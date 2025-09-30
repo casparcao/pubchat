@@ -75,12 +75,13 @@ impl App {
         Self::default()
     }
 
-    pub fn handle_key_event(&mut self, key: crossterm::event::KeyEvent) {
+    pub fn handle_key_event(&mut self, key: crossterm::event::KeyEvent) -> bool {
+        let mut should_exit = false;
         match self.mode {
             Mode::Normal => match key.code {
                 crossterm::event::KeyCode::Char('q') if key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) => {
                     // Ctrl+Q 退出
-                    std::process::exit(0);
+                    should_exit = true;
                 }
                 crossterm::event::KeyCode::Char('i') => {
                     self.mode = Mode::Insert;
@@ -101,6 +102,24 @@ impl App {
                     // 切换到群组视图
                     self.current_view = View::Groups;
                 }
+                crossterm::event::KeyCode::Enter => {
+                    // 在联系人或群组视图中按Enter选择
+                    match &self.current_view {
+                        View::Contacts => {
+                            if !self.contacts.is_empty() {
+                                let target = self.contacts[0].clone();
+                                self.current_view = View::Chat { target };
+                            }
+                        }
+                        View::Groups => {
+                            if !self.groups.is_empty() {
+                                let target = self.groups[0].clone();
+                                self.current_view = View::Chat { target };
+                            }
+                        }
+                        _ => {}
+                    }
+                }
                 _ => {}
             },
             Mode::Insert => match key.code {
@@ -119,33 +138,39 @@ impl App {
                 _ => {}
             },
         }
+        should_exit
     }
 
-    fn send_message(&mut self) {
+    fn send_message(&mut self) -> bool {
         if self.input.is_empty() {
-            return;
+            return false;
         }
 
         // 处理命令
-        if self.input.starts_with('/') {
-            self.handle_command();
+        let should_exit = if self.input.starts_with('/') {
+            self.handle_command()
         } else {
             // 发送普通消息
             let sender = match &self.current_view {
-                View::Chat { target } => target.clone(),
+                View::Chat { target } => {
+                    let msg = Message::new("You".to_string(), self.input.clone(), true);
+                    self.messages.push(msg);
+                    target.clone()
+                },
                 _ => "unknown".to_string(),
             };
-            let msg = Message::new("You".to_string(), self.input.clone(), true);
-            self.messages.push(msg);
             // TODO: 实际发送到网络
             // self.network.send(MessagePacket { ... });
-        }
+            false
+        };
 
         self.input.clear();
         self.mode = Mode::Normal;
+        should_exit
     }
 
-    fn handle_command(&mut self) {
+    fn handle_command(&mut self) -> bool {
+        let mut should_exit = false;
         let cmd = self.input.split_whitespace().next().unwrap_or("");
         match cmd {
             "/help" => {
@@ -155,7 +180,7 @@ impl App {
                 self.messages.clear();
             }
             "/quit" => {
-                std::process::exit(0);
+                should_exit = true;
             }
             "/list" => {
                 let contact_list = self.contacts.join(", ");
@@ -169,10 +194,19 @@ impl App {
         }
         self.input.clear();
         self.mode = Mode::Normal;
+        should_exit
     }
 
     pub fn render(&self, frame: &mut Frame) {
         let size = frame.size();
+        match &self.current_view {
+            View::Chat { .. } => self.render_chat_view(frame, size),
+            View::Contacts => self.render_contacts_view(frame, size),
+            View::Groups => self.render_groups_view(frame, size),
+        }
+    }
+
+    fn render_chat_view(&self, frame: &mut Frame, size: Rect) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -186,6 +220,32 @@ impl App {
 
         // 输入框
         self.render_input(frame, chunks[1]);
+    }
+
+    fn render_contacts_view(&self, frame: &mut Frame, size: Rect) {
+        let contacts: Vec<ListItem> = self.contacts
+            .iter()
+            .map(|contact| ListItem::new(format!("👤 {}", contact)))
+            .collect();
+
+        let contacts_list = List::new(contacts)
+            .block(Block::default().title("Contacts (Press Enter to select)").borders(Borders::ALL))
+            .highlight_style(Style::default().fg(Color::Yellow));
+
+        frame.render_widget(contacts_list, size);
+    }
+
+    fn render_groups_view(&self, frame: &mut Frame, size: Rect) {
+        let groups: Vec<ListItem> = self.groups
+            .iter()
+            .map(|group| ListItem::new(format!("👥 {}", group)))
+            .collect();
+
+        let groups_list = List::new(groups)
+            .block(Block::default().title("Groups (Press Enter to select)").borders(Borders::ALL))
+            .highlight_style(Style::default().fg(Color::Yellow));
+
+        frame.render_widget(groups_list, size);
     }
 
     fn render_messages(&self, frame: &mut Frame, area: Rect) {
@@ -207,10 +267,6 @@ impl App {
             .scroll_padding(1);
 
         frame.render_widget(messages_list, area);
-        frame.set_cursor(
-            area.x + self.input.len() as u16 + 1,
-            area.y + 1,
-        );
     }
 
     fn render_input(&self, frame: &mut Frame, area: Rect) {
@@ -233,5 +289,13 @@ impl App {
 
         frame.render_widget(input, chunks[0]);
         frame.render_widget(mode, chunks[1]);
+        
+        // 只在插入模式下设置光标位置
+        if let Mode::Insert = self.mode {
+            frame.set_cursor(
+                chunks[0].x + self.input.len() as u16 + 1,
+                chunks[0].y + 1,
+            );
+        }
     }
 }

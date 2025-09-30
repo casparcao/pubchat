@@ -28,7 +28,9 @@ async fn main() -> Result<()> {
             if key.code == KeyCode::Char('c') && key.modifiers.contains(event::KeyModifiers::CONTROL) {
                 break;
             }
-            app.handle_key_event(key);
+            if app.handle_key_event(key) {
+                break;
+            }
         }
     }
     // 退出原始模式
