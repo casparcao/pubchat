@@ -17,6 +17,7 @@ pub struct App {
     pub selected_contact: Option<usize>,
     pub selected_group: Option<usize>,
     pub current_user: String,
+    pub chat_maximized: bool, // 添加最大化状态字段
 }
 
 #[derive(Debug, Clone)]
@@ -93,6 +94,7 @@ impl Default for App {
             selected_contact: None,
             selected_group: None,
             current_user: "user1".to_string(),
+            chat_maximized: false, // 初始化最大化状态
         }
     }
 }
@@ -191,6 +193,12 @@ impl App {
                 crossterm::event::KeyCode::Char('g') => {
                     // 切换到群组视图
                     self.current_view = View::Groups;
+                }
+                crossterm::event::KeyCode::Char('m') => {
+                    // 切换聊天窗口最大化状态
+                    if matches!(self.current_view, View::Chat { .. }) {
+                        self.chat_maximized = !self.chat_maximized;
+                    }
                 }
                 crossterm::event::KeyCode::Enter => {
                     // 在联系人或群组视图中按Enter选择
@@ -461,10 +469,30 @@ impl App {
     pub fn render(&self, frame: &mut Frame) {
         let size = frame.size();
         match &self.current_view {
-            View::Chat { target } => self.render_main_layout(frame, size, target),
+            View::Chat { target } => {
+                if self.chat_maximized {
+                    self.render_maximized_chat_layout(frame, size, target)
+                } else {
+                    self.render_main_layout(frame, size, target)
+                }
+            },
             View::Contacts => self.render_contacts_layout(frame, size),
             View::Groups => self.render_groups_layout(frame, size),
         }
+    }
+
+    fn render_maximized_chat_layout(&self, frame: &mut Frame, area: Rect, target: &str) {
+        // 最大化聊天窗口布局：只显示聊天窗口和输入框
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Min(1),         // 消息区域（占据大部分空间）
+                Constraint::Length(5),      // 输入框区域
+            ])
+            .split(area);
+
+        self.render_messages(frame, chunks[0]);
+        self.render_input(frame, chunks[1]);
     }
 
     fn render_main_layout(&self, frame: &mut Frame, area: Rect, target: &str) {
@@ -661,11 +689,14 @@ impl App {
             View::Chat { target } => {
                 // 检查目标是联系人还是群组
                 if self.contacts.iter().any(|c| c.name == *target) {
-                    format!("Chat with {} (Contact)", target)
+                    format!("Chat with {} (Contact) {}", target, 
+                        if self.chat_maximized { "[M] (Press 'm' to restore)" } else { "[M] (Press 'm' to maximize)" })
                 } else if self.groups.iter().any(|g| g.name == *target) {
-                    format!("Chat in {} (Group)", target)
+                    format!("Chat in {} (Group) {}", target,
+                        if self.chat_maximized { "[M] (Press 'm' to restore)" } else { "[M] (Press 'm' to maximize)" })
                 } else {
-                    format!("Chat with {}", target)
+                    format!("Chat with {} {}", target,
+                        if self.chat_maximized { "[M] (Press 'm' to restore)" } else { "[M] (Press 'm' to maximize)" })
                 }
             },
             _ => "Messages".to_string(),
