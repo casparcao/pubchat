@@ -31,3 +31,12 @@ reqwest = "0.12"
 bytes = "1.10"
 futures = "0.3" 
 prost = "0.14"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+lto = true
+codegen-units = 1
+strip = true

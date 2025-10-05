@@ -1,4 +1,2 @@
-mod message;
-pub(crate) use message::{
-    Message
-};
+pub mod message;
+pub mod codec;

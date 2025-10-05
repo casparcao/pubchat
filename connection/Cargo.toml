@@ -6,12 +6,14 @@ description = "IM connection service: Manages client connections and WebSocket/T
 [dependencies]
 tokio = { workspace = true }
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 futures = { workspace = true }
 bytes = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
-prost = {workspace = true}
+prost = { workspace = true }
+core = { path = "../core" }
 
-# 可选：与其他服务通信（如通过 gRPC 或 HTTP）
+# Optional: Communicate with other services (via gRPC or HTTP)
 # reqwest = { workspace = true }
