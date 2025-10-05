@@ -1,0 +1,53 @@
+// proto/message.proto
+syntax = "proto3";
+
+package im;
+
+// 客户端 → 网关
+message ClientMessage {
+    string type = 1;  // "login", "chat", "ping"
+    oneof content {
+        LoginRequest login = 2;
+        ChatRequest chat = 3;
+        Ping ping = 4;
+    }
+}
+
+// 网关 → 客户端
+message ServerMessage {
+    string type = 1;  // "ack", "chat", "pong"
+    oneof content {
+        AckResponse ack = 2;
+        ChatResponse chat = 3;
+        Pong pong = 4;
+    }
+}
+
+message LoginRequest {
+    string user_id = 1;
+    string token = 2;
+}
+
+message ChatRequest {
+    string to = 1;
+    string content = 2;
+}
+
+message AckResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message ChatResponse {
+    string from = 1;
+    string content = 2;
+    int64 timestamp = 3;
+}
+
+message Ping {
+    int64 seq = 1;
+}
+
+message Pong {
+    int64 seq = 1;
+}

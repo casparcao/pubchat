@@ -1,5 +1,5 @@
 [package]
-name = "openchat"
+name = "pubchat"
 edition = "2024"
 description = "chat program based on terminal"
 
@@ -14,3 +14,8 @@ thiserror = {workspace = true}
 tracing = {workspace = true}
 tracing-subscriber = {workspace = true}
 chrono = {workspace = true}
+bytes = {workspace = true}
+prost = {workspace = true}
+
+[build-dependencies]
+prost-build = "0.14" 

@@ -13,7 +13,10 @@ bytes = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
+prost = {workspace = true}
 
 # 可选：与其他服务通信（如通过 gRPC 或 HTTP）
 # reqwest = { workspace = true }
-# prost = "0.11"
+
+[build-dependencies]
+tonic-build = "0.14"
