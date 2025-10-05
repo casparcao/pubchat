@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package message;
+
+enum Type {
+    CONNECT_REQUEST = 0; //连接初始化，携带令牌
+    CONNECT_RESPONSE = 1;
+    CHAT_REQUEST = 2;
+    CHAT_RESPONSE = 3;
+    PING = 6;//心跳消息
+    PONG = 7;
+}
+
+message Message{
+    uint64 id = 1;     //消息id
+    uint64 ts = 2;     //时间戳(单位:毫秒)
+    Type type = 3;  //消息类型
+    oneof content {
+        ConnectRequest connect_request = 4;
+        ConnectResponse connect_response = 5;
+        ChatRequest chat_request = 6;
+        ChatResponse chat_response = 7;
+        Ping ping = 8;
+        Pong pong = 9;
+    } //消息内容
+}
+
+message ConnectRequest{
+    string token = 1;
+}
+
+message ConnectResponse{
+    uint32 code = 1;
+    string message = 2;
+    uint64 uid = 3;
+}
+
+message ChatRequest {
+    uint64 speaker = 1;
+    uint64 room = 2; //所发生的聊天室id
+    ChatType type = 3;
+    string message = 4;
+    uint64 ts = 5;
+    string nickname = 6;
+}
+
+message ChatResponse {
+    uint64 speaker = 1;
+    uint64 room = 2; //所发生的聊天室id
+    ChatType type = 3;
+    string message = 4;
+    uint64 ts = 5;
+    string nickname = 6;
+}
+
+message Ping {
+    uint64 ts = 1;
+}
+
+message Pong {
+    uint64 ts = 1;
+    uint64 latency = 2;
+}
+
+
+message Room {
+    uint64 id = 1;
+    bool unread = 2;
+    //repeated Chat chats = 3;
+}
+
+message Pull {
+    message Request {
+        // 是否全部拉取，包括消息内容
+        // false = 只拉取每个聊天室是否有未读的消息
+        // true = 拉取指定聊天室中未读取的所有消息
+      bool full = 1;
+      // 指定拉取的聊天室id
+      uint64 room = 2;
+    }
+    message Response {
+        repeated Room rooms = 1;
+    }
+    Request request = 1;
+    Response response = 2;
+}
+
+message Push {
+  //Chat chat = 1;
+}
+
+enum ChatType {
+    /** 文本 */
+    TEXT = 0;
+    /** 表情 */
+    EMOJI = 1;
+    /** 图片 */
+    IMAGE = 2;
+    /** 代码 */
+    CODE = 3;
+    /** 富文本 */
+    RTF = 4;
+}
+
+//不需要内容的消息
+message None {}
+
+message Error {
+    int32 code = 1;
+    string message = 2;
+}

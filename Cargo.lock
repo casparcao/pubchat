@@ -172,6 +172,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "connection"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "futures",
+ "prost",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "core"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "futures",
+ "prost",
+ "prost-build",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -386,21 +415,6 @@ dependencies = [
  "pin-project-lite",
  "pin-utils",
  "slab",
-]
-
-[[package]]
-name = "gateway"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "bytes",
- "futures",
- "prost",
- "serde",
- "serde_json",
- "tokio",
- "tonic-build",
- "tracing",
 ]
 
 [[package]]
@@ -789,9 +803,9 @@ dependencies = [
  "bytes",
  "chrono",
  "color-eyre",
+ "core",
  "crossterm",
  "prost",
- "prost-build",
  "ratatui",
  "serde",
  "serde_json",
@@ -1174,18 +1188,6 @@ version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e06d43f1345a3bcd39f6a56dbb7dcab2ba47e68e8ac134855e7e2bdbaf8cab8"
 dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "tonic-build"
-version = "0.14.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c40aaccc9f9eccf2cd82ebc111adc13030d23e887244bc9cfa5d1d636049de3"
-dependencies = [
- "prettyplease",
  "proc-macro2",
  "quote",
  "syn",

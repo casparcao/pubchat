@@ -1,9 +1,7 @@
-# gateway/Cargo.toml
-
 [package]
-name = "gateway"
+name = "core"
 edition = "2024"
-description = "IM Gateway: Manages client connections and WebSocket/TCP long links"
+description = "core service"
 
 [dependencies]
 tokio = { workspace = true }
@@ -19,4 +17,4 @@ prost = {workspace = true}
 # reqwest = { workspace = true }
 
 [build-dependencies]
-tonic-build = "0.14"
+prost-build = "0.14" 

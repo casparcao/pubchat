@@ -20,8 +20,8 @@ fn main() -> Result<()> {
 
     // 编译 proto 文件
     config.compile_protos(
-    &["../proto/message.proto"],  // proto 文件列表
-    &["../proto"],  // proto 文件所在目录列表
+    &["proto/message.proto"],  // proto 文件列表
+    &["proto"],  // proto 文件所在目录列表
     )?;
 
     eprintln!("✅ Protobuf 代码生成成功！");

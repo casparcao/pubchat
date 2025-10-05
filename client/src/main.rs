@@ -9,8 +9,6 @@ use ratatui::prelude::CrosstermBackend;
 use std::io::{stdout, Result};
 
 mod ui;
-mod codec;
-mod proto;
 
 #[tokio::main]
 async fn main() -> Result<()> {

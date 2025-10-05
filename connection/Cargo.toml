@@ -1,7 +1,7 @@
 [package]
-name = "session"
+name = "connection"
 edition = "2024"
-description = ""
+description = "IM connection service: Manages client connections and WebSocket/TCP long links"
 
 [dependencies]
 tokio = { workspace = true }
@@ -11,7 +11,7 @@ bytes = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
+prost = {workspace = true}
 
 # 可选：与其他服务通信（如通过 gRPC 或 HTTP）
 # reqwest = { workspace = true }
-# prost = "0.11"

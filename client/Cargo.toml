@@ -16,6 +16,4 @@ tracing-subscriber = {workspace = true}
 chrono = {workspace = true}
 bytes = {workspace = true}
 prost = {workspace = true}
-
-[build-dependencies]
-prost-build = "0.14" 
+core = { path = "../core" }

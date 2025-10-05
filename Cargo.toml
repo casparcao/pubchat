@@ -1,7 +1,9 @@
 [workspace]
+resolver = "3"
 members = [
+    "core",
     "client",
-    "gateway",
+    "connection",
     "router",
     "session"
 ]

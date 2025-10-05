@@ -1,9 +1,7 @@
-# gateway/Cargo.toml
-
 [package]
 name = "router"
 edition = "2024"
-description = "IM Gateway: Manages client connections and WebSocket/TCP long links"
+description = ""
 
 [dependencies]
 tokio = { workspace = true }
