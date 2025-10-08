@@ -16,4 +16,5 @@ tracing-subscriber = {workspace = true}
 chrono = {workspace = true}
 bytes = {workspace = true}
 prost = {workspace = true}
+reqwest = { workspace = true }
 core = { path = "../core" }

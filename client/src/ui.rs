@@ -18,6 +18,8 @@ pub struct App {
     pub selected_group: Option<usize>,
     pub current_user: String,
     pub chat_maximized: bool, // 添加最大化状态字段
+    // 添加token字段存储用户认证信息
+    pub token: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -95,6 +97,7 @@ impl Default for App {
             selected_group: None,
             current_user: "user1".to_string(),
             chat_maximized: false, // 初始化最大化状态
+            token: None, // 初始化token为空
         }
     }
 }
