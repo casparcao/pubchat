@@ -30,6 +30,6 @@ async fn get_rating_stats(
 pub fn router() -> Router {
     Router::new()
         .route("/ratings", post(create_rating))
-        .route("/ratings/model/:model_id", get(get_model_ratings))
-        .route("/ratings/stats/:model_id", get(get_rating_stats))
+        .route("/ratings/model/{model_id}", get(get_model_ratings))
+        .route("/ratings/stats/{model_id}", get(get_rating_stats))
 }

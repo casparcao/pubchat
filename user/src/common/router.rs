@@ -44,7 +44,7 @@ fn role_route() -> Router{
     Router::new()
         .route("/roles", axum::routing::get(crate::controller::role::select_roles))
         .route("/roles", axum::routing::post(crate::controller::role::create_role))
-        .route("/roles/:id", axum::routing::delete(crate::controller::role::delete_role))
+        .route("/roles/{id}", axum::routing::delete(crate::controller::role::delete_role))
 }
 
 pub async fn not_found() -> ApiErr{

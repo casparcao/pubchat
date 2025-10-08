@@ -19,6 +19,6 @@ async fn get_top_brands() -> Result<ApiResponse<Brand>, ApiErr> {
 
 pub fn router() -> Router {
     Router::new()
-        .route("/brands/category/:category", get(get_brands_by_category))
+        .route("/brands/category/{category}", get(get_brands_by_category))
         .route("/brands/top", get(get_top_brands))
 }

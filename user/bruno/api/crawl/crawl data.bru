@@ -1,0 +1,19 @@
+meta {
+  name: crawl data
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://{{host}}{{port}}/crawl?kw=手机
+  body: none
+  auth: none
+}
+
+params:query {
+  kw: 手机
+}
+
+script:pre-request {
+  req.setHeader("Authorization", "Bearer " + bru.getEnvVar("token"));
+}
