@@ -1,0 +1,30 @@
+[package]
+name = "user"
+edition = "2024"
+description = "core service"
+
+[dependencies]
+tokio = { workspace = true }
+tracing = { workspace = true }
+futures = { workspace = true }
+bytes = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+axum = { workspace = true }
+axum-extra = {workspace = true}
+tower = {workspace = true}
+tower-http = { workspace = true }
+log = {workspace = true}
+jsonwebtoken = {workspace = true}
+dotenv = {workspace = true}
+snowflaker = { workspace = true }
+sqlx = { workspace = true }
+validator = { workspace = true }
+redis = { workspace = true }
+rust_decimal = { workspace = true }
+chrono = { workspace = true }
+http-body = { workspace = true }
+http = { workspace = true }
+

@@ -1,0 +1,2 @@
+ALTER TABLE `user`
+ADD COLUMN `avatar` VARCHAR(256) NULL DEFAULT NULL AFTER `union_id`;
