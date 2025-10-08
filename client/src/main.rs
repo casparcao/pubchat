@@ -109,7 +109,6 @@ async fn connect_with_token(token: &str) -> Result<TcpStream> {
             token: token.to_string(),
         })),
     };
-    eprintln!("Connection 0");
     
     // 发送连接请求
     let encoded = encode(&connect_request)
@@ -119,10 +118,9 @@ async fn connect_with_token(token: &str) -> Result<TcpStream> {
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
     
     // 读取连接响应
-    let response = decode::<Message, _>(&mut stream)
+    let _response = decode::<Message, _>(&mut stream)
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         
-    eprintln!("Connection response: {:?}", response);
     Ok(stream)
 }
