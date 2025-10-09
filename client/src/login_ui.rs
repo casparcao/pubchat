@@ -152,7 +152,7 @@ impl LoginState {
     }
 
     pub fn render(&mut self, frame: &mut Frame) {
-        let size = frame.size();
+        let size = frame.area();
         
         // 创建登录框区域
         let popup_area = Rect {
@@ -236,14 +236,14 @@ impl LoginState {
         // 设置光标位置
         if !self.is_logging_in {
             if matches!(self.focus, LoginFocus::Username) {
-                frame.set_cursor(
-                    chunks[1].x + self.username.len() as u16 + 1,
-                    chunks[1].y + 1,
+                frame.set_cursor_position(
+                    (chunks[1].x + self.username.len() as u16 + 1,
+                    chunks[1].y + 1,)
                 );
             } else if matches!(self.focus, LoginFocus::Password) {
-                frame.set_cursor(
-                    chunks[3].x + self.password.len() as u16 + 1,
-                    chunks[3].y + 1,
+                frame.set_cursor_position(
+                    (chunks[3].x + self.password.len() as u16 + 1,
+                    chunks[3].y + 1,)
                 );
             }
         }

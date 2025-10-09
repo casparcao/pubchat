@@ -3,12 +3,18 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tokio::net::TcpStream;
+use tokio::io::AsyncWriteExt;
+use core::proto::message::{Message, Type, ChatRequest, ChatType};
+use core::proto::codec::{encode};
 
 // 应用状态
 #[derive(Debug, Clone)]
 pub struct App {
     pub input: String,
-    pub messages: HashMap<String, Vec<Message>>,
+    pub messages: HashMap<String, Vec<MessageItem>>,
     pub contacts: Vec<Contact>,
     pub groups: Vec<Group>,
     pub current_view: View,
@@ -20,14 +26,31 @@ pub struct App {
     pub chat_maximized: bool, // 添加最大化状态字段
     // 添加token字段存储用户认证信息
     pub token: Option<String>,
+    // 添加TCP流用于发送消息
+    pub stream: Option<Arc<Mutex<TcpStream>>>,
 }
 
 #[derive(Debug, Clone)]
-pub struct Message {
+pub struct MessageItem {
     pub sender: String,
     pub content: String,
     pub timestamp: String,
     pub is_user: bool,
+}
+
+impl MessageItem {
+    pub fn new(sender: String, content: String, is_user: bool) -> Self {
+        Self {
+            sender,
+            content,
+            timestamp: chrono::Local::now().format("%H:%M").to_string(),
+            is_user,
+        }
+    }
+
+    pub fn system(content: &str) -> Self {
+        Self::new("SYSTEM".to_string(), content.to_string(), false)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -63,18 +86,18 @@ pub enum Mode {
     Insert,
 }
 
-impl Default for App {
-    fn default() -> Self {
+impl App {
+    pub fn new() -> Self {
         let mut messages = HashMap::new();
         // 为alice初始化一些消息
         messages.insert("alice".to_string(), vec![
-            Message::new("alice".to_string(), "Hello there!".to_string(), false),
-            Message::new("You".to_string(), "Hi Alice, how are you?".to_string(), true),
+            MessageItem::new("alice".to_string(), "Hello there!".to_string(), false),
+            MessageItem::new("You".to_string(), "Hi Alice, how are you?".to_string(), true),
         ]);
         // 为dev-team初始化一些消息
         messages.insert("dev-team".to_string(), vec![
-            Message::new("bob".to_string(), "Hey team, let's meet at 2pm".to_string(), false),
-            Message::new("alice".to_string(), "Sounds good to me".to_string(), false),
+            MessageItem::new("bob".to_string(), "Hey team, let's meet at 2pm".to_string(), false),
+            MessageItem::new("alice".to_string(), "Sounds good to me".to_string(), false),
         ]);
         
         Self {
@@ -98,30 +121,128 @@ impl Default for App {
             current_user: "user1".to_string(),
             chat_maximized: false, // 初始化最大化状态
             token: None, // 初始化token为空
+            stream: None, // 初始化stream为空
         }
+    }
+    
+    pub fn set_token(&mut self, token: Option<String>) {
+        self.token = token;
+    }
+    
+    pub fn set_stream(&mut self, stream: Arc<Mutex<TcpStream>>) {
+        self.stream = Some(stream);
+    }
+    
+    // 添加接收消息的方法
+    pub fn add_received_message(&mut self, chat_req: ChatRequest) {
+        let target = if chat_req.room == 0 {
+            // 私聊消息
+            chat_req.nickname.clone()
+        } else {
+            // 群组消息
+            // 这里需要根据room ID找到对应的群组名
+            format!("room_{}", chat_req.room)
+        };
+        
+        // 确保目标有消息列表
+        if !self.messages.contains_key(&target) {
+            self.messages.insert(target.clone(), vec![]);
+        }
+        
+        // 添加接收到的消息
+        if let Some(messages) = self.messages.get_mut(&target) {
+            let msg = MessageItem::new(
+                chat_req.nickname,
+                chat_req.message,
+                false
+            );
+            messages.push(msg);
+        }
+    }
+    
+    // 发送消息的方法
+    pub async fn send_message_over_tcp(&self, content: String, target: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        if let Some(stream) = &self.stream {
+            // 检查目标是联系人还是群组
+            let is_group = self.groups.iter().any(|g| g.name == target);
+            let room_id = if is_group { 
+                // 简化处理，实际应该根据群组名查找对应的room ID
+                1 
+            } else { 
+                0 // 私聊
+            };
+            
+            // 创建聊天请求消息
+            let chat_request = Message {
+                id: 2, // 简化处理，实际应该使用唯一ID生成器
+                ts: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u64,
+                r#type: Type::ChatRequest as i32,
+                content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest {
+                    speaker: 12345, // 这应该从连接响应中获取
+                    room: room_id,
+                    r#type: ChatType::Text as i32,
+                    message: content,
+                    ts: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis() as u64,
+                    nickname: self.current_user.clone(),
+                })),
+            };
+            
+            // 发送消息
+            let encoded = encode(&chat_request)?;
+            let mut stream_guard = stream.lock().await;
+            stream_guard.write_all(&encoded).await?;
+        }
+        Ok(())
     }
 }
 
-impl Message {
-    pub fn new(sender: String, content: String, is_user: bool) -> Self {
+impl Default for App {
+    fn default() -> Self {
+        let mut messages = HashMap::new();
+        // 为alice初始化一些消息
+        messages.insert("alice".to_string(), vec![
+            MessageItem::new("alice".to_string(), "Hello there!".to_string(), false),
+            MessageItem::new("You".to_string(), "Hi Alice, how are you?".to_string(), true),
+        ]);
+        // 为dev-team初始化一些消息
+        messages.insert("dev-team".to_string(), vec![
+            MessageItem::new("bob".to_string(), "Hey team, let's meet at 2pm".to_string(), false),
+            MessageItem::new("alice".to_string(), "Sounds good to me".to_string(), false),
+        ]);
+        
         Self {
-            sender,
-            content,
-            timestamp: chrono::Local::now().format("%H:%M").to_string(),
-            is_user,
+            input: String::new(),
+            messages,
+            contacts: vec![
+                Contact { name: "alice".to_string(), status: Status::Online },
+                Contact { name: "bob".to_string(), status: Status::Offline },
+            ],
+            groups: vec![
+                Group { name: "dev-team".to_string(), members: vec!["alice".to_string(), "bob".to_string()] },
+                Group { name: "random".to_string(), members: vec!["alice".to_string()] },
+            ],
+            current_view: View::Chat {
+                target: "alice".to_string(),
+            },
+            mode: Mode::Normal,
+            scroll_offset: 0,
+            selected_contact: None,
+            selected_group: None,
+            current_user: "user1".to_string(),
+            chat_maximized: false, // 初始化最大化状态
+            token: None, // 初始化token为空
+            stream: None,
         }
-    }
-
-    pub fn system(content: &str) -> Self {
-        Self::new("SYSTEM".to_string(), content.to_string(), false)
     }
 }
 
 impl App {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn handle_key_event(&mut self, key: crossterm::event::KeyEvent) -> bool {
         let mut should_exit = false;
         match self.mode {
@@ -281,9 +402,9 @@ impl App {
                         self.messages.insert(target.clone(), vec![]);
                     }
                     
-                    // 添加发送的消息
+                    // 添加发送的消息到UI
                     if let Some(messages) = self.messages.get_mut(target) {
-                        let msg = Message::new(
+                        let msg = MessageItem::new(
                             "You".to_string(), 
                             self.input.clone(), 
                             true
@@ -291,28 +412,51 @@ impl App {
                         messages.push(msg);
                     }
                     
-                    // 同时模拟接收消息（用于演示）
-                    // 在真实应用中，这将来自网络
-                    if self.contacts.iter().any(|c| c.name == *target) {
-                        // 这是发送给联系人的消息
-                        if let Some(messages) = self.messages.get_mut(target) {
-                            let response = Message::new(
-                                target.clone(),
-                                format!("Thanks for your message: \"{}\"", self.input),
-                                false
-                            );
-                            messages.push(response);
-                        }
-                    } else if self.groups.iter().any(|g| g.name == *target) {
-                        // 这是发送给群组的消息
-                        if let Some(messages) = self.messages.get_mut(target) {
-                            let response = Message::new(
-                                "bot".to_string(),
-                                format!("Message received in {}: \"{}\"", target, self.input),
-                                false
-                            );
-                            messages.push(response);
-                        }
+                    // 实际通过TCP发送消息
+                    let content = self.input.clone();
+                    let target_clone = target.clone();
+                    if let Some(stream) = &self.stream {
+                        let stream_clone = stream.clone();
+                        tokio::spawn(async move {
+                            // 检查目标是联系人还是群组
+                            // 这里需要实际的App引用来检查contacts和groups，但为简化处理，我们假设外部已确定
+                            let room_id = 0; // 简化处理，实际应该根据目标类型确定
+                            
+                            // 创建聊天请求消息
+                            let chat_request = Message {
+                                id: 2, // 简化处理，实际应该使用唯一ID生成器
+                                ts: std::time::SystemTime::now()
+                                    .duration_since(std::time::UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_millis() as u64,
+                                r#type: Type::ChatRequest as i32,
+                                content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest {
+                                    speaker: 12345, // 这应该从连接响应中获取
+                                    room: room_id,
+                                    r#type: ChatType::Text as i32,
+                                    message: content.clone(),
+                                    ts: std::time::SystemTime::now()
+                                        .duration_since(std::time::UNIX_EPOCH)
+                                        .unwrap()
+                                        .as_millis() as u64,
+                                    nickname: "You".to_string(), // 这应该从用户信息中获取
+                                })),
+                            };
+                            
+                            // 发送消息
+                            let encoded = match encode(&chat_request) {
+                                Ok(data) => data,
+                                Err(e) => {
+                                    eprintln!("Failed to encode message: {}", e);
+                                    return;
+                                }
+                            };
+                            
+                            let mut stream_guard = stream_clone.lock().await;
+                            if let Err(e) = stream_guard.write_all(&encoded).await {
+                                eprintln!("Failed to send message: {}", e);
+                            }
+                        });
                     }
                 },
                 _ => {
@@ -323,13 +467,11 @@ impl App {
                         self.messages.insert(system_target.clone(), vec![]);
                     }
                     if let Some(messages) = self.messages.get_mut(&system_target) {
-                        let msg = Message::system("Cannot send message: not in chat view");
+                        let msg = MessageItem::system("Cannot send message: not in chat view");
                         messages.push(msg);
                     }
                 }
             };
-            // TODO: 实际发送到网络
-            // self.network.send(MessagePacket { ... });
             false
         };
 
@@ -355,14 +497,14 @@ impl App {
         match cmd {
             "/help" => {
                 if let Some(messages) = self.messages.get_mut(&target) {
-                    messages.push(Message::system("Available commands:"));
-                    messages.push(Message::system("/help - Show this help"));
-                    messages.push(Message::system("/clear - Clear chat history"));
-                    messages.push(Message::system("/quit or /exit - Exit the application"));
-                    messages.push(Message::system("/list - List contacts and groups"));
-                    messages.push(Message::system("/join <group> - Join a group"));
-                    messages.push(Message::system("/create <group> - Create a new group"));
-                    messages.push(Message::system("/status <status> - Change your status"));
+                    messages.push(MessageItem::system("Available commands:"));
+                    messages.push(MessageItem::system("/help - Show this help"));
+                    messages.push(MessageItem::system("/clear - Clear chat history"));
+                    messages.push(MessageItem::system("/quit or /exit - Exit the application"));
+                    messages.push(MessageItem::system("/list - List contacts and groups"));
+                    messages.push(MessageItem::system("/join <group> - Join a group"));
+                    messages.push(MessageItem::system("/create <group> - Create a new group"));
+                    messages.push(MessageItem::system("/status <status> - Change your status"));
                 }
             }
             "/clear" => {
@@ -388,8 +530,8 @@ impl App {
                         .map(|g| g.name.clone())
                         .collect::<Vec<_>>()
                         .join(", ");
-                    messages.push(Message::system(&format!("Contacts: {}", contact_list)));
-                    messages.push(Message::system(&format!("Groups: {}", group_list)));
+                    messages.push(MessageItem::system(&format!("Contacts: {}", contact_list)));
+                    messages.push(MessageItem::system(&format!("Groups: {}", group_list)));
                 }
             }
             "/join" => {
@@ -404,16 +546,16 @@ impl App {
                             self.messages.insert(group_name.to_string(), vec![]);
                         }
                         if let Some(messages) = self.messages.get_mut(group_name) {
-                            messages.push(Message::system(&format!("Joined group: {}", group_name)));
+                            messages.push(MessageItem::system(&format!("Joined group: {}", group_name)));
                         }
                     } else {
                         if let Some(messages) = self.messages.get_mut(&target) {
-                            messages.push(Message::system(&format!("Group '{}' not found", group_name)));
+                            messages.push(MessageItem::system(&format!("Group '{}' not found", group_name)));
                         }
                     }
                 } else {
                     if let Some(messages) = self.messages.get_mut(&target) {
-                        messages.push(Message::system("Usage: /join <group>"));
+                        messages.push(MessageItem::system("Usage: /join <group>"));
                     }
                 }
             }
@@ -424,7 +566,7 @@ impl App {
                     // 检查群组是否已存在
                     if self.groups.iter().any(|g| g.name == group_name) {
                         if let Some(messages) = self.messages.get_mut(&target) {
-                            messages.push(Message::system(&format!("Group '{}' already exists", group_name)));
+                            messages.push(MessageItem::system(&format!("Group '{}' already exists", group_name)));
                         }
                     } else {
                         self.groups.push(Group {
@@ -432,14 +574,14 @@ impl App {
                             members: vec!["user1".to_string()], // 当前用户
                         });
                         if let Some(messages) = self.messages.get_mut(&target) {
-                            messages.push(Message::system(&format!("Created group: {}", group_name)));
+                            messages.push(MessageItem::system(&format!("Created group: {}", group_name)));
                         }
                         // 为新群组初始化消息列表
                         self.messages.insert(group_name.to_string(), vec![]);
                     }
                 } else {
                     if let Some(messages) = self.messages.get_mut(&target) {
-                        messages.push(Message::system("Usage: /create <group>"));
+                        messages.push(MessageItem::system("Usage: /create <group>"));
                     }
                 }
             }
@@ -448,19 +590,19 @@ impl App {
                 if parts.len() >= 2 {
                     let status_str = parts[1];
                     if let Some(messages) = self.messages.get_mut(&target) {
-                        messages.push(Message::system(&format!("Status changed to: {}", status_str)));
+                        messages.push(MessageItem::system(&format!("Status changed to: {}", status_str)));
                     }
                     // TODO: 实际更改状态
                 } else {
                     if let Some(messages) = self.messages.get_mut(&target) {
-                        messages.push(Message::system("Usage: /status <status>"));
+                        messages.push(MessageItem::system("Usage: /status <status>"));
                     }
                 }
             }
             _ => {
                 if let Some(messages) = self.messages.get_mut(&target) {
-                    messages.push(Message::system(&format!("Unknown command: {}", cmd)));
-                    messages.push(Message::system("Type /help for available commands"));
+                    messages.push(MessageItem::system(&format!("Unknown command: {}", cmd)));
+                    messages.push(MessageItem::system("Type /help for available commands"));
                 }
             }
         }
@@ -470,7 +612,7 @@ impl App {
     }
 
     pub fn render(&self, frame: &mut Frame) {
-        let size = frame.size();
+        let size = frame.area();
         match &self.current_view {
             View::Chat { target } => {
                 if self.chat_maximized {
@@ -739,9 +881,9 @@ impl App {
         
         // 只在插入模式下设置光标位置
         if let Mode::Insert = self.mode {
-            frame.set_cursor(
-                chunks[0].x + self.input.len() as u16 + 1,
-                chunks[0].y + 1,
+            frame.set_cursor_position(
+                (chunks[0].x + self.input.len() as u16 + 1,
+                chunks[0].y + 1)
             );
         }
     }

@@ -7,13 +7,15 @@ use crossterm::{
 use ratatui::Terminal;
 use ratatui::prelude::CrosstermBackend;
 use std::io::{stdout, Result};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 mod ui;
 mod login_ui;
 
 use login_ui::{LoginState, LoginResult};
 use tokio::net::TcpStream;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::AsyncWriteExt;
 use core::proto::message::{Message, ConnectRequest, Type};
 use core::proto::codec::{encode, decode};
 
@@ -59,10 +61,21 @@ async fn main() -> Result<()> {
     };
     
     // 使用token建立TCP连接
-    let _stream = connect_with_token(&token).await?;
+    let stream = connect_with_token(&token).await?;
     
     // 登录成功后，创建应用状态
     let mut app = App::new();
+    app.set_token(Some(token));
+    
+    // 创建Arc<Mutex<TcpStream>>用于发送和接收
+    let shared_stream = Arc::new(Mutex::new(stream));
+    app.set_stream(shared_stream.clone());
+    
+    // 启动接收消息的任务
+    let recv_app = app.clone();
+    tokio::spawn(async move {
+        receive_messages(shared_stream, recv_app).await;
+    });
     
     // 主事件循环
     loop {
@@ -123,4 +136,33 @@ async fn connect_with_token(token: &str) -> Result<TcpStream> {
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         
     Ok(stream)
+}
+
+// 接收消息的异步任务
+async fn receive_messages(stream: Arc<Mutex<TcpStream>>, mut app: App) {
+    loop {
+        let mut stream_guard = stream.lock().await;
+        match decode::<Message, _>(&mut *stream_guard).await {
+            Ok(msg) => {
+                drop(stream_guard); // 释放锁
+                
+                // 处理接收到的消息
+                match msg.r#type {
+                    t if t == Type::ChatRequest as i32 => {
+                        if let Some(core::proto::message::message::Content::ChatRequest(chat_req)) = msg.content {
+                            // 更新UI中的消息
+                            app.add_received_message(chat_req);
+                        }
+                    }
+                    _ => {
+                        // 其他类型消息暂不处理
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("Error receiving message: {}", e);
+                break;
+            }
+        }
+    }
 }
