@@ -5,10 +5,11 @@ use ratatui::{
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tokio::net::TcpStream;
+use tokio::net::tcp::OwnedWriteHalf;
 use tokio::io::AsyncWriteExt;
 use core::proto::message::{Message, Type, ChatRequest, ChatType};
 use core::proto::codec::{encode};
+use tokio::time;
 
 // 应用状态
 #[derive(Debug, Clone)]
@@ -27,7 +28,7 @@ pub struct App {
     // 添加token字段存储用户认证信息
     pub token: Option<String>,
     // 添加TCP流用于发送消息
-    pub stream: Option<Arc<Mutex<TcpStream>>>,
+    pub stream: Option<Arc<Mutex<OwnedWriteHalf>>>,
 }
 
 #[derive(Debug, Clone)]
@@ -129,7 +130,7 @@ impl App {
         self.token = token;
     }
     
-    pub fn set_stream(&mut self, stream: Arc<Mutex<TcpStream>>) {
+    pub fn set_stream(&mut self, stream: Arc<Mutex<OwnedWriteHalf>>) {
         self.stream = Some(stream);
     }
     
@@ -197,6 +198,7 @@ impl App {
             let encoded = encode(&chat_request)?;
             let mut stream_guard = stream.lock().await;
             stream_guard.write_all(&encoded).await?;
+            stream_guard.flush().await?;
         }
         Ok(())
     }
@@ -416,8 +418,10 @@ impl App {
                     let content = self.input.clone();
                     let target_clone = target.clone();
                     if let Some(stream) = &self.stream {
+                        eprintln!("Sending message to {}: {}", target_clone, content);
                         let stream_clone = stream.clone();
                         tokio::spawn(async move {
+                            eprintln!("Sending message to {} in task", target_clone);
                             // 检查目标是联系人还是群组
                             // 这里需要实际的App引用来检查contacts和groups，但为简化处理，我们假设外部已确定
                             let room_id = 0; // 简化处理，实际应该根据目标类型确定
@@ -452,10 +456,22 @@ impl App {
                                 }
                             };
                             
+                            // Write to the stream directly without contention
                             let mut stream_guard = stream_clone.lock().await;
-                            if let Err(e) = stream_guard.write_all(&encoded).await {
-                                eprintln!("Failed to send message: {}", e);
+                            match stream_guard.write_all(&encoded).await {
+                                Ok(_) => {
+                                    if let Err(e) = stream_guard.flush().await {
+                                        eprintln!("Failed to flush stream: {}", e);
+                                    } else {
+                                        eprintln!("Message sent and flushed successfully");
+                                    }
+                                },
+                                Err(e) => {
+                                    eprintln!("Failed to send message: {}", e);
+                                }
                             }
+                            drop(stream_guard);
+                            eprintln!("Sending message 3");
                         });
                     }
                 },

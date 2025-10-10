@@ -15,7 +15,7 @@ mod login_ui;
 
 use login_ui::{LoginState, LoginResult};
 use tokio::net::TcpStream;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncWriteExt, AsyncReadExt};
 use core::proto::message::{Message, ConnectRequest, Type};
 use core::proto::codec::{encode, decode};
 
@@ -67,14 +67,15 @@ async fn main() -> Result<()> {
     let mut app = App::new();
     app.set_token(Some(token));
     
-    // 创建Arc<Mutex<TcpStream>>用于发送和接收
-    let shared_stream = Arc::new(Mutex::new(stream));
-    app.set_stream(shared_stream.clone());
+    // Split the TCP stream into read and write halves
+    let (reader, writer) = stream.into_split();
+    let shared_writer = Arc::new(Mutex::new(writer));
+    app.set_stream(shared_writer.clone());
     
+    let app_clone = app.clone();
     // 启动接收消息的任务
-    let recv_app = app.clone();
     tokio::spawn(async move {
-        receive_messages(shared_stream, recv_app).await;
+        receive_messages(reader, app_clone).await;
     });
     
     // 主事件循环
@@ -139,13 +140,10 @@ async fn connect_with_token(token: &str) -> Result<TcpStream> {
 }
 
 // 接收消息的异步任务
-async fn receive_messages(stream: Arc<Mutex<TcpStream>>, mut app: App) {
+async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf, mut app: App) {
     loop {
-        let mut stream_guard = stream.lock().await;
-        match decode::<Message, _>(&mut *stream_guard).await {
+        match decode::<Message, _>(&mut reader).await {
             Ok(msg) => {
-                drop(stream_guard); // 释放锁
-                
                 // 处理接收到的消息
                 match msg.r#type {
                     t if t == Type::ChatRequest as i32 => {
