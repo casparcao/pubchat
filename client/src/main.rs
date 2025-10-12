@@ -1,4 +1,3 @@
-use crate::ui::App;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -16,8 +15,10 @@ mod login_ui;
 use login_ui::{LoginState, LoginResult};
 use tokio::net::TcpStream;
 use tokio::io::{AsyncWriteExt, AsyncReadExt};
-use core::proto::message::{Message, ConnectRequest, Type};
+use core::proto::message::{Message, ConnectRequest, Type, ChatRequest};
 use core::proto::codec::{encode, decode};
+
+use crate::ui::models::App;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -63,8 +64,24 @@ async fn main() -> Result<()> {
     // 使用token建立TCP连接
     let stream = connect_with_token(&token).await?;
     
+    // 创建好友服务实例
+    let friend_service = crate::ui::friend_service::FriendService::new("http://127.0.0.1:3000".to_string());
+    
+    // 获取好友列表
+    let friends = match friend_service.get_friends(&token).await {
+        Ok(friends) => friends,
+        Err(e) => {
+            eprintln!("Failed to get friends: {}", e);
+            Vec::new() // 如果获取失败，使用空的好友列表继续
+        }
+    };
+    
     // 登录成功后，创建应用状态
     let mut app = App::new();
+    // 更新联系人列表为从服务器获取的好友列表
+    app.contacts = friends.into_iter()
+        .map(|f| crate::ui::models::Contact::new(f.id, f.name, crate::ui::models::Status::Online, f.avatar))
+        .collect();
     app.set_token(Some(token));
     
     // Split the TCP stream into read and write halves

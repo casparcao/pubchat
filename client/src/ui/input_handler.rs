@@ -1,6 +1,6 @@
 use core::proto::{codec::encode, message::{ChatRequest, ChatType, Message, Type}};
 
-use crate::ui::{models::{App, Mode, View}, MessageItem};
+use crate::ui::{models::{App, Mode, View, MessageItem}};
 use crossterm::event::KeyEvent;
 use tokio::io::AsyncWriteExt;
 

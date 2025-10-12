@@ -14,7 +14,7 @@ pub async fn get_friend_list(
     Extension(claims): Extension<User>,
 ) -> Result<ApiResponse<FriendListResponse>, ApiErr> {
     let list = crate::service::friend::get_friend_list(claims).await?;
-    let res = FriendListResponse {friends: list};
+    let res = FriendListResponse { friends: list };
     Ok(ApiResponse::One(res))
 }
 

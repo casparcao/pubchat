@@ -20,8 +20,8 @@ impl App {
             input: String::new(),
             messages,
             contacts: vec![
-                Contact { name: "alice".to_string(), status: Status::Online },
-                Contact { name: "bob".to_string(), status: Status::Offline },
+                Contact::new(1, "alice".to_string(), Status::Online, None),
+                Contact::new(2, "bob".to_string(), Status::Offline, None),
             ],
             current_view: View::Chat {
                 target: "alice".to_string(),

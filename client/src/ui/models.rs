@@ -28,8 +28,16 @@ impl MessageItem {
 
 #[derive(Debug, Clone)]
 pub struct Contact {
+    pub id: i64,
     pub name: String,
     pub status: Status,
+    pub avatar: Option<String>,
+}
+
+impl Contact {
+    pub fn new(id: i64, name: String, status: Status, avatar: Option<String>) -> Self {
+        Self { id, name, status, avatar }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
