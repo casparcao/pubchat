@@ -142,10 +142,8 @@ impl App {
                     let content = self.input.clone();
                     let target_clone = target.clone();
                     if let Some(stream) = &self.stream {
-                        eprintln!("Sending message to {}: {}", target_clone, content);
                         let stream_clone = stream.clone();
                         tokio::spawn(async move {
-                            eprintln!("Sending message to {} in task", target_clone);
                             // 创建聊天请求消息
                             let room_id = 0; // 私聊
                             
@@ -185,16 +183,13 @@ impl App {
                                 Ok(_) => {
                                     if let Err(e) = stream_guard.flush().await {
                                         eprintln!("Failed to flush stream: {}", e);
-                                    } else {
-                                        eprintln!("Message sent and flushed successfully");
-                                    }
+                                    } 
                                 },
                                 Err(e) => {
                                     eprintln!("Failed to send message: {}", e);
                                 }
                             }
                             drop(stream_guard);
-                            eprintln!("Sending message 3");
                         });
                     }
                 },

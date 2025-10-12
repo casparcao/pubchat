@@ -26,7 +26,6 @@ pub async fn add_friend(user: AuthUser, friend_id: i64) -> Result<i64> {
 
 pub async fn get_friend_list(user: AuthUser) -> Result<Vec<FriendResponse>> {
     let friends = repository::friend::select_friends_by_user_id(user.id).await?;
-    
     let friend_responses: Vec<FriendResponse> = friends
         .into_iter()
         .map(|f| FriendResponse {
@@ -35,7 +34,6 @@ pub async fn get_friend_list(user: AuthUser) -> Result<Vec<FriendResponse>> {
             avatar: f.avatar,
         })
         .collect();
-        
     Ok(friend_responses)
 }
 

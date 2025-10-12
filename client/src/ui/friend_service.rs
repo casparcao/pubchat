@@ -10,6 +10,12 @@ pub struct FriendResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FriendListResponse {
+    pub data: FriendListResponseData,
+    pub ok: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FriendListResponseData{
     pub friends: Vec<FriendResponse>,
 }
 
@@ -36,7 +42,7 @@ impl FriendService {
 
         if response.status().is_success() {
             let friends_response: FriendListResponse = response.json().await?;
-            Ok(friends_response.friends)
+            Ok(friends_response.data.friends)
         } else {
             let status = response.status();
             let error_text = response.text().await?;
