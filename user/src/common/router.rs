@@ -10,6 +10,7 @@ pub fn init() -> Result<Router, String>{
         .merge(role_route())
         .merge(food_route())
         .merge(user_route())
+        .merge(friend_route())
         .merge(crate::controller::ratings::router())
         .layer(ValidateRequestHeaderLayer::custom(auth::AuthHeader{}))
         .merge(crate::controller::brands::router())
@@ -29,6 +30,12 @@ fn user_route() -> Router{
         .route("/user/current", axum::routing::get(crate::controller::user::select_current_user))
 }
 
+fn friend_route() -> Router{
+    Router::new()
+        .route("/friends", axum::routing::get(crate::controller::friend::get_friend_list))
+        .route("/friends/{friend_id}", axum::routing::post(crate::controller::friend::add_friend))
+        .route("/friends/{friend_id}", axum::routing::delete(crate::controller::friend::remove_friend))
+}
 
 fn food_route() -> Router{
     Router::new()
@@ -51,8 +58,6 @@ pub async fn not_found() -> ApiErr{
     ApiErr::Bad(404, "未找到指定资源...")
 }
 
-pub async fn error_handling(err: BoxError) -> ApiErr{
-    log::error!("{}", err);
-    ApiErr::Error("服务异常，请稍后再试")
+async fn error_handling(err: BoxError) -> ApiErr {
+    ApiErr::Bad(500, "服务器内部错误")
 }
-
