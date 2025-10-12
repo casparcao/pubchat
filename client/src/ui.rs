@@ -17,12 +17,10 @@ pub struct App {
     pub input: String,
     pub messages: HashMap<String, Vec<MessageItem>>,
     pub contacts: Vec<Contact>,
-    pub groups: Vec<Group>,
     pub current_view: View,
     pub mode: Mode,
     pub scroll_offset: u16,
     pub selected_contact: Option<usize>,
-    pub selected_group: Option<usize>,
     pub current_user: String,
     pub chat_maximized: bool, // 添加最大化状态字段
     // 添加token字段存储用户认证信息
@@ -60,12 +58,6 @@ pub struct Contact {
     pub status: Status,
 }
 
-#[derive(Debug, Clone)]
-pub struct Group {
-    pub name: String,
-    pub members: Vec<String>,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Status {
     Online,
@@ -78,7 +70,6 @@ pub enum Status {
 pub enum View {
     Chat { target: String },
     Contacts,
-    Groups,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -95,11 +86,6 @@ impl App {
             MessageItem::new("alice".to_string(), "Hello there!".to_string(), false),
             MessageItem::new("You".to_string(), "Hi Alice, how are you?".to_string(), true),
         ]);
-        // 为dev-team初始化一些消息
-        messages.insert("dev-team".to_string(), vec![
-            MessageItem::new("bob".to_string(), "Hey team, let's meet at 2pm".to_string(), false),
-            MessageItem::new("alice".to_string(), "Sounds good to me".to_string(), false),
-        ]);
         
         Self {
             input: String::new(),
@@ -108,17 +94,12 @@ impl App {
                 Contact { name: "alice".to_string(), status: Status::Online },
                 Contact { name: "bob".to_string(), status: Status::Offline },
             ],
-            groups: vec![
-                Group { name: "dev-team".to_string(), members: vec!["alice".to_string(), "bob".to_string()] },
-                Group { name: "random".to_string(), members: vec!["alice".to_string()] },
-            ],
             current_view: View::Chat {
                 target: "alice".to_string(),
             },
             mode: Mode::Normal,
             scroll_offset: 0,
             selected_contact: None,
-            selected_group: None,
             current_user: "user1".to_string(),
             chat_maximized: false, // 初始化最大化状态
             token: None, // 初始化token为空
@@ -136,14 +117,7 @@ impl App {
     
     // 添加接收消息的方法
     pub fn add_received_message(&mut self, chat_req: ChatRequest) {
-        let target = if chat_req.room == 0 {
-            // 私聊消息
-            chat_req.nickname.clone()
-        } else {
-            // 群组消息
-            // 这里需要根据room ID找到对应的群组名
-            format!("room_{}", chat_req.room)
-        };
+        let target = chat_req.nickname.clone();
         
         // 确保目标有消息列表
         if !self.messages.contains_key(&target) {
@@ -164,15 +138,6 @@ impl App {
     // 发送消息的方法
     pub async fn send_message_over_tcp(&self, content: String, target: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(stream) = &self.stream {
-            // 检查目标是联系人还是群组
-            let is_group = self.groups.iter().any(|g| g.name == target);
-            let room_id = if is_group { 
-                // 简化处理，实际应该根据群组名查找对应的room ID
-                1 
-            } else { 
-                0 // 私聊
-            };
-            
             // 创建聊天请求消息
             let chat_request = Message {
                 id: 2, // 简化处理，实际应该使用唯一ID生成器
@@ -183,7 +148,7 @@ impl App {
                 r#type: Type::ChatRequest as i32,
                 content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest {
                     speaker: 12345, // 这应该从连接响应中获取
-                    room: room_id,
+                    room: 0, // 私聊
                     r#type: ChatType::Text as i32,
                     message: content,
                     ts: std::time::SystemTime::now()
@@ -202,49 +167,7 @@ impl App {
         }
         Ok(())
     }
-}
 
-impl Default for App {
-    fn default() -> Self {
-        let mut messages = HashMap::new();
-        // 为alice初始化一些消息
-        messages.insert("alice".to_string(), vec![
-            MessageItem::new("alice".to_string(), "Hello there!".to_string(), false),
-            MessageItem::new("You".to_string(), "Hi Alice, how are you?".to_string(), true),
-        ]);
-        // 为dev-team初始化一些消息
-        messages.insert("dev-team".to_string(), vec![
-            MessageItem::new("bob".to_string(), "Hey team, let's meet at 2pm".to_string(), false),
-            MessageItem::new("alice".to_string(), "Sounds good to me".to_string(), false),
-        ]);
-        
-        Self {
-            input: String::new(),
-            messages,
-            contacts: vec![
-                Contact { name: "alice".to_string(), status: Status::Online },
-                Contact { name: "bob".to_string(), status: Status::Offline },
-            ],
-            groups: vec![
-                Group { name: "dev-team".to_string(), members: vec!["alice".to_string(), "bob".to_string()] },
-                Group { name: "random".to_string(), members: vec!["alice".to_string()] },
-            ],
-            current_view: View::Chat {
-                target: "alice".to_string(),
-            },
-            mode: Mode::Normal,
-            scroll_offset: 0,
-            selected_contact: None,
-            selected_group: None,
-            current_user: "user1".to_string(),
-            chat_maximized: false, // 初始化最大化状态
-            token: None, // 初始化token为空
-            stream: None,
-        }
-    }
-}
-
-impl App {
     pub fn handle_key_event(&mut self, key: crossterm::event::KeyEvent) -> bool {
         let mut should_exit = false;
         match self.mode {
@@ -257,7 +180,7 @@ impl App {
                     self.mode = Mode::Insert;
                 }
                 crossterm::event::KeyCode::Char('k') => {
-                    // 在联系人或群组视图中向上导航
+                    // 在联系人视图中向上导航
                     match self.current_view {
                         View::Contacts => {
                             if !self.contacts.is_empty() {
@@ -265,15 +188,6 @@ impl App {
                                     self.selected_contact = Some(selected.saturating_sub(1));
                                 } else {
                                     self.selected_contact = Some(0);
-                                }
-                            }
-                        }
-                        View::Groups => {
-                            if !self.groups.is_empty() {
-                                if let Some(selected) = self.selected_group {
-                                    self.selected_group = Some(selected.saturating_sub(1));
-                                } else {
-                                    self.selected_group = Some(0);
                                 }
                             }
                         }
@@ -286,7 +200,7 @@ impl App {
                     }
                 }
                 crossterm::event::KeyCode::Char('j') => {
-                    // 在联系人或群组视图中向下导航
+                    // 在联系人视图中向下导航
                     match self.current_view {
                         View::Contacts => {
                             if !self.contacts.is_empty() {
@@ -294,15 +208,6 @@ impl App {
                                     self.selected_contact = Some((selected + 1).min(self.contacts.len() - 1));
                                 } else {
                                     self.selected_contact = Some(0);
-                                }
-                            }
-                        }
-                        View::Groups => {
-                            if !self.groups.is_empty() {
-                                if let Some(selected) = self.selected_group {
-                                    self.selected_group = Some((selected + 1).min(self.groups.len() - 1));
-                                } else {
-                                    self.selected_group = Some(0);
                                 }
                             }
                         }
@@ -316,10 +221,6 @@ impl App {
                     // 切换到联系人视图
                     self.current_view = View::Contacts;
                 }
-                crossterm::event::KeyCode::Char('g') => {
-                    // 切换到群组视图
-                    self.current_view = View::Groups;
-                }
                 crossterm::event::KeyCode::Char('m') => {
                     // 切换聊天窗口最大化状态
                     if matches!(self.current_view, View::Chat { .. }) {
@@ -327,25 +228,12 @@ impl App {
                     }
                 }
                 crossterm::event::KeyCode::Enter => {
-                    // 在联系人或群组视图中按Enter选择
+                    // 在联系人视图中按Enter选择
                     match &self.current_view {
                         View::Contacts => {
                             if let Some(index) = self.selected_contact {
                                 if index < self.contacts.len() {
                                     let target = self.contacts[index].name.clone();
-                                    self.current_view = View::Chat { target: target.clone() };
-                                    
-                                    // 确保目标有消息列表
-                                    if !self.messages.contains_key(&target) {
-                                        self.messages.insert(target.clone(), vec![]);
-                                    }
-                                }
-                            }
-                        }
-                        View::Groups => {
-                            if let Some(index) = self.selected_group {
-                                if index < self.groups.len() {
-                                    let target = self.groups[index].name.clone();
                                     self.current_view = View::Chat { target: target.clone() };
                                     
                                     // 确保目标有消息列表
@@ -362,8 +250,7 @@ impl App {
                     // 在不同视图间切换
                     self.current_view = match self.current_view {
                         View::Chat { .. } => View::Contacts,
-                        View::Contacts => View::Groups,
-                        View::Groups => View::Chat { target: "alice".to_string() },
+                        View::Contacts => View::Chat { target: "alice".to_string() },
                     };
                 }
                 _ => {}
@@ -422,9 +309,8 @@ impl App {
                         let stream_clone = stream.clone();
                         tokio::spawn(async move {
                             eprintln!("Sending message to {} in task", target_clone);
-                            // 检查目标是联系人还是群组
-                            // 这里需要实际的App引用来检查contacts和groups，但为简化处理，我们假设外部已确定
-                            let room_id = 0; // 简化处理，实际应该根据目标类型确定
+                            // 创建聊天请求消息
+                            let room_id = 0; // 私聊
                             
                             // 创建聊天请求消息
                             let chat_request = Message {
@@ -499,105 +385,35 @@ impl App {
     fn handle_command(&mut self) -> bool {
         let mut should_exit = false;
         let cmd = self.input.split_whitespace().next().unwrap_or("");
-        // 确定消息应该添加到哪个目标
         let target = match &self.current_view {
             View::Chat { target } => target.clone(),
             _ => "system".to_string(),
         };
-        
-        // 确保目标有消息列表
-        if !self.messages.contains_key(&target) {
-            self.messages.insert(target.clone(), vec![]);
-        }
-        
+
         match cmd {
             "/help" => {
                 if let Some(messages) = self.messages.get_mut(&target) {
                     messages.push(MessageItem::system("Available commands:"));
                     messages.push(MessageItem::system("/help - Show this help"));
-                    messages.push(MessageItem::system("/clear - Clear chat history"));
                     messages.push(MessageItem::system("/quit or /exit - Exit the application"));
-                    messages.push(MessageItem::system("/list - List contacts and groups"));
-                    messages.push(MessageItem::system("/join <group> - Join a group"));
-                    messages.push(MessageItem::system("/create <group> - Create a new group"));
+                    messages.push(MessageItem::system("/clear - Clear chat history"));
                     messages.push(MessageItem::system("/status <status> - Change your status"));
-                }
-            }
-            "/clear" => {
-                if let Some(messages) = self.messages.get_mut(&target) {
-                    messages.clear();
                 }
             }
             "/quit" | "/exit" => {
                 should_exit = true;
             }
-            "/list" => {
-                if let Some(messages) = self.messages.get_mut(&target) {
-                    let contact_list = self.contacts.iter()
-                        .map(|c| format!("{} ({})", c.name, match c.status {
-                            Status::Online => "online",
-                            Status::Offline => "offline",
-                            Status::Busy => "busy",
-                            Status::Away => "away",
-                        }))
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    let group_list = self.groups.iter()
-                        .map(|g| g.name.clone())
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    messages.push(MessageItem::system(&format!("Contacts: {}", contact_list)));
-                    messages.push(MessageItem::system(&format!("Groups: {}", group_list)));
-                }
-            }
-            "/join" => {
-                let parts: Vec<&str> = self.input.split_whitespace().collect();
-                if parts.len() >= 2 {
-                    let group_name = parts[1];
-                    // 检查群组是否存在
-                    if self.groups.iter().any(|g| g.name == group_name) {
-                        self.current_view = View::Chat { target: group_name.to_string() };
-                        // 确保目标有消息列表
-                        if !self.messages.contains_key(group_name) {
-                            self.messages.insert(group_name.to_string(), vec![]);
-                        }
-                        if let Some(messages) = self.messages.get_mut(group_name) {
-                            messages.push(MessageItem::system(&format!("Joined group: {}", group_name)));
-                        }
-                    } else {
-                        if let Some(messages) = self.messages.get_mut(&target) {
-                            messages.push(MessageItem::system(&format!("Group '{}' not found", group_name)));
+            "/clear" => {
+                match &self.current_view {
+                    View::Chat { target } => {
+                        if let Some(messages) = self.messages.get_mut(target) {
+                            messages.clear();
                         }
                     }
-                } else {
-                    if let Some(messages) = self.messages.get_mut(&target) {
-                        messages.push(MessageItem::system("Usage: /join <group>"));
-                    }
-                }
-            }
-            "/create" => {
-                let parts: Vec<&str> = self.input.split_whitespace().collect();
-                if parts.len() >= 2 {
-                    let group_name = parts[1];
-                    // 检查群组是否已存在
-                    if self.groups.iter().any(|g| g.name == group_name) {
+                    _ => {
                         if let Some(messages) = self.messages.get_mut(&target) {
-                            messages.push(MessageItem::system(&format!("Group '{}' already exists", group_name)));
+                            messages.push(MessageItem::system("Use /clear in chat view"));
                         }
-                    } else {
-                        self.groups.push(Group {
-                            name: group_name.to_string(),
-                            members: vec!["user1".to_string()], // 当前用户
-                        });
-                        if let Some(messages) = self.messages.get_mut(&target) {
-                            messages.push(MessageItem::system(&format!("Created group: {}", group_name)));
-                        }
-                        // 为新群组初始化消息列表
-                        self.messages.insert(group_name.to_string(), vec![]);
-                    }
-                } else {
-                    if let Some(messages) = self.messages.get_mut(&target) {
-                        messages.push(MessageItem::system("Usage: /create <group>"));
                     }
                 }
             }
@@ -638,7 +454,6 @@ impl App {
                 }
             },
             View::Contacts => self.render_contacts_layout(frame, size),
-            View::Groups => self.render_groups_layout(frame, size),
         }
     }
 
@@ -657,20 +472,19 @@ impl App {
     }
 
     fn render_main_layout(&self, frame: &mut Frame, area: Rect, target: &str) {
-        // 三栏布局：联系人列表(1/4) + 聊天窗口(1/2) + 群组列表(1/4)
+        // 两栏布局：联系人列表(1/3) + 聊天窗口(2/3)
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Percentage(20), // 联系人列表
-                Constraint::Percentage(60), // 聊天窗口
-                Constraint::Percentage(20), // 群组列表
+                Constraint::Percentage(30), // 联系人列表
+                Constraint::Percentage(70), // 聊天窗口
             ])
             .split(area);
 
         // 左侧联系人列表
         self.render_contacts_list(frame, chunks[0]);
 
-        // 中间聊天区域
+        // 右侧聊天区域
         let chat_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -681,9 +495,6 @@ impl App {
 
         self.render_messages(frame, chat_chunks[0]);
         self.render_input(frame, chat_chunks[1]);
-
-        // 右侧群组列表
-        self.render_groups_list(frame, chunks[2]);
     }
 
     fn render_contacts_layout(&self, frame: &mut Frame, area: Rect) {
@@ -727,42 +538,6 @@ impl App {
         frame.render_widget(info, chunks[1]);
     }
 
-    fn render_groups_layout(&self, frame: &mut Frame, area: Rect) {
-        // 主要显示群组列表，带一些信息区域
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage(30), // 群组列表
-                Constraint::Percentage(70), // 信息区域
-            ])
-            .split(area);
-
-        self.render_groups_list(frame, chunks[0]);
-        
-        // 右侧显示群组详细信息或帮助
-        let info_block = Block::default()
-            .title("Group Info")
-            .borders(Borders::ALL);
-            
-        let info_text = if let Some(index) = self.selected_group {
-            if index < self.groups.len() {
-                let group = &self.groups[index];
-                format!("Name: {}\nMembers: {}\n\nPress Enter to chat", 
-                    group.name,
-                    group.members.join(", "))
-            } else {
-                "Select a group".to_string()
-            }
-        } else {
-            "Select a group".to_string()
-        };
-        
-        let info = Paragraph::new(info_text)
-            .block(info_block);
-            
-        frame.render_widget(info, chunks[1]);
-    }
-
     fn render_contacts_list(&self, frame: &mut Frame, area: Rect) {
         let contacts: Vec<ListItem> = self.contacts
             .iter()
@@ -796,33 +571,6 @@ impl App {
         frame.render_widget(contacts_list, area);
     }
 
-    fn render_groups_list(&self, frame: &mut Frame, area: Rect) {
-        let groups: Vec<ListItem> = self.groups
-            .iter()
-            .enumerate()
-            .map(|(i, group)| {
-                let content = format!("👥 {}", group.name);
-                let mut item = ListItem::new(content);
-                if let Some(selected) = self.selected_group {
-                    if selected == i {
-                        item = item.style(Style::default().bg(Color::Blue));
-                    }
-                }
-                item
-            })
-            .collect();
-
-        let title = match self.current_view {
-            View::Groups => "Groups (↑/↓ to select)",
-            _ => "Groups"
-        };
-
-        let groups_list = List::new(groups)
-            .block(Block::default().title(title).borders(Borders::ALL));
-
-        frame.render_widget(groups_list, area);
-    }
-
     fn render_messages(&self, frame: &mut Frame, area: Rect) {
         // 获取当前聊天目标的消息
         let messages = match &self.current_view {
@@ -850,10 +598,7 @@ impl App {
             View::Chat { target } => {
                 // 检查目标是联系人还是群组
                 if self.contacts.iter().any(|c| c.name == *target) {
-                    format!("Chat with {} (Contact) {}", target, 
-                        if self.chat_maximized { "[M] (Press 'm' to restore)" } else { "[M] (Press 'm' to maximize)" })
-                } else if self.groups.iter().any(|g| g.name == *target) {
-                    format!("Chat in {} (Group) {}", target,
+                    format!("Chat with {} {}", target, 
                         if self.chat_maximized { "[M] (Press 'm' to restore)" } else { "[M] (Press 'm' to maximize)" })
                 } else {
                     format!("Chat with {} {}", target,
@@ -899,43 +644,14 @@ impl App {
         if let Mode::Insert = self.mode {
             frame.set_cursor_position(
                 (chunks[0].x + self.input.len() as u16 + 1,
-                chunks[0].y + 1)
+                 chunks[0].y + 1)
             );
         }
     }
+}
 
-    /// 获取当前聊天目标的详细信息
-    pub fn get_current_target_info(&self) -> String {
-        match &self.current_view {
-            View::Chat { target } => {
-                // 检查是否是联系人
-                if let Some(contact) = self.contacts.iter().find(|c| c.name == *target) {
-                    format!(
-                        "👤 {} ({})",
-                        contact.name,
-                        match contact.status {
-                            Status::Online => "🟢 Online",
-                            Status::Offline => "🔴 Offline",
-                            Status::Busy => "🔴 Busy",
-                            Status::Away => "🟡 Away",
-                        }
-                    )
-                } 
-                // 检查是否是群组
-                else if let Some(group) = self.groups.iter().find(|g| g.name == *target) {
-                    format!(
-                        "👥 {} ({} members)",
-                        group.name,
-                        group.members.len()
-                    )
-                } 
-                // 默认情况
-                else {
-                    format!("💬 {}", target)
-                }
-            },
-            View::Contacts => "📋 Contacts".to_string(),
-            View::Groups => "👥 Groups".to_string(),
-        }
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
     }
 }
