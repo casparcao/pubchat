@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  redis:
+    # 使用官方 Redis 镜像，推荐指定版本以保证稳定
+    image: redis:7.2.5
+
+    # 容器名称
+    container_name: redis
+
+    # 端口映射：宿主机:容器
+    # 6379 是 Redis 默认端口
+    ports:
+      - "6379:6379"
+
+    # 命令行参数（可选）
+    # 如果使用自定义配置文件，则不需要在这里传参
+    # command: redis-server --appendonly yes --requirepass yourpassword
+
+    # 环境变量
+    environment:
+      # (可选) 设置 Redis 密码
+      # 注意：Redis 官方镜像不直接通过环境变量设置密码
+      # 密码需要在配置文件中设置，见下方 custom.conf 示例
+      # REDIS_PASSWORD: your-strong-password 
+
+    # 重启策略：除非被手动停止，否则总是重启
+    restart: unless-stopped
+
+    # 数据持久化 - ⚠️ 非常重要！
+    # 将 Redis 的数据目录挂载到宿主机
+    volumes:
+      - redis_data:/data                    # RDB 和 AOF 文件存储位置
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro # 挂载自定义配置文件
+
+    # 资源限制 (可选)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 512M
+    #       cpus: '0.5'
+
+# 定义命名卷
+volumes:
+  redis_data:
+    # driver: local
