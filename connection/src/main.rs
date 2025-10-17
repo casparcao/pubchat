@@ -7,8 +7,13 @@ use tracing_subscriber;
 use core::proto::message::{Message, ConnectResponse, Type, message, ChatResponse};
 use core::proto::codec::{decode, encode};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use tokio::sync::broadcast;
+use lapin::BasicProperties;
+use serde_json;
+
+mod queue;
 
 // 存储所有连接的客户端
 struct Client {
@@ -20,15 +25,18 @@ struct ConnectionManager {
     clients: HashMap<u64, Client>,
     // 使用广播通道来转发消息给所有相关客户端
     message_sender: broadcast::Sender<Message>,
+    // RabbitMQ管理器用于消息投递
+    rabbitmq_manager: Option<queue::RabbitMqManager>,
 }
 
 impl ConnectionManager {
-    fn new() -> Self {
+    fn new(rabbitmq_manager: Option<queue::RabbitMqManager>) -> Self {
         let (message_sender, _) = broadcast::channel(100);
         
         Self {
             clients: HashMap::new(),
             message_sender,
+            rabbitmq_manager,
         }
     }
     
@@ -38,6 +46,26 @@ impl ConnectionManager {
     
     fn broadcast_message(&self, message: &Message) -> Result<()> {
         let _ = self.message_sender.send(message.clone());
+        Ok(())
+    }
+    
+    async fn publish_to_rabbitmq(&self, message: &Message) -> Result<()> {
+        if let Some(rabbitmq_manager) = &self.rabbitmq_manager {
+            let payload = serde_json::to_vec(message)?;
+            let _confirm = rabbitmq_manager.get_channel()
+                .basic_publish(
+                    "", // default exchange
+                    rabbitmq_manager.get_queue_name(),
+                    lapin::options::BasicPublishOptions::default(),
+                    &payload,
+                    BasicProperties::default(),
+                )
+                .await?
+                .await?;
+            info!("Message published to RabbitMQ");
+        } else {
+            warn!("RabbitMQ manager not initialized, message not published");
+        }
         Ok(())
     }
 }
@@ -98,7 +126,7 @@ async fn handle_client_messages(
     
     // 注册客户端到连接管理器
     {
-        let mut manager = connection_manager.lock().unwrap();
+        let mut manager = connection_manager.lock().await;
         let client = Client {
             uid,
             writer: Arc::new(Mutex::new(writer)),
@@ -148,9 +176,14 @@ async fn handle_client_messages(
                     
                     // Broadcast the message to all clients
                     {
-                        let manager = connection_manager.lock().unwrap();
+                        let manager = connection_manager.lock().await;
                         if let Err(e) = manager.broadcast_message(&chat_response) {
                             error!("Failed to broadcast message: {}", e);
+                        }
+                        
+                        // Publish message to RabbitMQ
+                        if let Err(e) = manager.publish_to_rabbitmq(&chat_response).await {
+                            error!("Failed to publish message to RabbitMQ: {}", e);
                         }
                     }
                     info!("Broadcast ChatResponse for user {} in room {}", 
@@ -179,7 +212,10 @@ async fn main() -> Result<()> {
         .with_max_level(Level::INFO)
         .init();
 
-    let connection_manager = Arc::new(Mutex::new(ConnectionManager::new()));
+    // Initialize RabbitMQ
+    let rabbitmq_manager = queue::init().await?;
+    
+    let connection_manager = Arc::new(Mutex::new(ConnectionManager::new(rabbitmq_manager)));
 
     // Bind the listener to the address
     let listener = TcpListener::bind("127.0.0.1:8080").await?;
