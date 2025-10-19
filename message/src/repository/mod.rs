@@ -1,9 +1,3 @@
 pub mod db;
 pub mod rdb;
-pub mod user;
-pub mod role;
-pub mod org;
-pub mod food;
-pub mod rating;
-pub mod brand;
-pub mod friend;
+pub mod message;

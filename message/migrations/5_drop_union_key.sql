@@ -1,1 +1,0 @@
-ALTER TABLE `user` DROP INDEX `uk_union_id`;

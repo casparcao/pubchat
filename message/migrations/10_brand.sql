@@ -1,1 +1,0 @@
-UPDATE `brands` SET `platform_scores` = '{\"jd\": 5, \"tmall\": 5, \"taobao\":5}', `social_scores` = '{\"zhihu\": 5, \"xiaohongshu\": 5, \"weibo\": 5}', `advantages` = '[\"adv 1\",\"adv 2\"]', `price_range` = '{\"min\": 1299.99, \"max\": 5999.99}';

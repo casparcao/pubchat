@@ -1,2 +1,0 @@
-INSERT INTO `brands` (`id`, `name`, `category`, `rating`, `review_count`, `platform_scores`, `social_scores`, `is_top_brand`, `advantages`, `market_share`, `price_range`) VALUES (uuid_short(), '华为', 'phones', '4.9', '10000', '[]', '[]', '1', '[]', '4.9', '[]');
-INSERT INTO `brands` (`id`, `name`, `category`, `rating`, `review_count`, `platform_scores`, `social_scores`, `is_top_brand`, `advantages`, `market_share`, `price_range`) VALUES (uuid_short(), '小米', 'phones', '4.9', '10000', '[]', '[]', '1', '[]', '4.9', '[]');
