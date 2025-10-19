@@ -12,9 +12,14 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 prost = {workspace = true}
-
-# 可选：与其他服务通信（如通过 gRPC 或 HTTP）
-# reqwest = { workspace = true }
+axum = { workspace = true }
+axum-extra = {workspace = true}
+tower = {workspace = true}
+tower-http = { workspace = true }
+log = {workspace = true}
+jsonwebtoken = {workspace = true}
+thiserror = { workspace = true }
+http = { workspace = true }
 
 [build-dependencies]
 prost-build = "0.14" 
