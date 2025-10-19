@@ -1,4 +1,5 @@
 use anyhow::{Ok, Result};
+use futures::StreamExt;
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::AsyncWriteExt;
@@ -10,8 +11,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::sync::broadcast;
-use lapin::BasicProperties;
+use lapin::{BasicProperties, message::DeliveryResult};
 use serde_json;
+
+use crate::queue::RabbitMqManager;
 
 mod queue;
 
@@ -26,11 +29,11 @@ struct ConnectionManager {
     // 使用广播通道来转发消息给所有相关客户端
     message_sender: broadcast::Sender<Message>,
     // RabbitMQ管理器用于消息投递
-    rabbitmq_manager: Option<queue::RabbitMqManager>,
+    rabbitmq_manager: queue::RabbitMqManager,
 }
 
 impl ConnectionManager {
-    fn new(rabbitmq_manager: Option<queue::RabbitMqManager>) -> Self {
+    fn new(rabbitmq_manager: queue::RabbitMqManager) -> Self {
         let (message_sender, _) = broadcast::channel(100);
         
         Self {
@@ -50,21 +53,31 @@ impl ConnectionManager {
     }
     
     async fn publish_to_rabbitmq(&self, message: &Message) -> Result<()> {
-        if let Some(rabbitmq_manager) = &self.rabbitmq_manager {
-            let payload = serde_json::to_vec(message)?;
-            let _confirm = rabbitmq_manager.get_channel()
-                .basic_publish(
-                    "", // default exchange
-                    rabbitmq_manager.get_queue_name(),
-                    lapin::options::BasicPublishOptions::default(),
-                    &payload,
-                    BasicProperties::default(),
-                )
-                .await?
-                .await?;
-            info!("Message published to RabbitMQ");
+        let payload = serde_json::to_vec(message)?;
+        let _confirm = &self.rabbitmq_manager.get_channel()
+            .basic_publish(
+                "", // default exchange
+                &self.rabbitmq_manager.get_queue_name(),
+                lapin::options::BasicPublishOptions::default(),
+                &payload,
+                BasicProperties::default(),
+            )
+            .await?
+            .await?;
+        info!("Message published to RabbitMQ");
+        Ok(())
+    }
+
+    // 新增方法：向特定用户发送消息
+    async fn send_message_to_client(&self, target_uid: u64, message: &Message) -> Result<()> {
+        if let Some(client) = self.clients.get(&target_uid) {
+            let encoded = encode(message)?;
+            let mut writer = client.writer.lock().await;
+            writer.write_all(&encoded).await?;
+            writer.flush().await?;
+            info!("Message sent to client {}", target_uid);
         } else {
-            warn!("RabbitMQ manager not initialized, message not published");
+            warn!("Client {} not found, message not sent", target_uid);
         }
         Ok(())
     }
@@ -205,6 +218,72 @@ async fn handle_client_messages(
     Ok(())
 }
 
+// 新增函数：处理来自RabbitMQ的消息
+async fn handle_rabbitmq_messages(
+    connection_manager: Arc<Mutex<ConnectionManager>>,
+    rabbitmq_manager: queue::RabbitMqManager,
+) -> Result<()> {
+    let channel = rabbitmq_manager.get_channel().clone();
+    let queue_name = rabbitmq_manager.get_queue_name().to_string();
+    
+    // 创建消费者
+    let mut consumer = channel
+        .basic_consume(
+            &queue_name,
+            "connection_service_consumer",
+            lapin::options::BasicConsumeOptions::default(),
+            Default::default(),
+        )
+        .await?;
+
+    info!("Started consuming messages from RabbitMQ queue: {}", queue_name);
+    // 处理传入的消息
+    while let Some(delivery) = consumer.next().await {
+        if let std::result::Result::Ok(delivery) = delivery {
+            // 解析消息
+            match serde_json::from_slice::<Message>(&delivery.data) {
+                std::result::Result::Ok(message) => {
+                    info!("Received message from RabbitMQ: type={:?}", message.r#type);
+                    
+                    // 确定消息接收者
+                    let target_uid = match message.r#type {
+                        t if t == Type::ChatResponse as i32 => {
+                            if let Some(message::Content::ChatResponse(chat_resp)) = &message.content {
+                                Some(chat_resp.speaker) // 发送给说话者的客户端
+                            } else {
+                                None
+                            }
+                        },
+                        _ => None,
+                    };
+                    
+                    // 如果有目标用户，则发送消息到客户端
+                    if let Some(uid) = target_uid {
+                        let manager = connection_manager.lock().await;
+                        if let Err(e) = manager.send_message_to_client(uid, &message).await {
+                            error!("Failed to send message to client {}: {}", uid, e);
+                        }
+                    }
+                    
+                    // 确认消息处理完成
+                    if let Err(e) = delivery.ack(lapin::options::BasicAckOptions::default()).await {
+                        error!("Failed to acknowledge message: {}", e);
+                    }
+                },
+                Err(e) => {
+                    error!("Failed to parse message from RabbitMQ: {}", e);
+                    // 即使解析失败也确认消息，避免消息堆积
+                    if let Err(e) = delivery.ack(lapin::options::BasicAckOptions::default()).await {
+                        error!("Failed to acknowledge message: {}", e);
+                    }
+                }
+            }
+        }
+    }
+    
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize tracing
@@ -213,9 +292,17 @@ async fn main() -> Result<()> {
         .init();
 
     // Initialize RabbitMQ
-    let rabbitmq_manager = queue::init().await?;
+    let rabbitmq_manager: RabbitMqManager = queue::init().await?;
     
-    let connection_manager = Arc::new(Mutex::new(ConnectionManager::new(rabbitmq_manager)));
+    let connection_manager = Arc::new(Mutex::new(ConnectionManager::new(rabbitmq_manager.clone())));
+
+    // 启动RabbitMQ消息消费（如果RabbitMQ可用）
+    let manager_clone = connection_manager.clone();
+    tokio::spawn(async move {
+        if let Err(e) = handle_rabbitmq_messages(manager_clone, rabbitmq_manager).await {
+            error!("Error handling RabbitMQ messages: {}", e);
+        }
+    });
 
     // Bind the listener to the address
     let listener = TcpListener::bind("127.0.0.1:8080").await?;

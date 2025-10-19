@@ -9,6 +9,7 @@ pub struct RabbitMqConnection {
     connection: Connection,
 }
 
+#[derive(Debug,Clone)]
 pub struct RabbitMqManager {
     channel: Channel,
     queue_name: String,
@@ -61,16 +62,16 @@ impl RabbitMqManager {
     }
 }
 
-pub async fn init() -> Result<Option<RabbitMqManager>> {
+pub async fn init() -> Result<RabbitMqManager> {
     match RabbitMqConnection::new().await {
         Ok(rabbit_conn) => {
             let channel = rabbit_conn.create_channel().await?;
             let manager = RabbitMqManager::new(channel, "chat_messages").await?;
-            Ok(Some(manager))
+            Ok(manager)
         }
         Err(e) => {
             error!("Failed to initialize RabbitMQ: {}", e);
-            Ok(None)
+            Err(e)
         }
     }
 }
