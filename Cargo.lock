@@ -2334,6 +2334,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "message"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "axum-extra",
+ "bytes",
+ "chrono",
+ "dotenv",
+ "futures",
+ "http",
+ "http-body",
+ "jsonwebtoken",
+ "log 0.4.28",
+ "redis",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "snowflaker",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "validator",
+]
+
+[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"

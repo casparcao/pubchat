@@ -6,7 +6,8 @@ members = [
     "connection",
     "router",
     "session",
-    "user"
+    "user",
+    "message",
 ]
 
 [workspace.package]
