@@ -1,44 +1,38 @@
+use core::request::Page;
+use core::response::ApiResponse;
+use core::response::ApiErr;
+
 use anyhow::Result;
-use axum::{
-    extract::{Path, Query, State},
-    Json,
-};
-use serde::{Deserialize, Serialize};
-use crate::service::message::MessageService;
+use axum::routing::get;
+use axum::Router;
+use core::extract::Path;
+use core::extract::Query;
+use crate::service::message;
 use crate::model::message::Message;
 
-#[derive(Debug, Deserialize)]
-pub struct MessageQuery {
-    limit: Option<u32>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct MessageResponse {
-    messages: Vec<Message>,
-}
-
 pub async fn get_messages_by_room(
-    State(service): State<MessageService>,
     Path(room_id): Path<i64>,
-    Query(params): Query<MessageQuery>,
-) -> Result<Json<MessageResponse>, (axum::http::StatusCode, String)> {
-    let limit = params.limit.unwrap_or(50);
-    
-    match service.get_messages_by_room(room_id, limit).await {
-        Ok(messages) => Ok(Json(MessageResponse { messages })),
-        Err(e) => Err((axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
-    }
+    Query(params): Query<Page>,
+) -> Result<ApiResponse<Message>, ApiErr>{
+    let limit = params.ps;
+    Ok(ApiResponse::List(message::get_messages_by_room(room_id, limit).await?, 0))
 }
 
 pub async fn get_messages_by_speaker(
-    State(service): State<MessageService>,
     Path(speaker_id): Path<i64>,
-    Query(params): Query<MessageQuery>,
-) -> Result<Json<MessageResponse>, (axum::http::StatusCode, String)> {
-    let limit = params.limit.unwrap_or(50);
+    Query(params): Query<Page>,
+) -> Result<ApiResponse<Message>, ApiErr> {
+    let limit = params.ps;
     
-    match service.get_messages_by_speaker(speaker_id, limit).await {
-        Ok(messages) => Ok(Json(MessageResponse { messages })),
-        Err(e) => Err((axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
-    }
+    Ok(ApiResponse::List(message::get_messages_by_speaker(speaker_id, limit).await?, 0))
+}
+
+pub async fn index() -> Result<ApiResponse<Message>, ApiErr> {
+    Ok(ApiResponse::List(vec![], 0))
+}
+
+pub fn router() -> Router {
+    Router::new()
+        .route("/messages/{room_id}", get(get_messages_by_room))
+        .route("/messages/{speaker_id}", get(get_messages_by_speaker))
 }

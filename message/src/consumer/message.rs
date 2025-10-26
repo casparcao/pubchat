@@ -7,31 +7,18 @@ use lapin::{
 };
 use serde_json;
 use crate::model::message::Message;
-use crate::service::message::MessageService;
+use crate::service::message;
 
-pub struct MessageConsumer {
-    rabbitmq_addr: String,
-    queue_name: String,
-}
-
-impl MessageConsumer {
-    pub fn new(rabbitmq_addr: String, queue_name: String) -> Self {
-        Self {
-            rabbitmq_addr,
-            queue_name,
-        }
-    }
-
-    pub async fn consume_messages(&self, message_service: MessageService) -> Result<()> {
-        let conn = Connection::connect(&self.rabbitmq_addr, ConnectionProperties::default())
+pub async fn consume_messages(rabbitmq_addr: &str, queue_name: &str) -> Result<()> {
+        let conn = Connection::connect(rabbitmq_addr, ConnectionProperties::default())
             .await?;
 
         let channel = conn.create_channel().await?;
 
         // Declare queue (this won't create a new one if it already exists)
-        let queue = channel
+        let _queue = channel
             .queue_declare(
-                &self.queue_name,
+                queue_name,
                 lapin::options::QueueDeclareOptions::default(),
                 FieldTable::default(),
             )
@@ -39,14 +26,14 @@ impl MessageConsumer {
 
         let mut consumer = channel
             .basic_consume(
-                &self.queue_name,
+                queue_name,
                 "message_service_consumer",
                 BasicConsumeOptions::default(),
                 FieldTable::default(),
             )
             .await?;
 
-        println!("Started consuming messages from RabbitMQ queue: {}", self.queue_name);
+        println!("Started consuming messages from RabbitMQ queue: {}", queue_name);
 
         while let Some(delivery) = consumer.next().await {
             if let Ok(delivery) = delivery {
@@ -67,7 +54,7 @@ impl MessageConsumer {
                             };
 
                             // Save the message to the database
-                            if let Err(e) = message_service.save_message(message).await {
+                            if let Err(e) = message::save_message(message).await {
                                 eprintln!("Failed to save message to database: {}", e);
                             }
                         }
@@ -90,4 +77,3 @@ impl MessageConsumer {
 
         Ok(())
     }
-}
