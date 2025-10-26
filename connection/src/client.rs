@@ -1,5 +1,5 @@
 use anyhow::Result;
-use tokio::net::tcp::OwnedWriteHalf;
+use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
 use tokio::io::AsyncWriteExt;
 use tracing::{info, error, warn};
@@ -27,8 +27,12 @@ pub async fn handle_client(
     let connect_request = decode::<Message, _>(&mut socket).await?;
     info!("Received message type: {:?}", connect_request.r#type);
 
+    // Split the socket into read and write halves
+    let (reader, mut writer) = socket.into_split();
+
     let mut uid = 0u64;
     if connect_request.r#type == Type::ConnectRequest as i32 {
+        info!("Client {} registered in connection manager", uid);
         if let Some(message::Content::ConnectRequest(req)) = connect_request.content {
             info!("Connect request with token: {}", req.token);
             
@@ -49,35 +53,29 @@ pub async fn handle_client(
                     uid,
                 })),
             };
-
             // Send the response
             let encoded = encode(&response)?;
-            socket.write_all(&encoded).await?;
-            socket.flush().await?; // Ensure the data is sent immediately
+            writer.write_all(&encoded).await?;
+            writer.flush().await?; // Ensure the data is sent immediately
             info!("Sent connection response to client");
+            // 注册客户端到连接管理器
+            let client = Client {
+                uid,
+                writer: Arc::new(Mutex::new(writer)),
+            };
+            manager::add_client(uid, client).await;
         }
+        
     }
 
     // 处理客户端消息
-    handle_client_messages(socket, uid).await
+    handle_client_messages(reader, uid).await
 }
 
 async fn handle_client_messages(
-    socket: TcpStream,
+    mut reader: OwnedReadHalf,
     uid: u64,
 ) -> Result<()> {
-    // Split the socket into read and write halves
-    let (mut reader, writer) = socket.into_split();
-    
-    // 注册客户端到连接管理器
-    let client = Client {
-        uid,
-        writer: Arc::new(Mutex::new(writer)),
-    };
-    manager::add_client(uid, client).await;
-    
-    info!("Client {} registered in connection manager", uid);
-    // Main message receiving loop
     loop {
         // Read incoming message
         let message = match decode::<Message, _>(&mut reader).await {
