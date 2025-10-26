@@ -7,9 +7,11 @@ use core::proto::message::{Message, ConnectResponse, Type, message, ChatResponse
 use core::proto::codec::{decode, encode};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::manager::ConnectionManager;
+use crate::manager;
+use crate::queue;
 
 // 存储所有连接的客户端
+#[derive(Debug)]
 pub struct Client {
     pub uid: u64,
     pub writer: Arc<Mutex<OwnedWriteHalf>>,
@@ -17,7 +19,6 @@ pub struct Client {
 
 pub async fn handle_client(
     mut socket: TcpStream,
-    connection_manager: Arc<Mutex<ConnectionManager>>
 ) -> Result<()> {
     let peer_addr = socket.peer_addr()?;
     info!("New client connected: {}", peer_addr);
@@ -58,26 +59,22 @@ pub async fn handle_client(
     }
 
     // 处理客户端消息
-    handle_client_messages(socket, connection_manager.clone(), uid).await
+    handle_client_messages(socket, uid).await
 }
 
 async fn handle_client_messages(
     socket: TcpStream,
-    connection_manager: Arc<Mutex<ConnectionManager>>,
     uid: u64,
 ) -> Result<()> {
     // Split the socket into read and write halves
     let (mut reader, writer) = socket.into_split();
     
     // 注册客户端到连接管理器
-    {
-        let mut manager = connection_manager.lock().await;
-        let client = Client {
-            uid,
-            writer: Arc::new(Mutex::new(writer)),
-        };
-        manager.add_client(uid, client);
-    }
+    let client = Client {
+        uid,
+        writer: Arc::new(Mutex::new(writer)),
+    };
+    manager::add_client(uid, client).await;
     
     info!("Client {} registered in connection manager", uid);
     // Main message receiving loop
@@ -121,13 +118,8 @@ async fn handle_client_messages(
                     
                     // Broadcast the message to all clients
                     {
-                        let manager = connection_manager.lock().await;
-                        if let Err(e) = manager.broadcast_message(&chat_response) {
-                            error!("Failed to broadcast message: {}", e);
-                        }
-                        
                         // Publish message to RabbitMQ
-                        if let Err(e) = manager.publish_to_rabbitmq(&chat_response).await {
+                        if let Err(e) = queue::publish(&chat_response).await {
                             error!("Failed to publish message to RabbitMQ: {}", e);
                         }
                     }

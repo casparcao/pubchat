@@ -2,7 +2,7 @@ mod message;
 
 use anyhow::Result;
 
-pub async fn init() -> Result<()>{
+pub async fn init() {
     // Start RabbitMQ consumer in a separate task
     // let message_service_clone = message_service.clone();
     tokio::spawn(async move {
@@ -13,6 +13,4 @@ pub async fn init() -> Result<()>{
             eprintln!("Error consuming messages: {}", e);
         }
     });
-
-    Ok(())
 }

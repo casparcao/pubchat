@@ -15,6 +15,6 @@ anyhow = { workspace = true }
 prost = { workspace = true }
 core = { path = "../core" }
 lapin = { workspace = true }
-
-# Optional: Communicate with other services (via gRPC or HTTP)
-# reqwest = { workspace = true }
+dotenv = { workspace = true }
+deadpool = { workspace = true }
+deadpool-lapin = { workspace = true }
