@@ -157,6 +157,7 @@ impl App {
                                 r#type: Type::Chat as i32,
                                 content: Some(core::proto::message::message::Content::Chat(Chat{
                                     speaker: 12345, // 这应该从连接响应中获取
+                                    receiver: 12345,
                                     room: room_id,
                                     r#type: ChatType::Text as i32,
                                     message: content.clone(),

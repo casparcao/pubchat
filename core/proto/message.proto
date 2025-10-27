@@ -35,11 +35,12 @@ message ConnectResponse{
 
 message Chat {
     uint64 speaker = 1;
-    uint64 room = 2; //所发生的聊天室id
-    ChatType type = 3;
-    string message = 4;
-    uint64 ts = 5;
-    string nickname = 6;
+    uint64 receiver = 2;
+    uint64 room = 3; //所发生的聊天室id
+    ChatType type = 4;
+    string message = 5;
+    uint64 ts = 6;
+    string nickname = 7;
 }
 
 message Ping {

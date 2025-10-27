@@ -57,16 +57,18 @@ pub struct ConnectResponse {
 pub struct Chat {
     #[prost(uint64, tag = "1")]
     pub speaker: u64,
-    /// 所发生的聊天室id
     #[prost(uint64, tag = "2")]
+    pub receiver: u64,
+    /// 所发生的聊天室id
+    #[prost(uint64, tag = "3")]
     pub room: u64,
-    #[prost(enumeration = "ChatType", tag = "3")]
+    #[prost(enumeration = "ChatType", tag = "4")]
     pub r#type: i32,
-    #[prost(string, tag = "4")]
+    #[prost(string, tag = "5")]
     pub message: ::prost::alloc::string::String,
-    #[prost(uint64, tag = "5")]
+    #[prost(uint64, tag = "6")]
     pub ts: u64,
-    #[prost(string, tag = "6")]
+    #[prost(string, tag = "7")]
     pub nickname: ::prost::alloc::string::String,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
