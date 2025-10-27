@@ -1,6 +1,6 @@
 use core::proto::{codec::encode, message::{Chat, ChatType, Message, Type}};
 
-use crate::ui::{models::{App, Mode, View, MessageItem}};
+use crate::ui::models::{App, Mode, View, MessageItem};
 use crossterm::event::KeyEvent;
 use tokio::io::AsyncWriteExt;
 
@@ -141,6 +141,8 @@ impl App {
                     // 实际通过TCP发送消息
                     let content = self.input.clone();
                     let target_clone = target.clone();
+                    let current_user_id = self.current_user_id; // 获取当前用户ID
+                    let current_user = self.current_user.clone(); // 获取当前用户名
                     if let Some(stream) = &self.stream {
                         let stream_clone = stream.clone();
                         tokio::spawn(async move {
@@ -156,8 +158,8 @@ impl App {
                                     .as_millis() as u64,
                                 r#type: Type::Chat as i32,
                                 content: Some(core::proto::message::message::Content::Chat(Chat{
-                                    speaker: 12345, // 这应该从连接响应中获取
-                                    receiver: 12345,
+                                    speaker: current_user_id, // 使用真实的用户ID
+                                    receiver: 12345, // TODO: 应该从目标获取真实ID
                                     room: room_id,
                                     r#type: ChatType::Text as i32,
                                     message: content.clone(),
@@ -165,7 +167,7 @@ impl App {
                                         .duration_since(std::time::UNIX_EPOCH)
                                         .unwrap()
                                         .as_millis() as u64,
-                                    nickname: "You".to_string(), // 这应该从用户信息中获取
+                                    nickname: current_user, // 使用真实的用户名
                                 })),
                             };
                             
@@ -218,59 +220,41 @@ impl App {
     fn handle_command(&mut self) -> bool {
         let mut should_exit = false;
         let cmd = self.input.split_whitespace().next().unwrap_or("");
+        // 确定消息应该添加到哪个目标
         let target = match &self.current_view {
             View::Chat { target } => target.clone(),
             _ => "system".to_string(),
         };
-
+        
+        // 确保目标有消息列表
+        if !self.messages.contains_key(&target) {
+            self.messages.insert(target.clone(), vec![]);
+        }
+        
         match cmd {
             "/help" => {
                 if let Some(messages) = self.messages.get_mut(&target) {
                     messages.push(MessageItem::system("Available commands:"));
                     messages.push(MessageItem::system("/help - Show this help"));
-                    messages.push(MessageItem::system("/quit or /exit - Exit the application"));
                     messages.push(MessageItem::system("/clear - Clear chat history"));
-                    messages.push(MessageItem::system("/status <status> - Change your status"));
+                    messages.push(MessageItem::system("/quit or /exit - Exit the application"));
+                }
+            }
+            "/clear" => {
+                if let Some(messages) = self.messages.get_mut(&target) {
+                    messages.clear();
                 }
             }
             "/quit" | "/exit" => {
                 should_exit = true;
             }
-            "/clear" => {
-                match &self.current_view {
-                    View::Chat { target } => {
-                        if let Some(messages) = self.messages.get_mut(target) {
-                            messages.clear();
-                        }
-                    }
-                    _ => {
-                        if let Some(messages) = self.messages.get_mut(&target) {
-                            messages.push(MessageItem::system("Use /clear in chat view"));
-                        }
-                    }
-                }
-            }
-            "/status" => {
-                let parts: Vec<&str> = self.input.split_whitespace().collect();
-                if parts.len() >= 2 {
-                    let status_str = parts[1];
-                    if let Some(messages) = self.messages.get_mut(&target) {
-                        messages.push(MessageItem::system(&format!("Status changed to: {}", status_str)));
-                    }
-                    // TODO: 实际更改状态
-                } else {
-                    if let Some(messages) = self.messages.get_mut(&target) {
-                        messages.push(MessageItem::system("Usage: /status <status>"));
-                    }
-                }
-            }
             _ => {
                 if let Some(messages) = self.messages.get_mut(&target) {
                     messages.push(MessageItem::system(&format!("Unknown command: {}", cmd)));
-                    messages.push(MessageItem::system("Type /help for available commands"));
                 }
             }
         }
+        
         self.input.clear();
         self.mode = Mode::Normal;
         should_exit

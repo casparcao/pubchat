@@ -15,7 +15,7 @@ mod login_ui;
 use login_ui::{LoginState, LoginResult};
 use tokio::net::TcpStream;
 use tokio::io::{AsyncWriteExt, AsyncReadExt};
-use core::proto::message::{Message, ConnectRequest, Type, Chat};
+use core::proto::message::{Message, ConnectRequest, Type, ConnectResponse};
 use core::proto::codec::{encode, decode};
 
 use crate::ui::models::App;
@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
     };
     
     // 使用token建立TCP连接
-    let stream = connect_with_token(&token).await?;
+    let (stream, user_id) = connect_with_token(&token).await?;
     
     // 创建好友服务实例
     let friend_service = crate::ui::friend_service::FriendService::new("http://127.0.0.1:3000".to_string());
@@ -83,6 +83,7 @@ async fn main() -> Result<()> {
         .map(|f| crate::ui::models::Contact::new(f.id, f.name, crate::ui::models::Status::Online, f.avatar))
         .collect();
     app.set_token(Some(token));
+    app.current_user_id = user_id; // 设置当前用户ID
     
     // Split the TCP stream into read and write halves
     let (reader, writer) = stream.into_split();
@@ -123,7 +124,7 @@ async fn main() -> Result<()> {
 }
 
 // 使用token建立TCP连接
-async fn connect_with_token(token: &str) -> Result<TcpStream> {
+async fn connect_with_token(token: &str) -> Result<(TcpStream, u64)> {
     let mut stream = TcpStream::connect("127.0.0.1:8080")
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
@@ -149,11 +150,26 @@ async fn connect_with_token(token: &str) -> Result<TcpStream> {
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
     
     // 读取连接响应
-    let _response = decode::<Message, _>(&mut stream)
+    let response = decode::<Message, _>(&mut stream)
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         
-    Ok(stream)
+    // 检查连接响应是否成功并获取用户ID
+    let user_id = if let Some(core::proto::message::message::Content::ConnectResponse(resp)) = response.content {
+        if resp.code == 0 {
+            eprintln!("Connection established successfully, user ID: {}", resp.uid);
+            resp.uid // 返回用户ID
+        } else {
+            eprintln!("Connection failed: {}", resp.message);
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, 
+                format!("Connection failed: {}", resp.message)));
+        }
+    } else {
+        eprintln!("Invalid connection response");
+        return Err(std::io::Error::new(std::io::ErrorKind::Other, "Invalid connection response"));
+    };
+        
+    Ok((stream, user_id))
 }
 
 // 接收消息的异步任务

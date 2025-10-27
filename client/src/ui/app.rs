@@ -30,6 +30,7 @@ impl App {
             scroll_offset: 0,
             selected_contact: None,
             current_user: "user1".to_string(),
+            current_user_id: 0, // 初始化用户ID为0
             chat_maximized: false,
             token: None,
             stream: None,
@@ -65,7 +66,7 @@ impl App {
     }
     
     // 发送消息的方法
-    pub async fn send_message_over_tcp(&self, content: String, target: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn send_message_over_tcp(&self, content: String, _target: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(stream) = &self.stream {
             // 创建聊天请求消息
             let chat_request = Message {
@@ -76,8 +77,8 @@ impl App {
                     .as_millis() as u64,
                 r#type: Type::Chat as i32,
                 content: Some(core::proto::message::message::Content::Chat(Chat {
-                    speaker: 12345, // 这应该从连接响应中获取
-                    receiver: 12345,
+                    speaker: self.current_user_id, // 使用真实的用户ID
+                    receiver: 12345, // TODO: 应该从目标联系人获取真实ID
                     room: 0, // 私聊
                     r#type: ChatType::Text as i32,
                     message: content,
