@@ -3,9 +3,9 @@ use tokio::net::TcpListener;
 use tracing::{info, error, Level};
 use tracing_subscriber;
 use dotenv::dotenv;
-mod client;
 mod manager;
 mod queue;
+mod handlers;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
         let (socket, _) = listener.accept().await?;
         
         tokio::spawn(async move {
-            if let Err(e) = client::handle_client(socket).await {
+            if let Err(e) = manager::handle_client(socket).await {
                 error!("Error handling client: {}", e);
             }
         });

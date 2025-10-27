@@ -5,8 +5,7 @@ package message;
 enum Type {
     CONNECT_REQUEST = 0; //连接初始化，携带令牌
     CONNECT_RESPONSE = 1;
-    CHAT_REQUEST = 2;
-    CHAT_RESPONSE = 3;
+    CHAT = 2;
     PING = 6;//心跳消息
     PONG = 7;
 }
@@ -18,8 +17,7 @@ message Message{
     oneof content {
         ConnectRequest connect_request = 4;
         ConnectResponse connect_response = 5;
-        ChatRequest chat_request = 6;
-        ChatResponse chat_response = 7;
+        Chat chat = 6;
         Ping ping = 8;
         Pong pong = 9;
     } //消息内容
@@ -35,16 +33,7 @@ message ConnectResponse{
     uint64 uid = 3;
 }
 
-message ChatRequest {
-    uint64 speaker = 1;
-    uint64 room = 2; //所发生的聊天室id
-    ChatType type = 3;
-    string message = 4;
-    uint64 ts = 5;
-    string nickname = 6;
-}
-
-message ChatResponse {
+message Chat {
     uint64 speaker = 1;
     uint64 room = 2; //所发生的聊天室id
     ChatType type = 3;

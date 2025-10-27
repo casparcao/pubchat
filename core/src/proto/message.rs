@@ -12,7 +12,7 @@ pub struct Message {
     /// 消息类型
     #[prost(enumeration = "Type", tag = "3")]
     pub r#type: i32,
-    #[prost(oneof = "message::Content", tags = "4, 5, 6, 7, 8, 9")]
+    #[prost(oneof = "message::Content", tags = "4, 5, 6, 8, 9")]
     pub content: ::core::option::Option<message::Content>,
 }
 /// Nested message and enum types in `Message`.
@@ -26,9 +26,7 @@ pub mod message {
         #[prost(message, tag = "5")]
         ConnectResponse(super::ConnectResponse),
         #[prost(message, tag = "6")]
-        ChatRequest(super::ChatRequest),
-        #[prost(message, tag = "7")]
-        ChatResponse(super::ChatResponse),
+        Chat(super::Chat),
         #[prost(message, tag = "8")]
         Ping(super::Ping),
         #[prost(message, tag = "9")]
@@ -56,25 +54,7 @@ pub struct ConnectResponse {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ChatRequest {
-    #[prost(uint64, tag = "1")]
-    pub speaker: u64,
-    /// 所发生的聊天室id
-    #[prost(uint64, tag = "2")]
-    pub room: u64,
-    #[prost(enumeration = "ChatType", tag = "3")]
-    pub r#type: i32,
-    #[prost(string, tag = "4")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(uint64, tag = "5")]
-    pub ts: u64,
-    #[prost(string, tag = "6")]
-    pub nickname: ::prost::alloc::string::String,
-}
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ChatResponse {
+pub struct Chat {
     #[prost(uint64, tag = "1")]
     pub speaker: u64,
     /// 所发生的聊天室id
@@ -174,8 +154,7 @@ pub enum Type {
     /// 连接初始化，携带令牌
     ConnectRequest = 0,
     ConnectResponse = 1,
-    ChatRequest = 2,
-    ChatResponse = 3,
+    Chat = 2,
     /// 心跳消息
     Ping = 6,
     Pong = 7,
@@ -189,8 +168,7 @@ impl Type {
         match self {
             Self::ConnectRequest => "CONNECT_REQUEST",
             Self::ConnectResponse => "CONNECT_RESPONSE",
-            Self::ChatRequest => "CHAT_REQUEST",
-            Self::ChatResponse => "CHAT_RESPONSE",
+            Self::Chat => "CHAT",
             Self::Ping => "PING",
             Self::Pong => "PONG",
         }
@@ -200,8 +178,7 @@ impl Type {
         match value {
             "CONNECT_REQUEST" => Some(Self::ConnectRequest),
             "CONNECT_RESPONSE" => Some(Self::ConnectResponse),
-            "CHAT_REQUEST" => Some(Self::ChatRequest),
-            "CHAT_RESPONSE" => Some(Self::ChatResponse),
+            "CHAT" => Some(Self::Chat),
             "PING" => Some(Self::Ping),
             "PONG" => Some(Self::Pong),
             _ => None,
