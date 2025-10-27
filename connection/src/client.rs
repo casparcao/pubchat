@@ -13,7 +13,7 @@ use crate::queue;
 // 存储所有连接的客户端
 #[derive(Debug)]
 pub struct Client {
-    pub uid: u64,
+    pub _uid: u64,
     pub writer: Arc<Mutex<OwnedWriteHalf>>,
 }
 
@@ -35,10 +35,8 @@ pub async fn handle_client(
         info!("Client {} registered in connection manager", uid);
         if let Some(message::Content::ConnectRequest(req)) = connect_request.content {
             info!("Connect request with token: {}", req.token);
-            
-            // 在实际应用中，这里需要验证token并获取用户ID
-            uid = 12345; // 临时用户ID
-            
+            let user = core::auth::verify(&req.token)?;
+            uid = user.id as u64;
             // Create a connection response
             let response = Message {
                 id: connect_request.id,
@@ -60,7 +58,7 @@ pub async fn handle_client(
             info!("Sent connection response to client");
             // 注册客户端到连接管理器
             let client = Client {
-                uid,
+                _uid: uid,
                 writer: Arc::new(Mutex::new(writer)),
             };
             manager::add_client(uid, client).await;

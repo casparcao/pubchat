@@ -60,6 +60,25 @@ pub fn issue(id: i64) -> Result<String> {
     .map_err(|_| ApiErr::Error("Token颁发失败").into())
 }
 
+pub fn verify(token: &str) -> Result<User> {
+    let keys = KEYS.get();
+    if keys.is_none(){
+        return Err(ApiErr::Error("JWT密钥异常").into());
+    }
+    let token_data = decode::<User>(token, &keys.unwrap().decoding, &Validation::default());
+    if token_data.is_err(){
+        log::error!("token解析异常>>{}", token_data.unwrap_err());
+        return Err(ApiErr::Bad(400, "Token解析异常").into());
+    }
+    let token_data = token_data.unwrap();
+    let claims = token_data.claims;
+    let exp = claims.exp;
+    if exp  < SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() {
+        return Err(ApiErr::Bad(401, "Token已过期").into());
+    }
+    Ok(claims)
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct AuthHeader;
 
@@ -84,18 +103,11 @@ impl<B> ValidateRequest<B> for AuthHeader {
         let token = token.unwrap();
         log::info!("token:{}", token);
         let token = &token[7..];
-        let token_data = decode::<User>(token, &keys.unwrap().decoding, &Validation::default());
-        if token_data.is_err(){
-            log::error!("token解析异常>>{}", token_data.unwrap_err());
-            return Err(ApiErr::Bad(400, "Token解析异常").into_response());
+        let claims = verify(token);
+        if claims.is_err(){
+            return Err(ApiErr::from(claims.unwrap_err()).into_response());
         }
-        let token_data = token_data.unwrap();
-        let claims = token_data.claims;
-        let exp = claims.exp;
-        if exp  < SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() {
-            return Err(ApiErr::Bad(401, "Token已过期").into_response());
-        }
-        request.extensions_mut().insert(claims);
+        request.extensions_mut().insert(claims.unwrap());
         Ok(())
     }
 }
