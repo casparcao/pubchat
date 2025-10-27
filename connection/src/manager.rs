@@ -2,14 +2,12 @@ use anyhow::Result;
 use tokio::{io::AsyncWriteExt, sync::Mutex};
 use tracing::{info, warn, error};
 use core::proto::message::Message;
-use core::response::ApiErr;
 use std::{collections::HashMap, sync::OnceLock};
-use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
+use tokio::net::tcp::OwnedWriteHalf;
 use tokio::net::TcpStream;
-use core::proto::message::{ConnectResponse, Type, message, Chat};
-use core::proto::codec::{decode, encode};
+use core::proto::message::Type;
+use core::proto::codec::decode;
 use std::sync::Arc;
-use crate::queue;
 use crate::handlers;
 
 
@@ -79,16 +77,4 @@ pub async fn handle_client(
             }
         }
     }
-}
-
-async fn receive_messages(
-    mut reader: OwnedReadHalf,
-    uid: u64,
-) -> Result<()> {
-    loop {
-        
-    }
-    
-    info!("Client message handling ended for user {}", uid);
-    Ok(())
 }

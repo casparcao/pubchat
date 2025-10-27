@@ -15,6 +15,7 @@ async fn main() -> Result<()> {
         .with_max_level(Level::INFO)
         .init();
     // Initialize RabbitMQ
+    core::auth::init();
     queue::init().await?;
     manager::init().await;
     
