@@ -143,6 +143,10 @@ impl App {
                     let target_clone = target.clone();
                     let current_user_id = self.current_user_id; // 获取当前用户ID
                     let current_user = self.current_user.clone(); // 获取当前用户名
+                    
+                    // 获取接收者ID，如果找不到则使用默认值
+                    let receiver_id = self.get_contact_id(target).unwrap_or(12345);
+                    
                     if let Some(stream) = &self.stream {
                         let stream_clone = stream.clone();
                         tokio::spawn(async move {
@@ -159,7 +163,7 @@ impl App {
                                 r#type: Type::Chat as i32,
                                 content: Some(core::proto::message::message::Content::Chat(Chat{
                                     speaker: current_user_id, // 使用真实的用户ID
-                                    receiver: 12345, // TODO: 应该从目标获取真实ID
+                                    receiver: receiver_id, // 使用从好友列表获取的真实ID
                                     room: room_id,
                                     r#type: ChatType::Text as i32,
                                     message: content.clone(),

@@ -38,6 +38,16 @@ impl Contact {
     pub fn new(id: i64, name: String, status: Status, avatar: Option<String>) -> Self {
         Self { id, name, status, avatar }
     }
+    
+    // 从好友响应创建联系人
+    pub fn from_friend_response(friend: crate::ui::friend_service::FriendResponse) -> Self {
+        Self {
+            id: friend.id,
+            name: friend.name,
+            status: Status::Offline, // 默认状态为离线
+            avatar: friend.avatar,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -71,7 +81,7 @@ pub struct App {
     pub scroll_offset: u16,
     pub selected_contact: Option<usize>,
     pub current_user: String,
-    pub current_user_id: u64, // 添加当前用户ID字段
+    pub current_user_id: u64,
     pub chat_maximized: bool,
     // 添加token字段存储用户认证信息
     pub token: Option<String>,

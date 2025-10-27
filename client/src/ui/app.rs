@@ -45,6 +45,13 @@ impl App {
         self.stream = Some(stream);
     }
     
+    // 根据联系人名称查找联系人ID
+    pub fn get_contact_id(&self, name: &str) -> Option<u64> {
+        self.contacts.iter()
+            .find(|contact| contact.name == name)
+            .map(|contact| contact.id as u64)
+    }
+    
     // 添加接收消息的方法
     pub fn add_received_message(&mut self, chat_req: Chat) {
         let target = chat_req.nickname.clone();
@@ -66,8 +73,11 @@ impl App {
     }
     
     // 发送消息的方法
-    pub async fn send_message_over_tcp(&self, content: String, _target: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn send_message_over_tcp(&self, content: String, target: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(stream) = &self.stream {
+            // 获取接收者ID，如果找不到则使用默认值
+            let receiver_id = self.get_contact_id(&target).unwrap_or(12345);
+            
             // 创建聊天请求消息
             let chat_request = Message {
                 id: 2, // 简化处理，实际应该使用唯一ID生成器
@@ -78,7 +88,7 @@ impl App {
                 r#type: Type::Chat as i32,
                 content: Some(core::proto::message::message::Content::Chat(Chat {
                     speaker: self.current_user_id, // 使用真实的用户ID
-                    receiver: 12345, // TODO: 应该从目标联系人获取真实ID
+                    receiver: receiver_id, // 使用从好友列表获取的真实ID
                     room: 0, // 私聊
                     r#type: ChatType::Text as i32,
                     message: content,

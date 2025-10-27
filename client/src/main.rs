@@ -80,7 +80,7 @@ async fn main() -> Result<()> {
     let mut app = App::new();
     // 更新联系人列表为从服务器获取的好友列表
     app.contacts = friends.into_iter()
-        .map(|f| crate::ui::models::Contact::new(f.id, f.name, crate::ui::models::Status::Online, f.avatar))
+        .map(|f| crate::ui::models::Contact::from_friend_response(f))
         .collect();
     app.set_token(Some(token));
     app.current_user_id = user_id; // 设置当前用户ID
