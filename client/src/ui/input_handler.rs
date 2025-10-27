@@ -1,4 +1,4 @@
-use core::proto::{codec::encode, message::{ChatRequest, ChatType, Message, Type}};
+use core::proto::{codec::encode, message::{Chat, ChatType, Message, Type}};
 
 use crate::ui::{models::{App, Mode, View, MessageItem}};
 use crossterm::event::KeyEvent;
@@ -154,8 +154,8 @@ impl App {
                                     .duration_since(std::time::UNIX_EPOCH)
                                     .unwrap()
                                     .as_millis() as u64,
-                                r#type: Type::ChatRequest as i32,
-                                content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest {
+                                r#type: Type::Chat as i32,
+                                content: Some(core::proto::message::message::Content::Chat(Chat{
                                     speaker: 12345, // 这应该从连接响应中获取
                                     room: room_id,
                                     r#type: ChatType::Text as i32,

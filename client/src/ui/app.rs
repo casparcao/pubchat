@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
 use tokio::net::tcp::OwnedWriteHalf;
-use core::proto::message::{Message, Type, ChatRequest, ChatType};
+use core::proto::message::{Chat, ChatType, Message, Type};
 use core::proto::codec::encode;
 
 impl App {
@@ -45,7 +45,7 @@ impl App {
     }
     
     // 添加接收消息的方法
-    pub fn add_received_message(&mut self, chat_req: ChatRequest) {
+    pub fn add_received_message(&mut self, chat_req: Chat) {
         let target = chat_req.nickname.clone();
         
         // 确保目标有消息列表
@@ -74,8 +74,8 @@ impl App {
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_millis() as u64,
-                r#type: Type::ChatRequest as i32,
-                content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest {
+                r#type: Type::Chat as i32,
+                content: Some(core::proto::message::message::Content::Chat(Chat {
                     speaker: 12345, // 这应该从连接响应中获取
                     room: 0, // 私聊
                     r#type: ChatType::Text as i32,

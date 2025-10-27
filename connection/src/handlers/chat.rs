@@ -6,13 +6,13 @@ use core::response::ApiErr;
 use std::{collections::HashMap, sync::OnceLock};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
-use core::proto::message::{ConnectResponse, Type, message, ChatResponse};
+use core::proto::message::{ConnectResponse, Type, message, Chat};
 use core::proto::codec::{decode, encode};
 use std::sync::Arc;
 use crate::manager::Client;
 use crate::queue;
 pub async fn handle(message: Message) -> Result<()> { 
-    if let Some(message::Content::ChatRequest(chat_req)) = message.content {
+    if let Some(message::Content::Chat(chat_req)) = message.content {
         info!("Processing ChatRequest from user {}: room={}, message='{}', timestamp={}",
                 chat_req.speaker, chat_req.room, chat_req.message, chat_req.ts);
         // Create a chat response mirroring the request
@@ -22,8 +22,8 @@ pub async fn handle(message: Message) -> Result<()> {
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_millis() as u64,
-            r#type: Type::ChatResponse as i32,
-            content: Some(message::Content::ChatResponse(ChatResponse {
+            r#type: Type::Chat as i32,
+            content: Some(message::Content::Chat(Chat{
                 speaker: chat_req.speaker,
                 room: chat_req.room,
                 r#type: chat_req.r#type,

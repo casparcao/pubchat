@@ -40,7 +40,7 @@ pub async fn consume_messages(rabbitmq_addr: &str, queue_name: &str) -> Result<(
                 match serde_json::from_slice::<core::proto::message::Message>(&delivery.data) {
                     Ok(proto_message) => {
                         // Convert the proto message to our database message model
-                        if let Some(core::proto::message::message::Content::ChatResponse(chat_response)) = 
+                        if let Some(core::proto::message::message::Content::Chat(chat_response)) = 
                             proto_message.content {
                             
                             let message = Message {

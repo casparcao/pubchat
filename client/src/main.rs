@@ -15,7 +15,7 @@ mod login_ui;
 use login_ui::{LoginState, LoginResult};
 use tokio::net::TcpStream;
 use tokio::io::{AsyncWriteExt, AsyncReadExt};
-use core::proto::message::{Message, ConnectRequest, Type, ChatRequest};
+use core::proto::message::{Message, ConnectRequest, Type, Chat};
 use core::proto::codec::{encode, decode};
 
 use crate::ui::models::App;
@@ -163,8 +163,8 @@ async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf, mut app: A
             Ok(msg) => {
                 // 处理接收到的消息
                 match msg.r#type {
-                    t if t == Type::ChatRequest as i32 => {
-                        if let Some(core::proto::message::message::Content::ChatRequest(chat_req)) = msg.content {
+                    t if t == Type::Chat as i32 => {
+                        if let Some(core::proto::message::message::Content::Chat(chat_req)) = msg.content {
                             // 更新UI中的消息
                             app.add_received_message(chat_req);
                         }

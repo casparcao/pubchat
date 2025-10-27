@@ -6,7 +6,7 @@ use core::response::ApiErr;
 use std::{collections::HashMap, sync::OnceLock};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
-use core::proto::message::{ConnectResponse, Type, message, ChatResponse};
+use core::proto::message::{ConnectResponse, Type, message, Chat};
 use core::proto::codec::{decode, encode};
 use std::sync::Arc;
 use crate::manager::Client;

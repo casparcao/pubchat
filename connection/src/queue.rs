@@ -67,8 +67,8 @@ pub async fn receive() -> Result<()> {
                     
                     // 确定消息接收者
                     let target_uid = match message.r#type {
-                        t if t == Type::ChatResponse as i32 => {
-                            if let Some(Content::ChatResponse(chat_resp)) = &message.content {
+                        t if t == Type::Chat as i32 => {
+                            if let Some(Content::Chat(chat_resp)) = &message.content {
                                 Some(chat_resp.speaker) // 发送给说话者的客户端
                             } else {
                                 None
