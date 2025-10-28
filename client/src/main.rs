@@ -11,6 +11,7 @@ use tokio::sync::Mutex;
 
 mod ui;
 mod login_ui;
+mod repository;
 
 use login_ui::{LoginState, LoginResult};
 use tokio::net::TcpStream;
@@ -18,13 +19,14 @@ use tokio::io::{AsyncWriteExt, AsyncReadExt};
 use core::proto::message::{Message, ConnectRequest, Type, ConnectResponse};
 use core::proto::codec::{encode, decode};
 
-use crate::ui::models::App;
+use crate::{repository::db, ui::models::App};
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenv::dotenv().ok();
     // 初始化日志
     tracing_subscriber::fmt::init();
-    
+    db::init().await;
     // 进入原始模式
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;

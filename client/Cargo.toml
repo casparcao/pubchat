@@ -18,3 +18,6 @@ bytes = {workspace = true}
 prost = {workspace = true}
 reqwest = { workspace = true }
 core = { path = "../core" }
+sqlx = { workspace = true }
+anyhow = {workspace = true}
+dotenv = {workspace = true}
