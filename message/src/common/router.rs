@@ -19,9 +19,9 @@ pub fn init() -> Result<Router> {
 
 
 pub async fn not_found() -> ApiErr{
-    ApiErr::Bad(404, "未找到指定资源...")
+    ApiErr::Bad(404, "未找到指定资源...".to_string())
 }
 
 async fn error_handling(err: BoxError) -> ApiErr {
-    ApiErr::Bad(500, "服务器内部错误")
+    ApiErr::Bad(500, "服务器内部错误".to_string())
 }

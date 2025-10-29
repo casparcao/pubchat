@@ -20,7 +20,7 @@ pub async fn init(){
 }
 
 async fn get() -> Result<&'static SqlitePool> {
-    POOL.get().ok_or(ApiErr::Error("获取Redis客户端失败").into())
+    POOL.get().ok_or(ApiErr::Error("获取Redis客户端失败".to_string()).into())
 }
 
 

@@ -13,10 +13,10 @@ pub enum ApiResponse<T: Serialize>{
 pub enum ApiErr{
     //客户请求不合法
     #[error("{0}")]
-    Bad(u16, &'static str),
+    Bad(u16, String),
     //服务器端异常
     #[error("")]
-    Error(&'static str)
+    Error(String)
 }
 
 impl From<Error> for ApiErr{
@@ -31,7 +31,7 @@ impl From<Error> for ApiErr{
         }else{
             log::error!("异常>>{:?}", value);
         }
-        return ApiErr::Error("服务异常，请稍后再试");
+        return ApiErr::Error("服务异常，请稍后再试".to_string());
     }
 }
 
@@ -39,9 +39,9 @@ impl IntoResponse for ApiErr{
     fn into_response(self) -> Response {
         match self {
             Self::Bad(code, msg) =>
-                (axum::http::StatusCode::from_u16(code).unwrap(), Json(ApiResult::<String>::bad(msg.to_string()))).into_response(),
+                (axum::http::StatusCode::from_u16(code).unwrap(), Json(ApiResult::<String>::bad(msg))).into_response(),
             Self::Error(msg) =>
-                (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResult::<String>::bad(msg.to_string()))).into_response(),
+                (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResult::<String>::bad(msg))).into_response(),
         }
     }
 }
@@ -58,7 +58,7 @@ impl<T: Serialize> IntoResponse for ApiResponse<T>{
 }
 
 #[derive(Serialize, Debug, Deserialize)]
-struct ApiResult<T: Serialize>{
+pub struct ApiResult<T: Serialize>{
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<T>,
     #[serde(skip_serializing_if = "Option::is_none")]

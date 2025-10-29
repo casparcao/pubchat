@@ -23,7 +23,7 @@ pub async fn init(){
 }
 
 pub(crate) async fn get() -> Result<&'static MySqlPool> {
-    POOL.get().ok_or(ApiErr::Error("获取Redis客户端失败").into())
+    POOL.get().ok_or(ApiErr::Error("获取Redis客户端失败".to_string()).into())
 }
 
 

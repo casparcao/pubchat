@@ -83,6 +83,6 @@ impl From<MultipartRejection> for ApiRejection{
 impl IntoResponse for ApiRejection {
     fn into_response(self) -> axum::response::Response {
         log::info!("ApiRejection:{}:{}", self.status, self.message);
-        ApiErr::Bad(400, "请求参数不合法，请检查后重新提交").into_response()
+        ApiErr::Bad(400, "请求参数不合法，请检查后重新提交".to_string()).into_response()
     }
 }

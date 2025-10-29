@@ -43,5 +43,5 @@ pub async fn handle(message: &Message, mut writer: OwnedWriteHalf) -> Result<Cli
             return Ok(client);
         }
     }
-    Err(ApiErr::Bad(401, "unauthorized").into())
+    Err(ApiErr::Bad(401, "unauthorized".to_string()).into())
 }

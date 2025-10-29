@@ -12,12 +12,14 @@ use tokio::sync::Mutex;
 mod ui;
 mod login_ui;
 mod repository;
+mod service;
 
-use login_ui::{LoginState, LoginResult};
+use login_ui::{LoginScreen, LoginResult};
 use tokio::net::TcpStream;
-use tokio::io::{AsyncWriteExt, AsyncReadExt};
-use core::proto::message::{Message, ConnectRequest, Type, ConnectResponse};
+use tokio::io::AsyncWriteExt;
+use core::proto::message::{Message, ConnectRequest, Type};
 use core::proto::codec::{encode, decode};
+use crate::service::token_store::{load_token, save_token, is_token_valid, clear_token};
 
 use crate::{repository::db, ui::models::App};
 
@@ -34,33 +36,19 @@ async fn main() -> Result<()> {
     // 创建终端
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
     
-    // 显示登录界面
-    let mut login_state = LoginState::new();
-    let token = loop {
-        terminal.draw(|frame| login_state.render(frame))?;
-        
-        if let Event::Key(key) = event::read()? {
-            if key.kind != KeyEventKind::Press {
-                continue;
-            }
-            
-            let result = login_state.handle_key_event(key).await;
-            match result {
-                LoginResult::Success(token) => {
-                    break token;
-                }
-                LoginResult::Exit => {
-                    // 用户按ESC退出
-                    disable_raw_mode()?;
-                    stdout().execute(LeaveAlternateScreen)?;
-                    return Ok(());
-                }
-                LoginResult::Continue => {
-                    // 继续登录循环
-                    continue;
-                }
-            }
+    // 首先尝试从本地文件加载token
+    let token = if let Ok(Some(stored_token)) = load_token() {
+        if is_token_valid(&stored_token) {
+            // Token有效，尝试直接连接
+            stored_token.token
+        } else {
+            // Token过期，清除它并重新登录
+            let _ = clear_token();
+            show_login_screen(&mut terminal).await?
         }
+    } else {
+        // 没有找到存储的token，显示登录界面
+        show_login_screen(&mut terminal).await?
     };
     
     // 使用token建立TCP连接
@@ -84,7 +72,7 @@ async fn main() -> Result<()> {
     app.contacts = friends.into_iter()
         .map(|f| crate::ui::models::Contact::from_friend_response(f))
         .collect();
-    app.set_token(Some(token));
+    app.set_token(Some(token.clone()));
     app.current_user_id = user_id; // 设置当前用户ID
     
     // Split the TCP stream into read and write halves
@@ -123,6 +111,39 @@ async fn main() -> Result<()> {
     disable_raw_mode()?;
     stdout().execute(LeaveAlternateScreen)?;
     Ok(())
+}
+
+// 显示登录界面并处理登录逻辑
+async fn show_login_screen(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> Result<String> {
+    let mut login_screen = LoginScreen::new();
+    loop {
+        terminal.draw(|frame| login_screen.render(frame))?;
+        
+        if let Event::Key(key) = event::read()? {
+            if key.kind != KeyEventKind::Press {
+                continue;
+            }
+            
+            let result = login_screen.handle_key_event(key).await;
+            match result {
+                LoginResult::Success(token) => {
+                    // 登录成功，保存token到本地文件
+                    let _ = save_token(&token.token, token.exp);
+                    break Ok(token.token);
+                }
+                LoginResult::Exit => {
+                    // 用户按ESC退出
+                    disable_raw_mode()?;
+                    stdout().execute(LeaveAlternateScreen)?;
+                    std::process::exit(0);
+                }
+                LoginResult::Continue => {
+                    // 继续登录循环
+                    continue;
+                }
+            }
+        }
+    }
 }
 
 // 使用token建立TCP连接

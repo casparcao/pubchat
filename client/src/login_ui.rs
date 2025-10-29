@@ -1,13 +1,14 @@
+use core::auth::Token;
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Paragraph, Clear},
 };
 use crossterm::event::{KeyCode, KeyEvent};
-use reqwest;
-use serde::{Deserialize, Serialize};
+use crate::service::login;
+use anyhow::Result;
 
 #[derive(Debug, Clone)]
-pub struct LoginState {
+pub struct LoginScreen {
     pub username: String,
     pub password: String,
     pub focus: LoginFocus,
@@ -22,12 +23,12 @@ pub enum LoginFocus {
 }
 
 pub enum LoginResult {
-    Success(String), // 登录成功，返回token
+    Success(Token), // 登录成功，返回token
     Continue,
     Exit,
 }
 
-impl Default for LoginState {
+impl Default for LoginScreen {
     fn default() -> Self {
         Self {
             username: String::new(),
@@ -39,7 +40,7 @@ impl Default for LoginState {
     }
 }
 
-impl LoginState {
+impl LoginScreen {
     pub fn new() -> Self {
         Self::default()
     }
@@ -58,7 +59,12 @@ impl LoginState {
                     self.error_message = None;
                     
                     // 执行登录操作
-                    match self.perform_login().await {
+                    let request = login::LoginRequest {
+                        username: self.username.clone(),
+                        password: self.password.clone(),
+                    };
+                    let result : Result<Token> = login::login(&request).await;
+                    match result {
                         Ok(token) => {
                             self.is_logging_in = false;
                             self.error_message = Some("Login successful".to_string());
@@ -66,7 +72,7 @@ impl LoginState {
                         }
                         Err(e) => {
                             self.is_logging_in = false;
-                            self.error_message = Some(e);
+                            self.error_message = Some(e.to_string());
                             return LoginResult::Continue;
                         }
                     }
@@ -112,42 +118,6 @@ impl LoginState {
                 LoginResult::Continue
             }
             _ => LoginResult::Continue,
-        }
-    }
-
-    // 执行登录操作
-    pub async fn perform_login(&mut self) -> Result<String, String> {
-        // 创建HTTP客户端
-        let client = reqwest::Client::new();
-        
-        // 构造登录请求
-        let login_request = LoginRequest {
-            username: self.username.clone(),
-            password: self.password.clone(),
-        };
-        
-        // 发送登录请求
-        let response = client
-            .post("http://127.0.0.1:3000/login")
-            .json(&login_request)
-            .send()
-            .await
-            .map_err(|e| format!("Network error: {}", e))?;
-        
-        // 检查响应状态
-        if response.status().is_success() {
-            let token_response: TokenResponse = response
-                .json()
-                .await
-                .map_err(|e| format!("Failed to parse response: {}", e))?;
-            Ok(token_response.data.token)
-        } else {
-            let status = response.status();
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "Unknown error".to_string());
-            Err(format!("Login failed with status {}: {}", status, error_text))
         }
     }
 
@@ -253,24 +223,4 @@ impl LoginState {
     pub fn is_logging_in(&self) -> bool {
         self.is_logging_in
     }
-}
-
-// 登录请求结构
-#[derive(Serialize)]
-struct LoginRequest {
-    username: String,
-    password: String,
-}
-
-// Token响应结构
-#[derive(Deserialize)]
-struct TokenResponse {
-    data: Token,
-    ok: bool,
-}
-
-#[derive(Debug, Deserialize)]
-struct Token {
-    token: String,
-    exp: u128,
 }

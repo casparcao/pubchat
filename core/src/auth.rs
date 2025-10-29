@@ -47,7 +47,7 @@ pub fn init() {
 pub fn issue(id: i64) -> Result<String> {
     let keys = KEYS.get();
     if keys.is_none(){
-        return Err(ApiErr::Error("JWT密钥异常").into());
+        return Err(ApiErr::Error("JWT密钥异常".to_string()).into());
     }
     let claims = User {
         id,
@@ -57,24 +57,24 @@ pub fn issue(id: i64) -> Result<String> {
     };
     // Create the authorization token
     encode(&Header::default(), &claims, &keys.unwrap().encoding)
-    .map_err(|_| ApiErr::Error("Token颁发失败").into())
+    .map_err(|_| ApiErr::Error("Token颁发失败".to_string()).into())
 }
 
 pub fn verify(token: &str) -> Result<User> {
     let keys = KEYS.get();
     if keys.is_none(){
-        return Err(ApiErr::Error("JWT密钥异常").into());
+        return Err(ApiErr::Error("JWT密钥异常".to_string()).into());
     }
     let token_data = decode::<User>(token, &keys.unwrap().decoding, &Validation::default());
     if token_data.is_err(){
         log::error!("token解析异常>>{}", token_data.unwrap_err());
-        return Err(ApiErr::Bad(400, "Token解析异常").into());
+        return Err(ApiErr::Bad(400, "Token解析异常".to_string()).into());
     }
     let token_data = token_data.unwrap();
     let claims = token_data.claims;
     let exp = claims.exp;
     if exp  < SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() {
-        return Err(ApiErr::Bad(401, "Token已过期").into());
+        return Err(ApiErr::Bad(401, "Token已过期".to_string()).into());
     }
     Ok(claims)
 }
@@ -89,16 +89,16 @@ impl<B> ValidateRequest<B> for AuthHeader {
     ) -> Result<(), axum::http::Response<Self::ResponseBody>> {
         let keys = KEYS.get();
         if keys.is_none(){
-            return Err(ApiErr::Error("JWT密钥异常").into_response());
+            return Err(ApiErr::Error("JWT密钥异常".to_string()).into_response());
         }
         let auth_header = request.headers().get(AUTHORIZATION);
         if auth_header.is_none(){
-            return Err(ApiErr::Bad(400, "Authorization请求头缺失").into_response());
+            return Err(ApiErr::Bad(400, "Authorization请求头缺失".to_string()).into_response());
         }
         let token = auth_header.unwrap();
         let token = token.to_str();
         if token.is_err(){
-            return Err(ApiErr::Bad(400, "提取Token失败").into_response());
+            return Err(ApiErr::Bad(400, "提取Token失败".to_string()).into_response());
         }
         let token = token.unwrap();
         log::info!("token:{}", token);
@@ -134,4 +134,11 @@ pub struct User {
     //所在组织id
     pub oid: i64,
     pub exp: u128,
+}
+
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Token{
+    pub token: String,
+    pub exp: u128
 }

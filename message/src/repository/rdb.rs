@@ -14,7 +14,7 @@ pub async fn init(){
 }
 
 async fn get() -> Result<&'static redis::Client> {
-    POOL.get().ok_or(ApiErr::Error("获取Redis客户端失败").into())
+    POOL.get().ok_or(ApiErr::Error("获取Redis客户端失败".to_string()).into())
 }
 
 pub async fn connection() -> Result<redis::Connection>{
