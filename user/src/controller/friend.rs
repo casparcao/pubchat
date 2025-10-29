@@ -1,7 +1,7 @@
 use axum::Extension;
 use crate::common::auth::User;
 use crate::common::response::{ApiErr, ApiResponse};
-use crate::vo::friend::FriendListResponse;
+use crate::vo::friend::FriendResponse;
 
 pub async fn add_friend(
     Extension(claims): Extension<User>,
@@ -12,10 +12,9 @@ pub async fn add_friend(
 
 pub async fn get_friend_list(
     Extension(claims): Extension<User>,
-) -> Result<ApiResponse<FriendListResponse>, ApiErr> {
+) -> Result<ApiResponse<FriendResponse>, ApiErr> {
     let list = crate::service::friend::get_friend_list(claims).await?;
-    let res = FriendListResponse { friends: list };
-    Ok(ApiResponse::One(res))
+    Ok(ApiResponse::List(list, 0))
 }
 
 pub async fn remove_friend(

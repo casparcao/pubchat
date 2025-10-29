@@ -2,6 +2,8 @@ use core::{auth::Token, response::{ApiErr, ApiResult}};
 use anyhow::Result;
 use serde::Serialize;
 
+use crate::service::user_host;
+
 
 // 登录请求结构
 #[derive(Serialize)]
@@ -18,7 +20,7 @@ pub async fn login(body: &LoginRequest) -> Result<Token> {
     
     // 发送登录请求
     let response = client
-        .post("http://127.0.0.1:3000/login")
+        .post(format!("{}/login", user_host()))
         .json(body)
         .send()
         .await?;

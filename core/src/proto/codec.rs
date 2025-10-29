@@ -22,6 +22,5 @@ pub fn encode<T: Message>(msg: &T) -> Result<Vec<u8>, io::Error> {
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     buf.put_u32_le(encoded.len() as u32);
     buf.put_slice(&encoded);
-
     Ok(buf)
 }

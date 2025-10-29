@@ -6,8 +6,3 @@ pub struct FriendResponse {
     pub name: String,
     pub avatar: Option<String>,
 }
-
-#[derive(Serialize, Debug)]
-pub struct FriendListResponse {
-    pub friends: Vec<FriendResponse>,
-}
