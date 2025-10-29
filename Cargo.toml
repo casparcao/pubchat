@@ -4,8 +4,6 @@ members = [
     "core",
     "client",
     "connection",
-    "router",
-    "session",
     "user",
     "message",
 ]

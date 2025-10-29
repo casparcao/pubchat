@@ -3464,19 +3464,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "router"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "bytes",
- "futures",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "rsa"
 version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3814,19 +3801,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "session"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "bytes",
- "futures",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
 ]
 
 [[package]]
