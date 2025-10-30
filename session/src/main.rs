@@ -1,3 +1,5 @@
+use core::auth;
+
 use dotenv::dotenv;
 use tokio::net::TcpListener;
 use anyhow::Result;
@@ -18,6 +20,7 @@ use crate::common::router;
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv().ok();
+    auth::init();
     rdb::init().await;
     db::init().await;
     consumer::init().await?;

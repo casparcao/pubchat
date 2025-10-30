@@ -16,7 +16,7 @@ mod repository;
 mod service;
 
 use login_ui::{LoginScreen, LoginResult};
-use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::friend};
+use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::session};
 
 use crate::{repository::db, ui::models::App};
 
@@ -101,12 +101,16 @@ async fn show_main_screen(
     writer: tokio::net::tcp::OwnedWriteHalf
 ) -> Result<()> {
     // 获取好友列表
-    let friends : Vec<friend::FriendResponse> = service::friend::get_friends(&token).await?;
+    // let friends : Vec<friend::FriendResponse> = service::friend::get_friends(&token).await?;
+    let sessions = session::get_sessions(&token).await?;
     // 登录成功后，创建应用状态
     let mut app = App::new();
     // 更新联系人列表为从服务器获取的好友列表
-    app.contacts = friends.into_iter()
-        .map(|f| crate::ui::models::Contact::from_friend_response(f))
+    // app.contacts = friends.into_iter()
+    //     .map(|f| crate::ui::models::Contact::from_friend_response(f))
+    //     .collect();
+    app.sessions = sessions.into_iter()
+        .map(|s| crate::ui::models::Session::from_session_response(s))
         .collect();
     app.set_token(Some(token.clone()));
     app.current_user_id = user_id; // 设置当前用户ID

@@ -15,6 +15,7 @@ pub struct SessionResponse {
 pub async fn get_sessions(token: &str) -> Result<Vec<SessionResponse>> {
     let client = reqwest::Client::new();
     let url = format!("{}/user/sessions", session_host());
+    eprint!("{}", url);
     let response = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", token))
