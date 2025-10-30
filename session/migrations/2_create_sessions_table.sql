@@ -13,6 +13,7 @@ CREATE TABLE `sessions` (
 CREATE TABLE `user_sessions` (
   `id` BIGINT NOT NULL,
   `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `user_name` VARCHAR(100) NOT NULL COMMENT '用户名称',
   `session_id` BIGINT NOT NULL COMMENT '会话ID',
   `role` TINYINT NOT NULL DEFAULT '0' COMMENT '角色: 0-普通成员, 1-管理员',
   `jointime` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

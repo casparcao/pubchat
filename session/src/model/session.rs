@@ -15,6 +15,7 @@ pub struct Session {
 pub struct UserSession {
     pub id: i64,
     pub user_id: i64,
+    pub user_name: String,
     pub session_id: i64,
     pub role: i8, // 0-普通成员, 1-管理员
     pub jointime: NaiveDateTime,

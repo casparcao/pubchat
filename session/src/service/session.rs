@@ -1,10 +1,10 @@
-use core::response::{ApiErr, ApiResponse};
+use core::response::ApiErr;
 
 use anyhow::Result;
 use crate::vo::session::{CreateSessionRequest, SessionDetailResponse, UserSessionResponse};
 use crate::model::session::{Session, UserSession};
 use crate::repository::session as session_repo;
-use chrono::{Utc, NaiveDateTime};
+use chrono::Utc;
 
 pub async fn create_session(creator_id: i64, payload: CreateSessionRequest) -> Result<Session> {
     let now = Utc::now().naive_utc();
@@ -23,12 +23,13 @@ pub async fn create_session(creator_id: i64, payload: CreateSessionRequest) -> R
     session_repo::create_session(&session).await?;
     
     // 添加会话成员（包括创建者）
-    for user_id in payload.members {
+    for member in payload.members {
         let user_session = UserSession {
             id: snowflaker::next_id()? as i64,
-            user_id,
+            user_id: member.id,
+            user_name: member.name,
             session_id: session.id,
-            role: if user_id == creator_id { 1 } else { 0 }, // 创建者为管理员
+            role: if member.id == creator_id { 1 } else { 0 }, // 创建者为管理员
             jointime: now,
         };
         session_repo::create_user_session(&user_session).await?;
@@ -52,8 +53,8 @@ pub async fn get_session_by_id(session_id: i64) -> Result<SessionDetailResponse>
         id: session.id,
         name: session.name,
         members: members.into_iter().map(|m| UserSessionResponse {
-            id: m.id,
-            name: "".to_string(),
+            id: m.user_id,
+            name: m.user_name,
         }).collect(),
     };
     Ok(detail)

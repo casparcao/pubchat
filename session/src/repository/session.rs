@@ -21,9 +21,10 @@ pub async fn create_user_session(user_session: &UserSession) -> Result<UserSessi
     let mut connection = db::connection().await?;
     
     // 插入用户会话关联记录
-    sqlx::query("INSERT INTO user_sessions (id, user_id, session_id, role, jointime) VALUES (?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO user_sessions (id, user_id, user_name, session_id, role, jointime) VALUES (?, ?, ?, ?, ?, ?)")
         .bind(&user_session.id)
         .bind(&user_session.user_id)
+        .bind(&user_session.user_name)
         .bind(&user_session.session_id)
         .bind(&user_session.role)
         .bind(&user_session.jointime)
