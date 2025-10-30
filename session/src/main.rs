@@ -20,6 +20,8 @@ async fn main() -> Result<(), String> {
     rdb::init().await;
     db::init().await;
     consumer::init().await;
+    // 如果session模块有初始化需求，请取消下面这行注释并实现init方法
+    // session::init().await;
     
     let app = router::init().expect("路由模块初始化失败");
     let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();

@@ -1,5 +1,5 @@
 use anyhow::Error;
-use axum::{response::{IntoResponse, Response}, Json};
+use axum::{BoxError, Json, response::{IntoResponse, Response}};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -95,4 +95,13 @@ impl <T: Serialize> ApiResult<T>{
             count: Some(count),
         }
     }
+}
+
+
+pub async fn e404() -> ApiErr{
+    ApiErr::Bad(404, "未找到指定资源...".to_string())
+}
+
+pub async fn e500(err: BoxError) -> ApiErr {
+    ApiErr::Bad(500, format!("服务器内部错误: {}", err))
 }
