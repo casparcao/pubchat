@@ -1,15 +1,21 @@
 use core::response::ApiErr;
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use crate::vo::session::{CreateSessionRequest, SessionDetailResponse, UserSessionResponse};
 use crate::model::session::{Session, UserSession};
 use crate::repository::session as session_repo;
 use chrono::Utc;
 
 pub async fn create_session(creator_id: i64, payload: CreateSessionRequest) -> Result<Session> {
+    if payload.id <= 0 {
+        return Err(ApiErr::Bad(400, "会话ID不能小于等于0".to_string()).into());
+    }
+    let existed : Option<Session> = session_repo::find_session_by_id(payload.id).await?;
+    if existed.is_some() {
+        return Ok(existed.unwrap());
+    }
     let now = Utc::now().naive_utc();
-    let session_id = snowflaker::next_id()? as i64;
-    
+    let session_id = payload.id;
     // 创建会话
     let session = Session {
         id: session_id,

@@ -14,6 +14,8 @@ pub struct SessionResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateSessionRequest {
+    //必须携带id，这样服务器端判断是否已经创建了会话，如果存在直接返回
+    pub id: i64,
     pub name: String,
     pub members: Vec<CreateSessionUserRequest>,
 }
@@ -69,4 +71,10 @@ pub async fn create_session(token: &str, payload: CreateSessionRequest) -> Resul
         let error_text = response.text().await?;
         Err(ApiErr::Error(format!("Failed to create session: {} - {}", status, error_text).into()).into())
     }
+}
+
+//计算两个用户的唯一会话ID（始终不变，以便更快的找到两人的会话）
+pub async fn calc_session_id(uid1: i64, uid2: i64) -> u64{
+    let (min, max) = if uid1 < uid2 { (uid1 as u64, uid2 as u64) } else { (uid2 as u64, uid1 as u64) };
+    (min << 32) | (max & 0xFFFFFFFF)
 }
