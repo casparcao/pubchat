@@ -15,7 +15,13 @@ pub struct SessionResponse {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateSessionRequest {
     pub name: String,
-    pub member_ids: Vec<i64>,
+    pub members: Vec<CreateSessionUserRequest>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CreateSessionUserRequest {
+    pub id: i64,
+    pub name: String,
 }
 
 pub async fn get_sessions(token: &str) -> Result<Vec<SessionResponse>> {
@@ -40,10 +46,9 @@ pub async fn get_sessions(token: &str) -> Result<Vec<SessionResponse>> {
     }
 }
 
-pub async fn create_session(token: &str, name: String, member_ids: Vec<i64>) -> Result<SessionResponse> {
+pub async fn create_session(token: &str, payload: CreateSessionRequest) -> Result<SessionResponse> {
     let client = reqwest::Client::new();
     let url = format!("{}/sessions", session_host());
-    let payload = CreateSessionRequest { name, member_ids };
     
     let response = client
         .post(&url)
