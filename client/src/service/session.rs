@@ -12,10 +12,15 @@ pub struct SessionResponse {
     pub name: String,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CreateSessionRequest {
+    pub name: String,
+    pub member_ids: Vec<i64>,
+}
+
 pub async fn get_sessions(token: &str) -> Result<Vec<SessionResponse>> {
     let client = reqwest::Client::new();
     let url = format!("{}/user/sessions", session_host());
-    eprint!("{}", url);
     let response = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", token))
@@ -32,5 +37,31 @@ pub async fn get_sessions(token: &str) -> Result<Vec<SessionResponse>> {
         let status = response.status();
         let error_text = response.text().await?;
         Err(ApiErr::Error(format!("Failed to get sessions: {} - {}", status, error_text).into()).into())
+    }
+}
+
+pub async fn create_session(token: &str, name: String, member_ids: Vec<i64>) -> Result<SessionResponse> {
+    let client = reqwest::Client::new();
+    let url = format!("{}/sessions", session_host());
+    let payload = CreateSessionRequest { name, member_ids };
+    
+    let response = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", token))
+        .json(&payload)
+        .send()
+        .await?;
+        
+    if response.status().is_success() {
+        let result: ApiResult<SessionResponse> = response.json().await?;
+        if result.ok {
+            Ok(result.data.unwrap())
+        } else {
+            Err(ApiErr::Error(result.message.unwrap()).into())
+        }
+    } else {
+        let status = response.status();
+        let error_text = response.text().await?;
+        Err(ApiErr::Error(format!("Failed to create session: {} - {}", status, error_text).into()).into())
     }
 }

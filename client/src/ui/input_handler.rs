@@ -28,6 +28,16 @@ impl App {
                                 }
                             }
                         }
+                        View::FriendsList => {
+                            // 在好友列表视图中向上导航
+                            if !self.contacts.is_empty() {
+                                if let Some(selected) = self.selected_friend {
+                                    self.selected_friend = Some(selected.saturating_sub(1));
+                                } else {
+                                    self.selected_friend = Some(0);
+                                }
+                            }
+                        }
                         _ => {
                             // 在聊天视图中，k键用于滚动消息
                             if self.scroll_offset > 0 {
@@ -48,6 +58,16 @@ impl App {
                                 }
                             }
                         }
+                        View::FriendsList => {
+                            // 在好友列表视图中向下导航
+                            if !self.contacts.is_empty() {
+                                if let Some(selected) = self.selected_friend {
+                                    self.selected_friend = Some((selected + 1).min(self.contacts.len() - 1));
+                                } else {
+                                    self.selected_friend = Some(0);
+                                }
+                            }
+                        }
                         _ => {
                             // 在聊天视图中，j键用于滚动消息
                             self.scroll_offset += 1;
@@ -57,6 +77,10 @@ impl App {
                 crossterm::event::KeyCode::Char('h') => {
                     // 切换到联系人视图
                     self.current_view = View::Contacts;
+                }
+                crossterm::event::KeyCode::Char('f') => {
+                    // 切换到好友列表视图
+                    self.current_view = View::FriendsList;
                 }
                 crossterm::event::KeyCode::Char('m') => {
                     // 切换聊天窗口最大化状态
@@ -80,6 +104,23 @@ impl App {
                                 }
                             }
                         }
+                        View::FriendsList => {
+                            // 在好友列表视图中按Enter选择
+                            if let Some(index) = self.selected_friend {
+                                if index < self.contacts.len() {
+                                    let friend = &self.contacts[index];
+                                    let friend_name = friend.name.clone();
+                                    
+                                    // 切换到聊天视图
+                                    self.current_view = View::Chat { target: friend_name.clone() };
+                                    
+                                    // 确保目标有消息列表
+                                    if !self.messages.contains_key(&friend_name) {
+                                        self.messages.insert(friend_name.clone(), vec![]);
+                                    }
+                                }
+                            }
+                        }
                         _ => {}
                     }
                 }
@@ -87,7 +128,8 @@ impl App {
                     // 在不同视图间切换
                     self.current_view = match self.current_view {
                         View::Chat { .. } => View::Contacts,
-                        View::Contacts => View::Chat { target: "alice".to_string() },
+                        View::Contacts => View::FriendsList,
+                        View::FriendsList => View::Chat { target: "alice".to_string() },
                     };
                 }
                 _ => {}
@@ -240,8 +282,18 @@ impl App {
                 if let Some(messages) = self.messages.get_mut(&target) {
                     messages.push(MessageItem::system("Available commands:"));
                     messages.push(MessageItem::system("/help - Show this help"));
+                    messages.push(MessageItem::system("/friends - Open friends list"));
                     messages.push(MessageItem::system("/clear - Clear chat history"));
                     messages.push(MessageItem::system("/quit or /exit - Exit the application"));
+                }
+            }
+            "/friends" => {
+                // 切换到好友列表视图
+                self.current_view = View::FriendsList;
+                self.selected_friend = None;
+                
+                if let Some(messages) = self.messages.get_mut(&target) {
+                    messages.push(MessageItem::system("Opening friends list..."));
                 }
             }
             "/clear" => {
