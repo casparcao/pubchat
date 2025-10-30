@@ -1,5 +1,6 @@
 use dotenv::dotenv;
 use tokio::net::TcpListener;
+use anyhow::Result;
 
 pub mod model;
 pub mod service;
@@ -15,11 +16,11 @@ use crate::common::router;
 
 
 #[tokio::main]
-async fn main() -> Result<(), String> {
+async fn main() -> Result<()> {
     dotenv().ok();
     rdb::init().await;
     db::init().await;
-    consumer::init().await;
+    consumer::init().await?;
     // 如果session模块有初始化需求，请取消下面这行注释并实现init方法
     // session::init().await;
     

@@ -1,29 +1,13 @@
 use anyhow::Result;
 use futures::StreamExt;
 use lapin::{
-    options::{BasicAckOptions, BasicConsumeOptions},
-    types::FieldTable,
-    Connection, ConnectionProperties,
+    Channel, options::{BasicAckOptions, BasicConsumeOptions}, types::FieldTable
 };
 use serde_json;
 use crate::model::message::Message;
 use crate::service::message;
 
-pub async fn consume_messages(rabbitmq_addr: &str, queue_name: &str) -> Result<()> {
-        let conn = Connection::connect(rabbitmq_addr, ConnectionProperties::default())
-            .await?;
-
-        let channel = conn.create_channel().await?;
-
-        // Declare queue (this won't create a new one if it already exists)
-        let _queue = channel
-            .queue_declare(
-                queue_name,
-                lapin::options::QueueDeclareOptions::default(),
-                FieldTable::default(),
-            )
-            .await?;
-
+pub async fn consume_messages(channel: Channel, queue_name: &str) -> Result<()> {
         let mut consumer = channel
             .basic_consume(
                 queue_name,

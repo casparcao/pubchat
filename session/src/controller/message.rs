@@ -34,5 +34,4 @@ pub async fn index() -> Result<ApiResponse<Message>, ApiErr> {
 pub fn router() -> Router {
     Router::new()
         .route("/messages/{room_id}", get(get_messages_by_room))
-        .route("/messages/{speaker_id}", get(get_messages_by_speaker))
 }

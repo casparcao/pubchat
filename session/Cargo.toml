@@ -29,3 +29,5 @@ http-body = { workspace = true }
 http = { workspace = true }
 lapin = { workspace = true }
 core = { path = "../core" }
+deadpool = { workspace = true }
+deadpool-lapin = { workspace = true }

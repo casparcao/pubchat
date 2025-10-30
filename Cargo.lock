@@ -3782,6 +3782,8 @@ dependencies = [
  "bytes",
  "chrono",
  "core",
+ "deadpool",
+ "deadpool-lapin",
  "dotenv",
  "futures",
  "http",
