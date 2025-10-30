@@ -11,12 +11,10 @@ use anyhow::Result;
 use tokio::sync::Mutex;
 
 mod ui;
-mod login_ui;
 mod repository;
 mod service;
 
-use login_ui::{LoginScreen, LoginResult};
-use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::session};
+use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::session, ui::login::{LoginResult, LoginScreen}};
 
 use crate::{repository::db, ui::models::App};
 
