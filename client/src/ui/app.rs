@@ -1,4 +1,4 @@
-use crate::ui::models::{App, MessageItem, Contact, View, Mode, Status};
+use crate::ui::models::{App, MessageItem, Contact, Session, View, Mode, Status};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
@@ -22,6 +22,10 @@ impl App {
             contacts: vec![
                 Contact::new(1, "alice".to_string(), Status::Online, None),
                 Contact::new(2, "bob".to_string(), Status::Offline, None),
+            ],
+            sessions: vec![
+                Session { id: 1, name: "alice".to_string() },
+                Session { id: 2, name: "group chat".to_string() },
             ],
             current_view: View::Chat {
                 target: "alice".to_string(),

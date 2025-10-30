@@ -20,7 +20,7 @@ impl App {
                     // 在联系人视图中向上导航
                     match self.current_view {
                         View::Contacts => {
-                            if !self.contacts.is_empty() {
+                            if !self.sessions.is_empty() {
                                 if let Some(selected) = self.selected_contact {
                                     self.selected_contact = Some(selected.saturating_sub(1));
                                 } else {
@@ -40,9 +40,9 @@ impl App {
                     // 在联系人视图中向下导航
                     match self.current_view {
                         View::Contacts => {
-                            if !self.contacts.is_empty() {
+                            if !self.sessions.is_empty() {
                                 if let Some(selected) = self.selected_contact {
-                                    self.selected_contact = Some((selected + 1).min(self.contacts.len() - 1));
+                                    self.selected_contact = Some((selected + 1).min(self.sessions.len() - 1));
                                 } else {
                                     self.selected_contact = Some(0);
                                 }
@@ -69,8 +69,8 @@ impl App {
                     match &self.current_view {
                         View::Contacts => {
                             if let Some(index) = self.selected_contact {
-                                if index < self.contacts.len() {
-                                    let target = self.contacts[index].name.clone();
+                                if index < self.sessions.len() {
+                                    let target = self.sessions[index].name.clone();
                                     self.current_view = View::Chat { target: target.clone() };
                                     
                                     // 确保目标有消息列表

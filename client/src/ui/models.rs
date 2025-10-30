@@ -50,6 +50,21 @@ impl Contact {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct Session {
+    pub id: i64,
+    pub name: String,
+}
+
+impl Session {
+    pub fn from_session_response(session: crate::service::session::SessionResponse) -> Self {
+        Self {
+            id: session.id,
+            name: session.name,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Status {
     Online,
@@ -76,6 +91,7 @@ pub struct App {
     pub input: String,
     pub messages: HashMap<String, Vec<MessageItem>>,
     pub contacts: Vec<Contact>,
+    pub sessions: Vec<Session>, // 添加会话列表
     pub current_view: View,
     pub mode: Mode,
     pub scroll_offset: u16,

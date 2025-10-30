@@ -34,17 +34,17 @@ impl App {
     }
 
     fn render_main_layout(&self, frame: &mut Frame, area: Rect, target: &str) {
-        // 两栏布局：联系人列表(1/3) + 聊天窗口(2/3)
+        // 两栏布局：会话列表(1/3) + 聊天窗口(2/3)
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Percentage(30), // 联系人列表
+                Constraint::Percentage(30), // 会话列表
                 Constraint::Percentage(70), // 聊天窗口
             ])
             .split(area);
 
-        // 左侧联系人列表
-        self.render_contacts_list(frame, chunks[0]);
+        // 左侧会话列表
+        self.render_sessions_list(frame, chunks[0]);
 
         // 右侧聊天区域
         let chat_chunks = Layout::default()
@@ -64,34 +64,28 @@ impl App {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Percentage(30), // 联系人列表
+                Constraint::Percentage(30), // 会话列表
                 Constraint::Percentage(70), // 信息区域
             ])
             .split(area);
 
-        self.render_contacts_list(frame, chunks[0]);
+        self.render_sessions_list(frame, chunks[0]);
         
-        // 右侧显示联系人详细信息或帮助
+        // 右侧显示会话详细信息或帮助
         let info_block = Block::default()
-            .title("Contact Info")
+            .title("Session Info")
             .borders(Borders::ALL);
             
         let info_text = if let Some(index) = self.selected_contact {
-            if index < self.contacts.len() {
-                let contact = &self.contacts[index];
-                format!("Name: {}\nStatus: {}\n\nPress Enter to chat", 
-                    contact.name,
-                    match contact.status {
-                        Status::Online => "Online",
-                        Status::Offline => "Offline",
-                        Status::Busy => "Busy",
-                        Status::Away => "Away",
-                    })
+            if index < self.sessions.len() {
+                let session = &self.sessions[index];
+                format!("Name: {}\n\nPress Enter to chat", 
+                    session.name)
             } else {
-                "Select a contact".to_string()
+                "Select a session".to_string()
             }
         } else {
-            "Select a contact".to_string()
+            "Select a session".to_string()
         };
         
         let info = Paragraph::new(info_text)
@@ -100,18 +94,12 @@ impl App {
         frame.render_widget(info, chunks[1]);
     }
 
-    fn render_contacts_list(&self, frame: &mut Frame, area: Rect) {
-        let contacts: Vec<ListItem> = self.contacts
+    fn render_sessions_list(&self, frame: &mut Frame, area: Rect) {
+        let sessions: Vec<ListItem> = self.sessions
             .iter()
             .enumerate()
-            .map(|(i, contact)| {
-                let status_char = match contact.status {
-                    Status::Online => "🟢",
-                    Status::Offline => "🔴",
-                    Status::Busy => "🔴",
-                    Status::Away => "🟡",
-                };
-                let content = format!("{} {}", status_char, contact.name);
+            .map(|(i, session)| {
+                let content = format!("💬 {}", session.name);
                 let mut item = ListItem::new(content);
                 if let Some(selected) = self.selected_contact {
                     if selected == i {
@@ -123,14 +111,14 @@ impl App {
             .collect();
 
         let title = match self.current_view {
-            View::Contacts => "Contacts (↑/↓ to select)",
-            _ => "Contacts"
+            View::Contacts => "Sessions (↑/↓ to select)",
+            _ => "Sessions"
         };
 
-        let contacts_list = List::new(contacts)
+        let sessions_list = List::new(sessions)
             .block(Block::default().title(title).borders(Borders::ALL));
 
-        frame.render_widget(contacts_list, area);
+        frame.render_widget(sessions_list, area);
     }
 
     fn render_messages(&self, frame: &mut Frame, area: Rect) {
@@ -158,12 +146,13 @@ impl App {
         // 获取当前聊天目标
         let title = match &self.current_view {
             View::Chat { target } => {
-                // 检查目标是联系人还是群组
-                if self.contacts.iter().any(|c| c.name == *target) {
+                // 检查目标是会话还是群组
+                if self.sessions.iter().any(|s| s.name == *target) {
                     format!("Chat with {} {}", target, 
                         if self.chat_maximized { "[M] (Press 'm' to restore)" } else { "[M] (Press 'm' to maximize)" })
                 } else {
-                    format!("Chat with {} {}", target,
+                    format!("Chat with {} {}",
+                        target,
                         if self.chat_maximized { "[M] (Press 'm' to restore)" } else { "[M] (Press 'm' to maximize)" })
                 }
             },
