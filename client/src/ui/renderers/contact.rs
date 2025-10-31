@@ -1,17 +1,20 @@
-use crate::ui::models::{App, Contact, Status};
+use crate::ui::models::{Contact, Status};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
 
+#[derive(Debug, Clone)]
 pub struct ContactListComponent {
     pub contacts: Vec<Contact>,
-    pub selected: Option<Contact>
+    pub selected: Option<usize>,
 }
 
+impl ContactListComponent {
+    pub fn new(contacts: Vec<Contact>, selected: Option<usize>) -> Self {
+        Self { contacts, selected }
+    }
 
-impl App {
-    // 添加好友列表布局渲染
     pub fn render_friends_list_layout(&self, frame: &mut Frame, area: Rect) {
         // 主要显示好友列表
         let chunks = Layout::default()
@@ -29,7 +32,7 @@ impl App {
             .title("Friend Info")
             .borders(Borders::ALL);
             
-        let info_text = if let Some(index) = self.selected_friend {
+        let info_text = if let Some(index) = self.selected {
             if index < self.contacts.len() {
                 let friend = &self.contacts[index];
                 format!("Name: {}\nStatus: {}\n\nPress Enter to start chat", 
@@ -66,7 +69,7 @@ impl App {
                 };
                 let content = format!("{} {}", status_char, friend.name);
                 let mut item = ListItem::new(content);
-                if let Some(selected) = self.selected_friend {
+                if let Some(selected) = self.selected {
                     if selected == i {
                         item = item.style(Style::default().bg(Color::Blue));
                     }

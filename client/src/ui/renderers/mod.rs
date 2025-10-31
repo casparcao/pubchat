@@ -8,6 +8,7 @@ use crate::ui::models::{App, View};
 use ratatui::{
     prelude::*,
 };
+use contact::ContactListComponent;
 
 impl App {
     pub fn render(&self, frame: &mut Frame) {
@@ -20,7 +21,10 @@ impl App {
                     self.render_main_layout(frame, size, session.clone())
                 }
             },
-            View::FriendsList => self.render_friends_list_layout(frame, size),
+            View::FriendsList => {
+                let contact_list = ContactListComponent::new(self.contacts.clone(), self.selected_friend);
+                contact_list.render_friends_list_layout(frame, size)
+            },
         }
     }
 }
