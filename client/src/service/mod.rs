@@ -5,10 +5,12 @@ pub mod connection;
 pub mod friend;
 pub mod cache;
 pub mod session;
+pub mod message;
 
 pub static CONNECTION_HOST : OnceLock<String> = OnceLock::new();
 pub static USER_HOST : OnceLock<String> = OnceLock::new();
 pub static SESSION_HOST: OnceLock<String> = OnceLock::new();
+
 pub(crate) async fn init() {
     let user_host = dotenv::var("USER_SERVER_URL").expect("请设置USER_SERVER_URL环境变量");
     let connection_host = dotenv::var("CONNECTION_SERVER_URL").expect("请设置CONNECTION_SERVER_URL环境变j'j");
@@ -19,13 +21,13 @@ pub(crate) async fn init() {
 }
 
 pub(crate) fn user_host() -> String {
-    USER_HOST.get().unwrap().to_string()
+    USER_HOST.get().expect("USER_HOST未初始化").clone()
 }
 
 pub(crate) fn connection_host() -> String {
-    CONNECTION_HOST.get().unwrap().to_string()
+    CONNECTION_HOST.get().expect("CONNECTION_HOST未初始化").clone()
 }
 
 pub(crate) fn session_host() -> String {
-    SESSION_HOST.get().unwrap().to_string()
+    SESSION_HOST.get().expect("SESSION_HOST未初始化").clone()
 }

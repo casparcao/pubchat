@@ -1,4 +1,4 @@
-use crate::ui::models::{App, View, MessageItem};
+use crate::ui::models::{App, View};
 use crossterm::event::{KeyEvent, KeyCode, KeyModifiers};
 
 impl App {
@@ -108,13 +108,33 @@ impl App {
                             if index < self.contacts.len() {
                                 let friend = &self.contacts[index];
                                 let friend_name = friend.name.clone();
+                                let friend_id = friend.id;
                                 
-                                // 切换到聊天视图
-                                self.current_view = View::Chat { target: friend_name.clone() };
-                                
-                                // 确保目标有消息列表
-                                if !self.messages.contains_key(&friend_name) {
-                                    self.messages.insert(friend_name.clone(), vec![]);
+                                // 创建一个任务来创建会话并加载消息
+                                match self.create_or_get_session(friend_name.clone(), friend_id) {
+                                    Ok(session) => {
+                                        // 加载会话消息
+                                        if let Err(e) = self.load_session_messages(session.id, friend_name.clone()){
+                                            eprintln!("Failed to load session messages: {}", e);
+                                        }
+                                        // 将会话添加到本地列表（如果不存在）
+                                        if !self.sessions.iter().any(|s| s.id == session.id) {
+                                            self.sessions.push(session);
+                                        }
+                                        
+                                        // 切换到聊天视图
+                                        self.current_view = View::Chat { target: friend_name };
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Failed to create session: {}", e);
+                                        // 如果创建会话失败，仍然切换到聊天视图
+                                        self.current_view = View::Chat { target: friend_name.clone() };
+                                        
+                                        // 确保目标有消息列表
+                                        if !self.messages.contains_key(&friend_name) {
+                                            self.messages.insert(friend_name.clone(), vec![]);
+                                        }
+                                    }
                                 }
                             }
                         }

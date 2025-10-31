@@ -52,7 +52,7 @@ async fn main() -> Result<()> {
     let (reader, writer) = stream.into_split();
     // 开启接收消息任务
     service::connection::receive_messages(reader).await;
-    show_main_screen(&mut terminal, token, user_id, writer).await?;
+    show_main_screen(&mut terminal, token, user_id, writer)?;
     // 退出原始模式
     disable_raw_mode()?;
     stdout().execute(LeaveAlternateScreen)?;
@@ -92,7 +92,7 @@ async fn show_login_screen(terminal: &mut Terminal<CrosstermBackend<std::io::Std
     }
 }
 
-async fn show_main_screen(
+fn show_main_screen(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>, 
     token: String,
     user_id: u64,
@@ -100,7 +100,7 @@ async fn show_main_screen(
 ) -> Result<()> {
     // 获取好友列表
     // let friends : Vec<friend::FriendResponse> = service::friend::get_friends(&token).await?;
-    let sessions = session::get_sessions(&token).await?;
+    let sessions = session::get_sessions(&token)?;
     // 登录成功后，创建应用状态
     let mut app = App::new();
     // 更新联系人列表为从服务器获取的好友列表
