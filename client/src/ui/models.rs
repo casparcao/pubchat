@@ -3,6 +3,8 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::net::tcp::OwnedWriteHalf;
 
+use crate::service::cache::Cache;
+
 #[derive(Debug, Clone)]
 pub struct MessageItem {
     pub sender: String,
@@ -50,7 +52,7 @@ impl Contact {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Session {
     pub id: i64,
     pub name: String,
@@ -65,6 +67,15 @@ impl Session {
     }
 }
 
+impl Default for Session {
+    fn default() -> Self {
+        Self {
+            id: 0,
+            name: "None".to_string(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Status {
     Online,
@@ -75,7 +86,7 @@ pub enum Status {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum View {
-    Chat { target: String },
+    Chat { session: Session },
     FriendsList, // 添加好友列表视图
 }
 
@@ -89,7 +100,6 @@ pub enum Mode {
 #[derive(Debug, Clone)]
 pub struct App {
     pub input: String,
-    pub messages: HashMap<String, Vec<MessageItem>>,
     pub contacts: Vec<Contact>,
     pub sessions: Vec<Session>, // 添加会话列表
     pub current_view: View,

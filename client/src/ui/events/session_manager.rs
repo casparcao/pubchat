@@ -1,8 +1,7 @@
 use core::response::ApiErr;
 
-use crate::ui::models::{App, Session as AppSession, MessageItem};
+use crate::ui::models::{App, Session as AppSession};
 use crate::service::session::{create_session, CreateSessionRequest, CreateSessionUserRequest};
-use crate::service::message;
 
 impl App {
     /// 为两个用户创建或获取会话
@@ -41,33 +40,4 @@ impl App {
         }
     }
     
-    /// 加载会话消息
-    pub fn load_session_messages(&mut self, session_id: i64, target: String) -> anyhow::Result<()> {
-        if let Some(ref token) = self.token {
-            match message::get_session_messages(token, session_id){
-                Ok(messages) => {
-                    // 转换消息格式
-                    let converted_messages: Vec<MessageItem> = messages
-                        .into_iter()
-                        .map(|msg| {
-                            MessageItem::new(
-                                msg.sender_name,
-                                msg.content,
-                                msg.sender_id == self.current_user_id as i64,
-                            )
-                        })
-                        .collect();
-                    
-                    // 更新UI中的消息列表
-                    self.messages.insert(target, converted_messages);
-                    Ok(())
-                }
-                Err(e) => {
-                    Err(ApiErr::Error(format!("Failed to load session messages: {}", e)).into())
-                }
-            }
-        } else {
-            Err(ApiErr::Error(format!("User not authenticated")).into())
-        }
-    }
 }

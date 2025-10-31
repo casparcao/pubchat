@@ -1,4 +1,6 @@
-use crate::ui::{models::{App, MessageItem, Mode, Session, View}, renderers::session::SessionListComponent};
+use core::request::Page;
+
+use crate::{service::cache, ui::{models::{App, MessageItem, Mode, Session}, renderers::session::SessionListComponent}};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},
@@ -108,7 +110,7 @@ impl ChatComponent {
 }
 
 impl App {
-    pub fn render_maximized_chat_layout(&self, frame: &mut Frame, area: Rect, target: String) {
+    pub fn render_maximized_chat_layout(&self, frame: &mut Frame, area: Rect, session: Session) {
         // 最大化聊天窗口布局：只显示聊天窗口和输入框
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -119,14 +121,11 @@ impl App {
             .split(area);
 
         // 获取当前聊天目标的消息
-        let messages = self.messages.get(&target).cloned().unwrap_or_default();
-        
-        // 获取当前会话
-        let session = self.sessions.iter().find(|s| s.name == target).cloned();
+        let messages = vec![];
         
         // 创建聊天组件并渲染
         let chat_component = ChatComponent::new(
-            session,
+            Some(session),
             messages,
             self.chat_maximized,
             self.mode.clone(),
@@ -136,7 +135,7 @@ impl App {
         
     }
 
-    pub fn render_main_layout(&self, frame: &mut Frame, area: Rect, target: String) {
+    pub fn render_main_layout(&self, frame: &mut Frame, area: Rect, session: Session) {
         // 两栏布局：会话列表(1/3) + 聊天窗口(2/3)
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
@@ -160,21 +159,23 @@ impl App {
             .split(chunks[1]);
 
         // 获取当前聊天目标的消息
-        let messages = self.messages.get(&target).cloned().unwrap_or_default();
-        
-        // 获取当前会话
-        let session = self.sessions.iter().find(|s| s.name == target).cloned();
-        
-        // 创建聊天组件并渲染
-        let chat_component = ChatComponent::new(
-            session,
-            messages,
-            self.chat_maximized,
-            self.mode.clone(),
-            self.input.clone(),
-        );
-        chat_component.render(frame, chat_chunks[0]);
-        
+        match cache::get().get_messages(session.id, self.token.as_ref().unwrap(), Page::default()){
+            Ok(messages) => {
+                // 创建聊天组件并渲染
+                let chat_component = ChatComponent::new(
+                    Some(session),
+                    messages.iter().map(|m| 
+                        MessageItem::new(m.speaker_id.to_string(), m.content.clone(), true)).collect(),
+                    self.chat_maximized,
+                    self.mode.clone(),
+                    self.input.clone(),
+                );
+                chat_component.render(frame, chat_chunks[0]);
+            },
+            Err(err) => {
+                eprintln!("Error fetching messages: {}", err);
+            }
+        }
     }
 
 

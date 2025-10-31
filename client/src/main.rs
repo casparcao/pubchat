@@ -14,7 +14,7 @@ mod ui;
 mod repository;
 mod service;
 
-use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::session, ui::login::{LoginResult, LoginScreen}};
+use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::{cache, session}, ui::login::{LoginResult, LoginScreen}};
 
 use crate::{repository::db, ui::models::App};
 
@@ -25,6 +25,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     db::init().await;
     service::init().await;
+    cache::init();
     // 进入原始模式
     enable_raw_mode()?;
     stdout().execute(EnterAlternateScreen)?;

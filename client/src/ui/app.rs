@@ -1,22 +1,17 @@
-use crate::ui::models::{App, MessageItem, View, Mode};
-use std::collections::HashMap;
+use crate::ui::models::{App, Mode, Session, View};
 use std::sync::Arc;
-use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
 use tokio::net::tcp::OwnedWriteHalf;
-use core::proto::message::{Chat, ChatType, Message, Type};
-use core::proto::codec::encode;
+use core::proto::message::Chat;
 
 impl App {
     pub fn new() -> Self {
-        let messages = HashMap::new();
         Self {
             input: String::new(),
-            messages,
             contacts: vec![],
             sessions: vec![],
             current_view: View::Chat {
-                target: "alice".to_string(),
+                session: Session {id:0, name:"session1".to_string()},
             },
             mode: Mode::Normal,
             scroll_offset: 0,
@@ -37,68 +32,11 @@ impl App {
         self.stream = Some(stream);
     }
     
-    // 根据联系人名称查找联系人ID
-    pub fn get_contact_id(&self, name: &str) -> Option<u64> {
-        self.contacts.iter()
-            .find(|contact| contact.name == name)
-            .map(|contact| contact.id as u64)
-    }
-    
     // 添加接收消息的方法
     pub fn add_received_message(&mut self, chat_req: Chat) {
         let target = chat_req.nickname.clone();
         
-        // 确保目标有消息列表
-        if !self.messages.contains_key(&target) {
-            self.messages.insert(target.clone(), vec![]);
-        }
         
-        // 添加接收到的消息
-        if let Some(messages) = self.messages.get_mut(&target) {
-            let msg = MessageItem::new(
-                chat_req.nickname,
-                chat_req.message,
-                false
-            );
-            messages.push(msg);
-        }
-    }
-    
-    // 发送消息的方法
-    pub async fn send_message_over_tcp(&self, content: String, target: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        if let Some(stream) = &self.stream {
-            // 获取接收者ID，如果找不到则使用默认值
-            let receiver_id = self.get_contact_id(&target).unwrap_or(12345);
-            
-            // 创建聊天请求消息
-            let chat_request = Message {
-                id: 2, // 简化处理，实际应该使用唯一ID生成器
-                ts: std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_millis() as u64,
-                r#type: Type::Chat as i32,
-                content: Some(core::proto::message::message::Content::Chat(Chat {
-                    speaker: self.current_user_id, // 使用真实的用户ID
-                    receiver: receiver_id, // 使用从好友列表获取的真实ID
-                    room: 0, // 私聊
-                    r#type: ChatType::Text as i32,
-                    message: content,
-                    ts: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_millis() as u64,
-                    nickname: self.current_user.clone(),
-                })),
-            };
-            
-            // 发送消息
-            let encoded = encode(&chat_request)?;
-            let mut stream_guard = stream.lock().await;
-            stream_guard.write_all(&encoded).await?;
-            stream_guard.flush().await?;
-        }
-        Ok(())
     }
 }
 
