@@ -83,7 +83,7 @@ impl App {
                                         }
                                     }
                                     Err(e) => {
-                                        eprintln!("Failed to create session: {}", e);
+                                        log::error!("Failed to create session: {}", e);
                                     }
                                 }
                             }

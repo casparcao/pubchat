@@ -17,7 +17,7 @@ pub async fn consume_messages(channel: Channel, queue_name: &str) -> Result<()> 
             )
             .await?;
 
-        println!("Started consuming messages from RabbitMQ queue: {}", queue_name);
+        log::info!("Started consuming messages from RabbitMQ queue: {}", queue_name);
 
         while let Some(delivery) = consumer.next().await {
             if let Ok(delivery) = delivery {
@@ -39,20 +39,20 @@ pub async fn consume_messages(channel: Channel, queue_name: &str) -> Result<()> 
 
                             // Save the message to the database
                             if let Err(e) = message::save_message(message).await {
-                                eprintln!("Failed to save message to database: {}", e);
+                                log::error!("Failed to save message to database: {}", e);
                             }
                         }
                         
                         // Acknowledge the message
                         if let Err(e) = delivery.ack(BasicAckOptions::default()).await {
-                            eprintln!("Failed to acknowledge message: {}", e);
+                            log::error!("Failed to acknowledge message: {}", e);
                         }
                     }
                     Err(e) => {
-                        eprintln!("Failed to parse message from RabbitMQ: {}", e);
+                        log::error!("Failed to parse message from RabbitMQ: {}", e);
                         // Even if parsing fails, acknowledge the message to avoid message buildup
                         if let Err(e) = delivery.ack(BasicAckOptions::default()).await {
-                            eprintln!("Failed to acknowledge message: {}", e);
+                            log::error!("Failed to acknowledge message: {}", e);
                         }
                     }
                 }

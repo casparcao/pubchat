@@ -53,7 +53,7 @@ impl App {
                             let encoded = match encode(&chat_request) {
                                 Ok(data) => data,
                                 Err(e) => {
-                                    eprintln!("Failed to encode message: {}", e);
+                                    log::error!("Failed to encode message: {}", e);
                                     return;
                                 }
                             };
@@ -63,11 +63,11 @@ impl App {
                             match stream_guard.write_all(&encoded).await {
                                 Ok(_) => {
                                     if let Err(e) = stream_guard.flush().await {
-                                        eprintln!("Failed to flush stream: {}", e);
+                                        log::error!("Failed to flush stream: {}", e);
                                     } 
                                 },
                                 Err(e) => {
-                                    eprintln!("Failed to send message: {}", e);
+                                    log::error!("Failed to send message: {}", e);
                                 }
                             }
                             drop(stream_guard);

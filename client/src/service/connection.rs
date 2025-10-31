@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+use log::{error, info};
 use tokio::net::TcpStream;
 use tokio::io::AsyncWriteExt;
 use core::{proto::message::{ConnectRequest, Message, Type}, response::ApiErr};
@@ -32,14 +33,14 @@ pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64)> {
     // 检查连接响应是否成功并获取用户ID
     let user_id = if let Some(core::proto::message::message::Content::ConnectResponse(resp)) = response.content {
         if resp.code == 0 {
-            eprintln!("Connection established successfully, user ID: {}", resp.uid);
+            info!("Connection established successfully, user ID: {}", resp.uid);
             resp.uid // 返回用户ID
         } else {
-            eprintln!("Connection failed: {}", resp.message);
+            error!("Connection failed: {}", resp.message);
             return Err(ApiErr::Error(format!("Connection failed: {}", resp.message)).into());
         }
     } else {
-        eprintln!("Invalid connection response");
+        error!("Invalid connection response");
         return Err(ApiErr::Error("Invalid connection response".to_string()).into());
     };
     Ok((stream, user_id))
@@ -60,17 +61,17 @@ pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf) {
                                 //聊天缓存
                                 //ui
                             }else{
-                                eprintln!("Invalid chat message");
+                                error!("Invalid chat message");
                             }
                         }
                         _ => {
                             // 其他类型消息暂不处理
-                            eprint!("Unhandled message type: {}", msg.r#type);
+                            error!("Unhandled message type: {}", msg.r#type);
                         }
                     }
                 }
                 Err(e) => {
-                    eprintln!("Error receiving message: {}", e);
+                    error!("Error receiving message: {}", e);
                 }
             }
         }

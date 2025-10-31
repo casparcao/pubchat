@@ -1,4 +1,5 @@
 use core::auth::Token;
+use log::info;
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Paragraph, Clear},
@@ -45,7 +46,7 @@ impl LoginScreen {
         Self::default()
     }
 
-    pub async fn handle_key_event(&mut self, key: KeyEvent) -> LoginResult {
+    pub fn handle_key_event(&mut self, key: KeyEvent) -> LoginResult {
         // 如果正在登录中，不处理其他按键
         if self.is_logging_in {
             return LoginResult::Continue;
@@ -63,16 +64,18 @@ impl LoginScreen {
                         username: self.username.clone(),
                         password: self.password.clone(),
                     };
-                    let result : Result<Token> = login::login(&request).await;
+                    let result : Result<Token> = login::login(&request);
                     match result {
                         Ok(token) => {
                             self.is_logging_in = false;
                             self.error_message = Some("Login successful".to_string());
+                            info!("Login successful");
                             return LoginResult::Success(token);
                         }
                         Err(e) => {
                             self.is_logging_in = false;
                             self.error_message = Some(e.to_string());
+                            info!("Login failed: {}", e);
                             return LoginResult::Continue;
                         }
                     }

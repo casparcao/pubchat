@@ -3,8 +3,6 @@
 use std::io::Result;
 
 fn main() -> Result<()> {
-    eprintln!("🔧 使用 prost-build 生成 Protobuf 代码...");
-
     // 配置 prost-build
     let mut config = prost_build::Config::new();
 
@@ -23,7 +21,5 @@ fn main() -> Result<()> {
     &["proto/message.proto"],  // proto 文件列表
     &["proto"],  // proto 文件所在目录列表
     )?;
-
-    eprintln!("✅ Protobuf 代码生成成功！");
     Ok(())
 }

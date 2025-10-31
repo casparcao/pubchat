@@ -173,7 +173,7 @@ impl App {
                 chat_component.render(frame, chat_chunks[0]);
             },
             Err(err) => {
-                eprintln!("Error fetching messages: {}", err);
+                log::error!("Error fetching messages: {}", err);
             }
         }
     }

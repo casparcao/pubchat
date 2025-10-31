@@ -11,11 +11,11 @@ pub async fn login(username: &str, password: &str) -> Result<i64> {
         if user.password == password {
             Ok(user.id)
         } else {
-            println!("密码错误");
+            log::info!("密码错误");
             Err(ApiErr::Bad(400, "用户名不存在或者密码错误").into())
         }
     }else{
-        println!("用户名不存在");
+        log::info!("用户名不存在");
         Err(ApiErr::Bad(400, "用户名不存在或者密码错误").into())
     }
 }

@@ -21,3 +21,5 @@ core = { path = "../core" }
 sqlx = { workspace = true }
 anyhow = {workspace = true}
 dotenv = {workspace = true}
+log = {workspace = true}
+env_logger = { workspace = true }

@@ -11,7 +11,7 @@ pub static CONNECTION_HOST : OnceLock<String> = OnceLock::new();
 pub static USER_HOST : OnceLock<String> = OnceLock::new();
 pub static SESSION_HOST: OnceLock<String> = OnceLock::new();
 
-pub(crate) async fn init() {
+pub(crate) fn init() {
     let user_host = dotenv::var("USER_SERVER_URL").expect("请设置USER_SERVER_URL环境变量");
     let connection_host = dotenv::var("CONNECTION_SERVER_URL").expect("请设置CONNECTION_SERVER_URL环境变j'j");
     let session_host = dotenv::var("SESSION_SERVER_URL").expect("请设置SESSION_SERVER_URL环境变j'j");

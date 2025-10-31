@@ -3,6 +3,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
+use log::info;
 use ratatui::Terminal;
 use ratatui::prelude::CrosstermBackend;
 use std::io::stdout;
@@ -13,18 +14,18 @@ use tokio::sync::Mutex;
 mod ui;
 mod repository;
 mod service;
+mod common;
 
 use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::{cache, session}, ui::login::{LoginResult, LoginScreen}};
 
 use crate::{repository::db, ui::models::App};
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     dotenv::dotenv().ok();
     // 初始化日志
-    tracing_subscriber::fmt::init();
-    db::init().await;
-    service::init().await;
+    common::log::init();
+    db::init();
+    service::init();
     cache::init();
     // 进入原始模式
     enable_raw_mode()?;
@@ -41,18 +42,18 @@ async fn main() -> Result<()> {
         } else {
             // Token过期，清除它并重新登录
             let _ = clear_token();
-            show_login_screen(&mut terminal).await?
+            show_login_screen(&mut terminal)?
         }
     } else {
         // 没有找到存储的token，显示登录界面
-        show_login_screen(&mut terminal).await?
+        show_login_screen(&mut terminal)?
     };
-    
+    let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
     // 使用token建立TCP连接
-    let (stream, user_id) = service::connection::connect_with_token(&token).await?;
+    let (stream, user_id) = rt.block_on(service::connection::connect_with_token(&token))?;
     let (reader, writer) = stream.into_split();
     // 开启接收消息任务
-    service::connection::receive_messages(reader).await;
+    rt.block_on(service::connection::receive_messages(reader));
     show_main_screen(&mut terminal, token, user_id, writer)?;
     // 退出原始模式
     disable_raw_mode()?;
@@ -61,7 +62,7 @@ async fn main() -> Result<()> {
 }
 
 // 显示登录界面并处理登录逻辑
-async fn show_login_screen(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> Result<String> {
+fn show_login_screen(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> Result<String> {
     let mut login_screen = LoginScreen::new();
     loop {
         terminal.draw(|frame| login_screen.render(frame))?;
@@ -71,7 +72,7 @@ async fn show_login_screen(terminal: &mut Terminal<CrosstermBackend<std::io::Std
                 continue;
             }
             
-            let result = login_screen.handle_key_event(key).await;
+            let result = login_screen.handle_key_event(key);
             match result {
                 LoginResult::Success(token) => {
                     // 登录成功，保存token到本地文件
@@ -102,6 +103,7 @@ fn show_main_screen(
     // 获取好友列表
     // let friends : Vec<friend::FriendResponse> = service::friend::get_friends(&token).await?;
     let sessions = session::get_sessions(&token)?;
+    info!("sessions: {:?}", sessions);
     // 登录成功后，创建应用状态
     let mut app = App::new();
     // 更新联系人列表为从服务器获取的好友列表

@@ -2,6 +2,7 @@ use core::auth::Token;
 use std::fs;
 use std::path::Path;
 use anyhow::Result;
+use log::info;
 
 /// 保存token到本地文件
 pub fn save_token(token: &str, exp: u128) -> Result<()> {
@@ -18,12 +19,12 @@ pub fn save_token(token: &str, exp: u128) -> Result<()> {
 /// 从本地文件读取token
 pub fn load_token() -> Result<Option<Token>> {
     let token_path = get_token_file_path()?;
-    
+    info!("Loading token from {}", token_path);
     if !Path::new(&token_path).exists() {
         return Ok(None);
     }
-    
     let content = fs::read_to_string(token_path)?;
+    info!("Token loaded: {:?}", content);
     let stored_token: Token = serde_json::from_str(&content)?;
     Ok(Some(stored_token))
 }

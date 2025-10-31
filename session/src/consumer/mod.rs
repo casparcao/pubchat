@@ -25,7 +25,7 @@ pub async fn init()  -> Result<()>{
     // let message_service_clone = message_service.clone();
     tokio::spawn(async move {
         if let Err(e) = message::consume_messages(channel, &queue_name).await {
-            eprintln!("Error consuming messages: {}", e);
+            log::error!("Error consuming messages: {}", e);
         }
     });
     Ok(())

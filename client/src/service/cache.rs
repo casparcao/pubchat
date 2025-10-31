@@ -58,7 +58,7 @@ impl Cache {
                 return Ok(messages);
             }
             Err(e) => {
-                eprintln!("从SQLite获取消息失败: {}", e);
+                log::error!("从SQLite获取消息失败: {}", e);
             }
         }
 
@@ -75,13 +75,13 @@ impl Cache {
                 let messages_clone = messages.clone();
                 for message in &messages_clone {
                     if let Err(e) = self.save_to_sqlite(message) {
-                        eprintln!("保存消息到SQLite失败: {}", e);
+                        log::error!("保存消息到SQLite失败: {}", e);
                     }
                 }
                 Ok(messages)
             }
             Err(e) => {
-                eprintln!("从远程服务器获取消息失败: {}", e);
+                log::error!("从远程服务器获取消息失败: {}", e);
                 // 如果所有缓存级别都失败，返回空列表
                 Ok(vec![])
             }
@@ -136,7 +136,7 @@ impl Cache {
 
         // 保存到SQLite
         if let Err(e) = self.save_to_sqlite(&message){
-            eprintln!("保存消息到SQLite失败: {}", e);
+            log::error!("保存消息到SQLite失败: {}", e);
         }
     }
 

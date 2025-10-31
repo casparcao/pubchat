@@ -14,22 +14,20 @@ pub(crate) struct LoginRequest {
 
 
     // 执行登录操作
-pub async fn login(body: &LoginRequest) -> Result<Token> {
+pub fn login(body: &LoginRequest) -> Result<Token> {
     // 创建HTTP客户端
-    let client = reqwest::Client::new();
+    let client = reqwest::blocking::Client::new();
     
     // 发送登录请求
     let response = client
         .post(format!("{}/login", user_host()))
         .json(body)
-        .send()
-        .await?;
+        .send()?;
     
     // 检查响应状态
     if response.status().is_success() {
         let response: ApiResult<Token> = response
-            .json()
-            .await?;
+            .json()?;
         if response.ok {
             Ok(response.data.unwrap())
         } else {
@@ -39,8 +37,7 @@ pub async fn login(body: &LoginRequest) -> Result<Token> {
     } else {
         let status = response.status();
         let error_text = response
-            .text()
-            .await?;
+            .text()?;
         Err(ApiErr::Error(format!("{} {}", status.as_u16(), error_text)).into())
     }
 }
