@@ -10,7 +10,7 @@ use crate::service::connection_host;
 
 
 // 使用token建立TCP连接
-pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64)> {
+pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64, String)> {
     let mut stream = TcpStream::connect(connection_host())
         .await?;
     // 创建连接请求消息
@@ -43,7 +43,7 @@ pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64)> {
         error!("Invalid connection response");
         return Err(ApiErr::Error("Invalid connection response".to_string()).into());
     };
-    Ok((stream, user_id))
+    Ok((stream, user_id, "".to_string()))
 }
 
 // 接收消息的异步任务

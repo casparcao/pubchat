@@ -22,7 +22,7 @@ impl App {
                 }
             },
             View::FriendsList => {
-                let contact_list = ContactListComponent::new(self.contacts.clone(), self.selected_friend);
+                let contact_list = ContactListComponent::new(&self.token);
                 contact_list.render_friends_list_layout(frame, size)
             },
         }

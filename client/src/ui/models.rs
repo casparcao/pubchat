@@ -2,6 +2,8 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::net::tcp::OwnedWriteHalf;
 
+use crate::ui::renderers::contact::ContactListComponent;
+
 
 #[derive(Debug, Clone)]
 pub struct MessageItem {
@@ -94,21 +96,26 @@ pub enum Mode {
     Insert,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Me {
+    pub id: u64,
+    pub name: String,
+}
+
 // 应用状态
 #[derive(Debug, Clone)]
 pub struct App {
     pub input: String,
-    pub contacts: Vec<Contact>,
+    pub contact: ContactListComponent,
     pub sessions: Vec<Session>, // 添加会话列表
     pub current_view: View,
     pub mode: Mode,
     pub scroll_offset: u16,
     pub selected_friend: Option<usize>, // 添加选中的好友
-    pub current_user: String,
-    pub current_user_id: u64,
+    pub me: Me,
     pub chat_maximized: bool,
     // 添加token字段存储用户认证信息
-    pub token: Option<String>,
+    pub token: String,
     // 添加TCP流用于发送消息
     pub stream: Option<Arc<Mutex<OwnedWriteHalf>>>,
 }

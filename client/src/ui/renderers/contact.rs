@@ -1,18 +1,35 @@
-use crate::ui::models::{Contact, Status};
+use core::response::ApiErr;
+
+use crate::{cache, service::session::{CreateSessionRequest, CreateSessionUserRequest, calc_session_id, create_session}, ui::models::{Contact, Me, Session, Status}};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
+use anyhow::Result;
 
 #[derive(Debug, Clone)]
 pub struct ContactListComponent {
     pub contacts: Vec<Contact>,
-    pub selected: Option<usize>,
+    pub selected: Option<Contact>,
+    //选中联系人在列表中的索引
+    pub index: usize,
 }
 
 impl ContactListComponent {
-    pub fn new(contacts: Vec<Contact>, selected: Option<usize>) -> Self {
-        Self { contacts, selected }
+    pub fn new(token: &str) -> Self {
+        match cache::friends_cache().get_friends(token){
+            Ok(friends) => {
+                let contacts = friends
+                    .into_iter()
+                    .map(|friend| Contact::from_friend_response(friend))
+                    .collect();
+                Self {contacts, selected: None, index: 0}
+            },
+            Err(e) => {
+                log::error!("Failed to get friends: {:?}", e);
+                Self {contacts: vec![], selected: None, index: 0}
+            },
+        }
     }
 
     pub fn render_friends_list_layout(&self, frame: &mut Frame, area: Rect) {
@@ -32,22 +49,17 @@ impl ContactListComponent {
             .title("Friend Info")
             .borders(Borders::ALL);
             
-        let info_text = if let Some(index) = self.selected {
-            if index < self.contacts.len() {
-                let friend = &self.contacts[index];
-                format!("Name: {}\nStatus: {}\n\nPress Enter to start chat", 
-                    friend.name,
-                    match friend.status {
-                        Status::Online => "Online",
-                        Status::Offline => "Offline",
-                        Status::Busy => "Busy",
-                        Status::Away => "Away",
-                    })
-            } else {
-                "Select a friend".to_string()
-            }
-        } else {
-            "Select a friend".to_string()
+        let info_text = if let Some(selected) = &self.selected {
+            format!("Name: {}\nStatus: {}\n\nPress Enter to start chat", 
+                selected.name,
+                match selected.status {
+                    Status::Online => "Online",
+                    Status::Offline => "Offline",
+                    Status::Busy => "Busy",
+                    Status::Away => "Away",
+                })
+        }else{
+            "Select a friend to view their information".to_string()
         };
         
         let info = Paragraph::new(info_text)
@@ -69,10 +81,8 @@ impl ContactListComponent {
                 };
                 let content = format!("{} {}", status_char, friend.name);
                 let mut item = ListItem::new(content);
-                if let Some(selected) = self.selected {
-                    if selected == i {
-                        item = item.style(Style::default().bg(Color::Blue));
-                    }
+                if self.index == i {
+                    item = item.style(Style::default().bg(Color::Blue));
                 }
                 item
             })
@@ -85,4 +95,61 @@ impl ContactListComponent {
 
         frame.render_widget(friends_list, area);
     }
+
+    pub fn move_up(&mut self){
+        if self.contacts.is_empty() {
+            return;
+        }
+        if self.index > 0 {
+            self.index -= 1;
+        }
+        self.selected = Some(self.contacts[self.index].clone());
+    }
+
+    pub fn move_down(&mut self){
+        if self.contacts.is_empty() {
+            return;
+        }
+        if self.index < self.contacts.len() - 1 {
+            self.index += 1;
+        }
+        self.selected = Some(self.contacts[self.index].clone());
+    }
+
+    pub fn create_session(&self, token: &str, me: &Me) -> Result<Session>{
+        if let Some(selected) = &self.selected {
+             // 计算会话ID
+            let session_id = calc_session_id(me.id as i64, selected.id) as i64;
+            // 构造创建会话请求
+            let request = CreateSessionRequest {
+                id: session_id,
+                name: format!("{} and {}", me.name, selected.name),
+                members: vec![
+                    CreateSessionUserRequest {
+                        id: me.id as i64,
+                        name: me.name.clone(),
+                    },
+                    CreateSessionUserRequest {
+                        id: selected.id,
+                        name: selected.name.clone(),
+                    }
+                ],
+            };
+            // 创建会话
+            match create_session(token, request){
+                Ok(session_response) => {
+                    // 创建或更新本地会话列表
+                    let app_session = Session::from_session_response(session_response);
+                    Ok(app_session)
+                }
+                Err(e) => {
+                    Err(ApiErr::Error(format!("Failed to create session: {}", e)).into())
+                }
+            }
+        }else{
+            log::warn!("No contact selected");
+            Err(ApiErr::Error("No contact selected".to_string()).into())
+        }
+    }
+
 }

@@ -159,7 +159,7 @@ impl App {
             .split(chunks[1]);
 
         // 获取当前聊天目标的消息
-        match cache::message_cache().get_messages(session.id, self.token.as_ref().unwrap(), Page::default()){
+        match cache::message_cache().get_messages(session.id, &self.token, Page::default()){
             Ok(messages) => {
                 // 创建聊天组件并渲染
                 let chat_component = ChatComponent::new(

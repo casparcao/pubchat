@@ -1,7 +1,6 @@
 pub mod normal_mode;
 pub mod insert_mode;
 pub mod message_sender;
-pub mod session_manager;
 
 use crate::ui::models::{App, Mode};
 use crossterm::event::KeyEvent;

@@ -74,5 +74,7 @@ pub fn create_session(token: &str, payload: CreateSessionRequest) -> Result<Sess
 //计算两个用户的唯一会话ID（始终不变，以便更快的找到两人的会话）
 pub fn calc_session_id(uid1: i64, uid2: i64) -> u64{
     let (min, max) = if uid1 < uid2 { (uid1 as u64, uid2 as u64) } else { (uid2 as u64, uid1 as u64) };
-    (min << 32) | (max & 0xFFFFFFFF)
+    let result = (min << 32) | (max & 0xFFFFFFFF);
+    log::info!("calc_session_id: {}, {}, {}", uid1, uid2, result);
+    result
 }

@@ -1,14 +1,15 @@
-use crate::ui::models::{App, Mode, Session, View};
+use crate::ui::models::{App, Mode, Session, View, Me};
+use crate::ui::renderers::contact::ContactListComponent;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::net::tcp::OwnedWriteHalf;
 use core::proto::message::Chat;
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(token: String, me: Me) -> Self {
         Self {
             input: String::new(),
-            contacts: vec![],
+            contact: ContactListComponent::new(&token),
             sessions: vec![],
             current_view: View::Chat {
                 session: Session {id:0, name:"session1".to_string()},
@@ -16,15 +17,14 @@ impl App {
             mode: Mode::Normal,
             scroll_offset: 0,
             selected_friend: None, // 初始化选中的好友
-            current_user: "user1".to_string(),
-            current_user_id: 0, // 初始化用户ID为0
+            me: me,
             chat_maximized: false,
-            token: None,
+            token: token,
             stream: None,
         }
     }
     
-    pub fn set_token(&mut self, token: Option<String>) {
+    pub fn set_token(&mut self, token: String) {
         self.token = token;
     }
     
@@ -37,11 +37,5 @@ impl App {
         let target = chat_req.nickname.clone();
         
         
-    }
-}
-
-impl Default for App {
-    fn default() -> Self {
-        Self::new()
     }
 }

@@ -17,7 +17,7 @@ mod service;
 mod common;
 mod cache;
 
-use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::session, ui::renderers::login::{LoginResult, LoginScreen}};
+use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::session, ui::{models::Me, renderers::login::{LoginResult, LoginScreen}}};
 
 use crate::{repository::db, ui::models::App};
 
@@ -51,11 +51,11 @@ fn main() -> Result<()> {
     };
     let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
     // 使用token建立TCP连接
-    let (stream, user_id) = rt.block_on(service::connection::connect_with_token(&token))?;
+    let (stream, user_id, user_name) = rt.block_on(service::connection::connect_with_token(&token))?;
     let (reader, writer) = stream.into_split();
     // 开启接收消息任务
     rt.block_on(service::connection::receive_messages(reader));
-    show_main_screen(&mut terminal, token, user_id, writer)?;
+    show_main_screen(&mut terminal, token, Me {id: user_id, name: user_name}, writer)?;
     // 退出原始模式
     disable_raw_mode()?;
     stdout().execute(LeaveAlternateScreen)?;
@@ -98,7 +98,7 @@ fn show_login_screen(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>)
 fn show_main_screen(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>, 
     token: String,
-    user_id: u64,
+    me: Me,
     writer: tokio::net::tcp::OwnedWriteHalf
 ) -> Result<()> {
     // 获取好友列表
@@ -106,7 +106,7 @@ fn show_main_screen(
     let sessions = session::get_sessions(&token)?;
     info!("sessions: {:?}", sessions);
     // 登录成功后，创建应用状态
-    let mut app = App::new();
+    let mut app = App::new(token, me);
     // 更新联系人列表为从服务器获取的好友列表
     // app.contacts = friends.into_iter()
     //     .map(|f| crate::ui::models::Contact::from_friend_response(f))
@@ -114,8 +114,6 @@ fn show_main_screen(
     app.sessions = sessions.into_iter()
         .map(|s| crate::ui::models::Session::from_session_response(s))
         .collect();
-    app.set_token(Some(token.clone()));
-    app.current_user_id = user_id; // 设置当前用户ID
     // Split the TCP stream into read and write halves
     let shared_writer = Arc::new(Mutex::new(writer));
     app.set_stream(shared_writer);
