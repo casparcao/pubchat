@@ -1,5 +1,5 @@
 pub mod chat;
-pub mod friends_list;
+pub mod contact;
 pub mod session;
 pub mod login;
 

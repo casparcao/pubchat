@@ -1,8 +1,14 @@
-use crate::ui::models::{App, View, Mode, Status};
+use crate::ui::models::{App, Contact, Status};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
+
+pub struct ContactListComponent {
+    pub contacts: Vec<Contact>,
+    pub selected: Option<Contact>
+}
+
 
 impl App {
     // 添加好友列表布局渲染
