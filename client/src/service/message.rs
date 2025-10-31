@@ -11,7 +11,7 @@ pub struct MessageItem {
     pub sender_id: i64,
     pub sender_name: String,
     pub content: String,
-    pub createtime: String, // 使用字符串格式的时间
+    pub createtime: i64, // 使用字符串格式的时间
 }
 
 /// 获取指定会话的消息历史
