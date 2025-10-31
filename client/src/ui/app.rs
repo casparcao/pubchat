@@ -9,24 +9,12 @@ use core::proto::codec::encode;
 
 impl App {
     pub fn new() -> Self {
-        let mut messages = HashMap::new();
-        // 为alice初始化一些消息
-        messages.insert("alice".to_string(), vec![
-            MessageItem::new("alice".to_string(), "Hello there!".to_string(), false),
-            MessageItem::new("You".to_string(), "Hi Alice, how are you?".to_string(), true),
-        ]);
-        
+        let messages = HashMap::new();
         Self {
             input: String::new(),
             messages,
-            contacts: vec![
-                Contact::new(1, "alice".to_string(), Status::Online, None),
-                Contact::new(2, "bob".to_string(), Status::Offline, None),
-            ],
-            sessions: vec![
-                Session { id: 1, name: "alice".to_string() },
-                Session { id: 2, name: "group chat".to_string() },
-            ],
+            contacts: vec![],
+            sessions: vec![],
             current_view: View::Chat {
                 target: "alice".to_string(),
             },
