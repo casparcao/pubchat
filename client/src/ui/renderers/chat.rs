@@ -1,78 +1,47 @@
-use crate::ui::models::{App, View, Mode};
+use crate::ui::{models::{App, MessageItem, Mode, Session, View}, renderers::session::SessionListComponent};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
 
-impl App {
-    pub fn render_maximized_chat_layout(&self, frame: &mut Frame, area: Rect, target: &str) {
-        // 最大化聊天窗口布局：只显示聊天窗口和输入框
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Min(1),         // 消息区域（占据大部分空间）
-                Constraint::Length(5),      // 输入框区域
-            ])
-            .split(area);
+pub struct ChatComponent {
+    // 聊天窗口布局
+    pub session: Option<Session>,
+    pub messages: Vec<MessageItem>,
+    pub chat_maximized: bool,
+    pub mode: Mode,
+    pub input: String,
+}
 
-        self.render_messages(frame, chunks[0]);
-        self.render_input(frame, chunks[1]);
+impl ChatComponent {
+    pub fn new(session: Option<Session>, messages: Vec<MessageItem>, chat_maximized: bool, mode: Mode, input: String) -> Self {
+        Self {
+            session,
+            messages,
+            chat_maximized,
+            mode,
+            input,
+        }
     }
 
-    pub fn render_main_layout(&self, frame: &mut Frame, area: Rect, target: &str) {
-        // 两栏布局：会话列表(1/3) + 聊天窗口(2/3)
+    pub fn render(&self, frame: &mut Frame, area: Rect) {
         let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage(30), // 会话列表
-                Constraint::Percentage(70), // 聊天窗口
-            ])
-            .split(area);
-
-        // 左侧会话列表
-        self.render_sessions_list(frame, chunks[0]);
-
-        // 右侧聊天区域
-        let chat_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Min(1),         // 消息区域
-                Constraint::Length(5),      // 增大输入框区域
+                Constraint::Length(3),      // 输入框区域
             ])
-            .split(chunks[1]);
+            .split(area);
 
-        self.render_messages(frame, chat_chunks[0]);
-        self.render_input(frame, chat_chunks[1]);
+        // 渲染消息区域
+        self.render_messages(frame, chunks[0]);
+        
+        // 渲染输入框
+        self.render_input(frame, chunks[1]);
     }
 
-    pub fn render_sessions_list(&self, frame: &mut Frame, area: Rect) {
-        let sessions: Vec<ListItem> = self.sessions
-            .iter()
-            .enumerate()
-            .map(|(i, session)| {
-                let content = format!("💬 {}", session.name);
-                let mut item = ListItem::new(content);
-                item
-            })
-            .collect();
-
-        let title = "Sessions";
-        let sessions_list = List::new(sessions)
-            .block(Block::default().title(title).borders(Borders::ALL));
-
-        frame.render_widget(sessions_list, area);
-    }
-
-    pub fn render_messages(&self, frame: &mut Frame, area: Rect) {
-        // 获取当前聊天目标的消息
-        let messages = match &self.current_view {
-            View::Chat { target } => {
-                self.messages.get(target).cloned().unwrap_or_default()
-            },
-            _ => vec![]
-        };
-
-        let list_items: Vec<ListItem> = messages.iter().map(|m| {
+    fn render_messages(&self, frame: &mut Frame, area: Rect) {
+        let list_items: Vec<ListItem> = self.messages.iter().map(|m| {
             let style = if m.is_user {
                 Style::default().fg(Color::Blue)
             } else if m.sender == "SYSTEM" {
@@ -85,30 +54,25 @@ impl App {
             ListItem::new(content).style(style)
         }).collect();
 
-        // 获取当前聊天目标
-        let title = match &self.current_view {
-            View::Chat { target } => {
-                // 检查目标是会话还是群组
-                if self.sessions.iter().any(|s| s.name == *target) {
-                    format!("Chat with {} {}", target, 
-                        if self.chat_maximized { "[M] (Press 'm' to restore)" } else { "[M] (Press 'm' to maximize)" })
-                } else {
-                    format!("Chat with {} {}",
-                        target,
-                        if self.chat_maximized { "[M] (Press 'm' to restore)" } else { "[M] (Press 'm' to maximize)" })
-                }
-            },
-            _ => "Messages".to_string(),
+        let title = if let Some(session) = &self.session {
+            format!("Chat with {} {}", 
+                session.name,
+                if self.chat_maximized { 
+                    "[M] (Press 'm' to restore)" 
+                } else { 
+                    "[M] (Press 'm' to maximize)" 
+                })
+        } else {
+            "Messages".to_string()
         };
 
         let messages_list = List::new(list_items)
             .block(Block::default().title(title).borders(Borders::ALL))
             .scroll_padding(1);
-
         frame.render_widget(messages_list, area);
     }
 
-    pub fn render_input(&self, frame: &mut Frame, area: Rect) {
+    fn render_input(&self, frame: &mut Frame, area: Rect) {
         let (text, style) = match self.mode {
             Mode::Normal => ("Normal Mode (i to insert)", Style::default().fg(Color::Yellow)),
             Mode::Insert => ("INSERT (Esc to normal)", Style::default().fg(Color::Green)),
@@ -141,4 +105,77 @@ impl App {
             );
         }
     }
+}
+
+impl App {
+    pub fn render_maximized_chat_layout(&self, frame: &mut Frame, area: Rect, target: String) {
+        // 最大化聊天窗口布局：只显示聊天窗口和输入框
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Min(1),         // 消息区域（占据大部分空间）
+                Constraint::Length(5),      // 输入框区域
+            ])
+            .split(area);
+
+        // 获取当前聊天目标的消息
+        let messages = self.messages.get(&target).cloned().unwrap_or_default();
+        
+        // 获取当前会话
+        let session = self.sessions.iter().find(|s| s.name == target).cloned();
+        
+        // 创建聊天组件并渲染
+        let chat_component = ChatComponent::new(
+            session,
+            messages,
+            self.chat_maximized,
+            self.mode.clone(),
+            self.input.clone(),
+        );
+        chat_component.render(frame, chunks[0]);
+        
+    }
+
+    pub fn render_main_layout(&self, frame: &mut Frame, area: Rect, target: String) {
+        // 两栏布局：会话列表(1/3) + 聊天窗口(2/3)
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(30), // 会话列表
+                Constraint::Percentage(70), // 聊天窗口
+            ])
+            .split(area);
+
+        let session_list_component = SessionListComponent::new(self.sessions.clone());
+        // 左侧会话列表
+        session_list_component.render(frame, chunks[0]);
+
+        // 右侧聊天区域
+        let chat_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Min(1),         // 消息区域
+                Constraint::Length(5),      // 增大输入框区域
+            ])
+            .split(chunks[1]);
+
+        // 获取当前聊天目标的消息
+        let messages = self.messages.get(&target).cloned().unwrap_or_default();
+        
+        // 获取当前会话
+        let session = self.sessions.iter().find(|s| s.name == target).cloned();
+        
+        // 创建聊天组件并渲染
+        let chat_component = ChatComponent::new(
+            session,
+            messages,
+            self.chat_maximized,
+            self.mode.clone(),
+            self.input.clone(),
+        );
+        chat_component.render(frame, chat_chunks[0]);
+        
+    }
+
+
 }

@@ -1,5 +1,6 @@
 pub mod chat;
 pub mod friends_list;
+pub mod session;
 
 
 use crate::ui::models::{App, View};
@@ -13,9 +14,9 @@ impl App {
         match &self.current_view {
             View::Chat { target } => {
                 if self.chat_maximized {
-                    self.render_maximized_chat_layout(frame, size, target.as_ref())
+                    self.render_maximized_chat_layout(frame, size, target.clone())
                 } else {
-                    self.render_main_layout(frame, size, target.as_ref())
+                    self.render_main_layout(frame, size, target.clone())
                 }
             },
             View::FriendsList => self.render_friends_list_layout(frame, size),
