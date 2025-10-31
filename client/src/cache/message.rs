@@ -2,22 +2,13 @@
 // 实现三级缓存：内存 -> SQLite -> 远程服务器
 
 use std::collections::HashMap;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 use std::sync::RwLock;
 use anyhow::Result;
 use crate::repository::message::{Message, select_messages};
 use crate::service::message::get_session_messages;
 use core::request::Page;
 
-pub static CACHE: OnceLock<Cache> = OnceLock::new();
-
-pub fn init() {
-    CACHE.get_or_init(|| Cache::new());
-}
-
-pub fn get() -> &'static Cache {
-    CACHE.get().unwrap()
-}
 
 // 三级缓存结构
 pub struct Cache {

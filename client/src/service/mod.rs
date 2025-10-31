@@ -1,11 +1,10 @@
 use std::sync::OnceLock;
 
-pub mod login;
 pub mod connection;
 pub mod friend;
-pub mod cache;
-pub mod session;
+pub mod login;
 pub mod message;
+pub mod session;
 
 pub static CONNECTION_HOST : OnceLock<String> = OnceLock::new();
 pub static USER_HOST : OnceLock<String> = OnceLock::new();

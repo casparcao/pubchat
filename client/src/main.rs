@@ -15,8 +15,9 @@ mod ui;
 mod repository;
 mod service;
 mod common;
+mod cache;
 
-use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::{cache, session}, ui::login::{LoginResult, LoginScreen}};
+use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::session, ui::renderers::login::{LoginResult, LoginScreen}};
 
 use crate::{repository::db, ui::models::App};
 

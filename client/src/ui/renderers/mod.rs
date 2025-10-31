@@ -1,6 +1,7 @@
 pub mod chat;
 pub mod friends_list;
 pub mod session;
+pub mod login;
 
 
 use crate::ui::models::{App, View};

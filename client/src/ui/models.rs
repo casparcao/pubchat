@@ -1,9 +1,7 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::net::tcp::OwnedWriteHalf;
 
-use crate::service::cache::Cache;
 
 #[derive(Debug, Clone)]
 pub struct MessageItem {

@@ -3,10 +3,11 @@ use core::response::{ApiErr, ApiResult};
 use reqwest;
 use serde::{Deserialize, Serialize};
 use anyhow::Result;
+use sqlx::prelude::FromRow;
 
 use crate::service::user_host;
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, FromRow)]
 pub struct FriendResponse {
     pub id: i64,
     pub name: String,
