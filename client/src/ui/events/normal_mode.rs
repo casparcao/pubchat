@@ -15,17 +15,8 @@ impl App {
                 self.mode = crate::ui::models::Mode::Insert;
             }
             KeyCode::Char('k') => {
-                // 在联系人视图中向上导航
+                // 在好友列表视图中向上导航
                 match self.current_view {
-                    View::Contacts => {
-                        if !self.sessions.is_empty() {
-                            if let Some(selected) = self.selected_contact {
-                                self.selected_contact = Some(selected.saturating_sub(1));
-                            } else {
-                                self.selected_contact = Some(0);
-                            }
-                        }
-                    }
                     View::FriendsList => {
                         // 在好友列表视图中向上导航
                         if !self.contacts.is_empty() {
@@ -45,17 +36,8 @@ impl App {
                 }
             }
             KeyCode::Char('j') => {
-                // 在联系人视图中向下导航
+                // 在好友列表视图中向下导航
                 match self.current_view {
-                    View::Contacts => {
-                        if !self.sessions.is_empty() {
-                            if let Some(selected) = self.selected_contact {
-                                self.selected_contact = Some((selected + 1).min(self.sessions.len() - 1));
-                            } else {
-                                self.selected_contact = Some(0);
-                            }
-                        }
-                    }
                     View::FriendsList => {
                         // 在好友列表视图中向下导航
                         if !self.contacts.is_empty() {
@@ -72,10 +54,6 @@ impl App {
                     }
                 }
             }
-            KeyCode::Char('h') => {
-                // 切换到联系人视图
-                self.current_view = View::Contacts;
-            }
             KeyCode::Char('f') => {
                 // 切换到好友列表视图
                 self.current_view = View::FriendsList;
@@ -87,21 +65,8 @@ impl App {
                 }
             }
             KeyCode::Enter => {
-                // 在联系人视图中按Enter选择
+                // 在好友列表视图中按Enter选择
                 match &self.current_view {
-                    View::Contacts => {
-                        if let Some(index) = self.selected_contact {
-                            if index < self.sessions.len() {
-                                let target = self.sessions[index].name.clone();
-                                self.current_view = View::Chat { target: target.clone() };
-                                
-                                // 确保目标有消息列表
-                                if !self.messages.contains_key(&target) {
-                                    self.messages.insert(target.clone(), vec![]);
-                                }
-                            }
-                        }
-                    }
                     View::FriendsList => {
                         // 在好友列表视图中按Enter选择
                         if let Some(index) = self.selected_friend {
@@ -145,9 +110,8 @@ impl App {
             KeyCode::Tab => {
                 // 在不同视图间切换
                 self.current_view = match self.current_view {
-                    View::Chat { .. } => View::Contacts,
-                    View::Contacts => View::FriendsList,
-                    View::FriendsList => View::Chat { target: "alice".to_string() },
+                    View::Chat { .. } => View::FriendsList,
+                    View::FriendsList => View::Chat { target: "".to_string() },
                 };
             }
             _ => {}

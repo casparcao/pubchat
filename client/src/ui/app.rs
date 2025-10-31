@@ -1,4 +1,4 @@
-use crate::ui::models::{App, MessageItem, Contact, Session, View, Mode, Status};
+use crate::ui::models::{App, MessageItem, View, Mode};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
@@ -20,7 +20,6 @@ impl App {
             },
             mode: Mode::Normal,
             scroll_offset: 0,
-            selected_contact: None,
             selected_friend: None, // 初始化选中的好友
             current_user: "user1".to_string(),
             current_user_id: 0, // 初始化用户ID为0

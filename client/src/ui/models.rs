@@ -76,7 +76,6 @@ pub enum Status {
 #[derive(Debug, Clone, PartialEq)]
 pub enum View {
     Chat { target: String },
-    Contacts,
     FriendsList, // 添加好友列表视图
 }
 
@@ -96,7 +95,6 @@ pub struct App {
     pub current_view: View,
     pub mode: Mode,
     pub scroll_offset: u16,
-    pub selected_contact: Option<usize>,
     pub selected_friend: Option<usize>, // 添加选中的好友
     pub current_user: String,
     pub current_user_id: u64,

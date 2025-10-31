@@ -1,4 +1,4 @@
-use crate::ui::models::{App, View, Mode, Status};
+use crate::ui::models::{App, View, Mode};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},
@@ -43,6 +43,24 @@ impl App {
 
         self.render_messages(frame, chat_chunks[0]);
         self.render_input(frame, chat_chunks[1]);
+    }
+
+    pub fn render_sessions_list(&self, frame: &mut Frame, area: Rect) {
+        let sessions: Vec<ListItem> = self.sessions
+            .iter()
+            .enumerate()
+            .map(|(i, session)| {
+                let content = format!("💬 {}", session.name);
+                let mut item = ListItem::new(content);
+                item
+            })
+            .collect();
+
+        let title = "Sessions";
+        let sessions_list = List::new(sessions)
+            .block(Block::default().title(title).borders(Borders::ALL));
+
+        frame.render_widget(sessions_list, area);
     }
 
     pub fn render_messages(&self, frame: &mut Frame, area: Rect) {

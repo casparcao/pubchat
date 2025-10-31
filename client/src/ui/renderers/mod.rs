@@ -1,5 +1,4 @@
 pub mod chat;
-pub mod contacts;
 pub mod friends_list;
 
 
@@ -14,12 +13,11 @@ impl App {
         match &self.current_view {
             View::Chat { target } => {
                 if self.chat_maximized {
-                    self.render_maximized_chat_layout(frame, size, target)
+                    self.render_maximized_chat_layout(frame, size, target.as_ref())
                 } else {
-                    self.render_main_layout(frame, size, target)
+                    self.render_main_layout(frame, size, target.as_ref())
                 }
             },
-            View::Contacts => self.render_contacts_layout(frame, size),
             View::FriendsList => self.render_friends_list_layout(frame, size),
         }
     }
