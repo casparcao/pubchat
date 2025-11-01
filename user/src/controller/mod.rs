@@ -5,4 +5,4 @@ pub mod food;
 pub mod user;
 pub mod brands;
 pub mod ratings;
-pub mod friend;
+pub mod contact;

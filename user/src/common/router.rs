@@ -10,7 +10,7 @@ pub fn init() -> Result<Router, String>{
         .merge(role_route())
         .merge(food_route())
         .merge(user_route())
-        .merge(friend_route())
+        .merge(contact_route())
         .merge(crate::controller::ratings::router())
         .layer(ValidateRequestHeaderLayer::custom(auth::AuthHeader{}))
         .merge(crate::controller::brands::router())
@@ -30,11 +30,11 @@ fn user_route() -> Router{
         .route("/user/current", axum::routing::get(crate::controller::user::select_current_user))
 }
 
-fn friend_route() -> Router{
+fn contact_route() -> Router{
     Router::new()
-        .route("/friends", axum::routing::get(crate::controller::friend::get_friend_list))
-        .route("/friends/{friend_id}", axum::routing::post(crate::controller::friend::add_friend))
-        .route("/friends/{friend_id}", axum::routing::delete(crate::controller::friend::remove_friend))
+        .route("/contacts", axum::routing::get(crate::controller::contact::get_list))
+        .route("/contacts/{there}", axum::routing::post(crate::controller::contact::add))
+        .route("/contacts/{there}", axum::routing::delete(crate::controller::contact::remove))
 }
 
 fn food_route() -> Router{

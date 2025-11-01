@@ -6,4 +6,4 @@ pub mod org;
 pub mod food;
 pub mod rating;
 pub mod brand;
-pub mod friend;
+pub mod contact;
