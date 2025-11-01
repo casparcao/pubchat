@@ -16,7 +16,7 @@ impl App {
             }
             KeyCode::Char('k') => {
                 // 在好友列表视图中向上导航
-                match self.current_view {
+                match self.view {
                     View::FriendsList => {
                         // 在好友列表视图中向上导航
                         self.contact.move_up();
@@ -31,7 +31,7 @@ impl App {
             }
             KeyCode::Char('j') => {
                 // 在好友列表视图中向下导航
-                match self.current_view {
+                match self.view {
                     View::FriendsList => {
                         // 在好友列表视图中向下导航
                         self.contact.move_down();
@@ -44,20 +44,20 @@ impl App {
             }
             KeyCode::Char('f') => {
                 // 切换到好友列表视图
-                self.current_view = View::FriendsList;
+                self.view = View::FriendsList;
             }
             KeyCode::Char('m') => {
                 // 切换聊天窗口最大化状态
-                if matches!(self.current_view, View::Chat { .. }) {
+                if matches!(self.view, View::Chat { .. }) {
                     self.chat_maximized = !self.chat_maximized;
                 }
             }
             KeyCode::Enter => {
                 // 在好友列表视图中按Enter选择
-                match &self.current_view {
+                match &self.view {
                     View::FriendsList => {
                         if let Ok(session ) = self.contact.create_session(&self.token, &self.me){
-                            self.current_view = View::Chat { session: session };
+                            self.view = View::Chat { session: session };
                         }else{
                             log::warn!("Failed to create session when entering chat view");
                         }
@@ -67,7 +67,7 @@ impl App {
             }
             KeyCode::Tab => {
                 // 在不同视图间切换
-                self.current_view = match self.current_view {
+                self.view = match self.view {
                     View::Chat { .. } => View::FriendsList,
                     View::FriendsList => {
                         if let Ok(session ) = self.contact.create_session(&self.token, &self.me){

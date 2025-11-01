@@ -16,7 +16,7 @@ impl App {
             self.handle_command()
         } else {
             // 发送普通消息
-            match &self.current_view {
+            match &self.view {
                 View::Chat { session } => {
                     // 实际通过TCP发送消息
                     let content = self.input.clone();
@@ -103,8 +103,7 @@ impl App {
             }
             "/friends" => {
                 // 切换到好友列表视图
-                self.current_view = View::FriendsList;
-                self.selected_friend = None;
+                self.view = View::FriendsList;
                 
                 // if let Some(messages) = self.messages.get_mut(&target) {
                 //     messages.push(MessageItem::system("Opening friends list..."));

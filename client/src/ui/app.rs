@@ -1,5 +1,6 @@
 use crate::ui::models::{App, Mode, Session, View, Me};
-use crate::ui::renderers::contact::ContactListComponent;
+use crate::ui::screen::contact::ContactListScreen;
+use crate::ui::screen::chat::ChatScreen;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::net::tcp::OwnedWriteHalf;
@@ -9,14 +10,13 @@ impl App {
     pub fn new(token: String, me: Me) -> Self {
         Self {
             input: String::new(),
-            contact: ContactListComponent::new(&token),
-            sessions: vec![],
-            current_view: View::Chat {
+            contact: ContactListScreen::new(&token),
+            chat: ChatScreen::new(me.id as i64, &token),
+            view: View::Chat {
                 session: Session {id:0, name:"session1".to_string()},
             },
             mode: Mode::Normal,
             scroll_offset: 0,
-            selected_friend: None, // 初始化选中的好友
             me: me,
             chat_maximized: false,
             token: token,
@@ -38,4 +38,5 @@ impl App {
         
         
     }
+    
 }

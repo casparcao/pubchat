@@ -2,7 +2,8 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::net::tcp::OwnedWriteHalf;
 
-use crate::ui::renderers::contact::ContactListComponent;
+use crate::ui::screen::chat::ChatScreen;
+use crate::ui::screen::contact::ContactListScreen;
 
 
 #[derive(Debug, Clone)]
@@ -106,12 +107,14 @@ pub struct Me {
 #[derive(Debug, Clone)]
 pub struct App {
     pub input: String,
-    pub contact: ContactListComponent,
-    pub sessions: Vec<Session>, // 添加会话列表
-    pub current_view: View,
+    // 联系人列表组件渲染逻辑
+    pub contact: ContactListScreen,
+    // 会话列表组件渲染逻辑
+    pub chat: ChatScreen,
+    //当前页面处于哪个视图
+    pub view: View,
     pub mode: Mode,
     pub scroll_offset: u16,
-    pub selected_friend: Option<usize>, // 添加选中的好友
     pub me: Me,
     pub chat_maximized: bool,
     // 添加token字段存储用户认证信息

@@ -2,6 +2,7 @@ use ratatui::{Frame, layout::Rect, widgets::{Block, Borders, List, ListItem}};
 
 use crate::ui::models::Session;
 
+#[derive(Debug, Clone)]
 pub struct SessionListComponent {
     pub sessions: Vec<Session>,
 }

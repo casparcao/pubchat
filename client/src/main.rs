@@ -3,7 +3,6 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use log::info;
 use ratatui::Terminal;
 use ratatui::prelude::CrosstermBackend;
 use std::io::stdout;
@@ -17,7 +16,7 @@ mod service;
 mod common;
 mod cache;
 
-use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, service::session, ui::{models::Me, renderers::login::{LoginResult, LoginScreen}}};
+use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, ui::{models::Me, screen::login::{LoginResult, LoginScreen}}};
 
 use crate::{repository::db, ui::models::App};
 
@@ -101,20 +100,9 @@ fn show_main_screen(
     me: Me,
     writer: tokio::net::tcp::OwnedWriteHalf
 ) -> Result<()> {
-    // 获取好友列表
-    // let friends : Vec<friend::FriendResponse> = service::friend::get_friends(&token).await?;
-    let sessions = session::get_sessions(&token)?;
-    info!("sessions: {:?}", sessions);
+    
     // 登录成功后，创建应用状态
     let mut app = App::new(token, me);
-    // 更新联系人列表为从服务器获取的好友列表
-    // app.contacts = friends.into_iter()
-    //     .map(|f| crate::ui::models::Contact::from_friend_response(f))
-    //     .collect();
-    app.sessions = sessions.into_iter()
-        .map(|s| crate::ui::models::Session::from_session_response(s))
-        .collect();
-    // Split the TCP stream into read and write halves
     let shared_writer = Arc::new(Mutex::new(writer));
     app.set_stream(shared_writer);
     // 主事件循环

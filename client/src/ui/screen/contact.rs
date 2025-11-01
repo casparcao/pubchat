@@ -8,14 +8,14 @@ use ratatui::{
 use anyhow::Result;
 
 #[derive(Debug, Clone)]
-pub struct ContactListComponent {
+pub struct ContactListScreen {
     pub contacts: Vec<Contact>,
     pub selected: Option<Contact>,
     //选中联系人在列表中的索引
     pub index: usize,
 }
 
-impl ContactListComponent {
+impl ContactListScreen {
     pub fn new(token: &str) -> Self {
         match cache::friends_cache().get_friends(token){
             Ok(friends) => {
