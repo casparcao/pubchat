@@ -4,7 +4,7 @@ use reqwest;
 use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
-use crate::service::session_host;
+use crate::remote::session_host;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SessionResponse {

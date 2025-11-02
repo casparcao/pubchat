@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::sync::RwLock;
 use anyhow::Result;
 use std::collections::HashMap;
-use crate::service::contact::{get_contacts, ContactResponse};
+use crate::remote::contact::{get_contacts, ContactResponse};
 
 /// 三级缓存结构
 pub struct Cache {

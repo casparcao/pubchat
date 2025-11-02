@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::sync::RwLock;
 use anyhow::Result;
 use crate::repository::message::{Message, select_messages};
-use crate::service::message::get_session_messages;
+use crate::remote::message::get_session_messages;
 use core::request::Page;
 
 
@@ -80,9 +80,9 @@ impl Cache {
     }
 
     /// 从SQLite数据库获取消息
-    fn get_from_sqlite(&self, room_id: i64, page: Page) -> Result<Vec<Message>> {
+    fn get_from_sqlite(&self, session_id: i64, page: Page) -> Result<Vec<Message>> {
         let rt = tokio::runtime::Runtime::new()?;
-        let (messages, _total) = rt.block_on(select_messages(room_id, page))?;
+        let (messages, _total) = rt.block_on(select_messages(session_id, page))?;
         Ok(messages)
     }
 
@@ -93,38 +93,24 @@ impl Cache {
     }
 
     /// 从远程服务器获取消息
-    fn get_from_remote(&self, room_id: i64, token: &str) -> Result<Vec<Message>> {
+    fn get_from_remote(&self, session: i64, token: &str) -> Result<Vec<Message>> {
         // 注意：这里需要将会话ID映射到房间ID
         // 在实际实现中，您可能需要一个映射机制
-        let remote_messages = get_session_messages(token, room_id)?;
-        
-        // 转换为本地消息格式
-        let messages: Vec<Message> = remote_messages.into_iter().map(|item| Message {
-            id: item.id,
-            speaker_id: item.sender_id,
-            receiver_id: 0, // 需要根据实际情况设置
-            room_id,
-            message_type: 1, // 默认文本消息
-            content: item.content,
-            timestamp: item.createtime,
-            nickname: item.sender_name,
-        }).collect();
-        
-        Ok(messages)
+        let remote_messages = get_session_messages(token, session)?;
+        Ok(remote_messages)
     }
 
     /// 向缓存中添加单条消息
-    pub fn add_message(&self, room_id: i64, message: Message) {
+    pub fn add_message(&self, session: i64, message: Message) {
         // 添加到内存缓存
         {
             let mut cache = self.memory_cache.write().unwrap();
-            if let Some(messages) = cache.get_mut(&room_id) {
+            if let Some(messages) = cache.get_mut(&session) {
                 messages.push(message.clone());
             } else {
-                cache.insert(room_id, vec![message.clone()]);
+                cache.insert(session, vec![message.clone()]);
             }
         }
-
         // 保存到SQLite
         if let Err(e) = self.save_to_sqlite(&message){
             log::error!("保存消息到SQLite失败: {}", e);
@@ -132,11 +118,11 @@ impl Cache {
     }
 
     /// 清除指定房间的缓存
-    pub fn invalidate_room_cache(&self, room_id: i64) {
+    pub fn invalidate_room_cache(&self, session: i64) {
         // 清除内存缓存
         {
             let mut cache = self.memory_cache.write().unwrap();
-            cache.remove(&room_id);
+            cache.remove(&session);
         }
         
         // 注意：在实际应用中，您可能还需要清除SQLite中的相关数据

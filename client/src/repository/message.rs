@@ -8,23 +8,23 @@ use crate::db;
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct Message {
     pub id: i64,
-    pub speaker_id: i64,
-    pub receiver_id: i64,
-    pub room_id: i64,
-    pub message_type: i32,
+    pub sender: i64,
+    pub receiver: i64,
+    pub session: i64,
+    pub mtype: i32,
     pub content: String,
     pub timestamp: i64,
-    pub nickname: String,
+    pub uname: String,
 }
 
 //查询指定聊天室的最新的n条消息
-pub(crate) async fn select_messages(rid: i64, page: Page) -> Result<(Vec<Message>, i64)>{
+pub(crate) async fn select_messages(sid: i64, page: Page) -> Result<(Vec<Message>, i64)>{
     let mut connection = db::connection().await?;
     let mut builder: QueryBuilder<Sqlite> = QueryBuilder::new(
         "SELECT *
             FROM messages 
-            where room_id= ");
-    builder.push_bind(rid);
+            where session = ");
+    builder.push_bind(sid);
     builder
         .push(" ORDER BY timestamp DESC")
         .push(" LIMIT ")
@@ -38,8 +38,8 @@ pub(crate) async fn select_messages(rid: i64, page: Page) -> Result<(Vec<Message
     let mut builder: QueryBuilder<Sqlite> = QueryBuilder::new(
         "SELECT COUNT(1)
             FROM messages
-            where room_id = ");
-    builder.push_bind(rid);
+            where session = ");
+    builder.push_bind(sid);
     let count:(i64,) = builder
         .build_query_as()
         .fetch_one(connection.as_mut())
@@ -49,15 +49,15 @@ pub(crate) async fn select_messages(rid: i64, page: Page) -> Result<(Vec<Message
 
 pub async fn save(message: &Message) -> Result<()> {
     let mut connection = db::connection().await?;
-    sqlx::query("INSERT INTO messages (id, speaker_id, receiver_id, room_id, message_type, content, timestamp, nickname) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO messages (id, sender, receiver, session, mtype, content, timestamp, uname) VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(&message.id)
-        .bind(&message.speaker_id)
-        .bind(&message.receiver_id)
-        .bind(&message.room_id)
-        .bind(&message.message_type)
+        .bind(&message.sender)
+        .bind(&message.receiver)
+        .bind(&message.session)
+        .bind(&message.mtype)
         .bind(&message.content)
         .bind(&message.timestamp)
-        .bind(&message.nickname)
+        .bind(&message.uname)
         .execute(connection.as_mut())
         .await?;
     Ok(())

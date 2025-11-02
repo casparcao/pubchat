@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Clear},
 };
 use crossterm::event::{KeyCode, KeyEvent};
-use crate::service::login;
+use crate::remote::login;
 use anyhow::Result;
 
 #[derive(Debug, Clone)]

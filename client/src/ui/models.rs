@@ -43,7 +43,7 @@ impl Contact {
     }
     
     // 从好友响应创建联系人
-    pub fn from_friend_response(friend: crate::service::contact::ContactResponse) -> Self {
+    pub fn from_friend_response(friend: crate::remote::contact::ContactResponse) -> Self {
         Self {
             id: friend.id,
             name: friend.name,
@@ -60,7 +60,7 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn from_session_response(session: crate::service::session::SessionResponse) -> Self {
+    pub fn from_session_response(session: crate::remote::session::SessionResponse) -> Self {
         Self {
             id: session.id,
             name: session.name,

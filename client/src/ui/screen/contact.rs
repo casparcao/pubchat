@@ -1,6 +1,6 @@
 use core::response::ApiErr;
 
-use crate::{cache, service::session::{CreateSessionRequest, CreateSessionUserRequest, calc_session_id, create_session}, ui::models::{Contact, Me, Session, Status}};
+use crate::{cache, remote::session::{CreateSessionRequest, CreateSessionUserRequest, calc_session_id, create_session}, ui::models::{Contact, Me, Session, Status}};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},

@@ -12,7 +12,7 @@ use tokio::sync::Mutex;
 
 mod ui;
 mod repository;
-mod service;
+mod remote;
 mod common;
 mod cache;
 
@@ -25,7 +25,7 @@ fn main() -> Result<()> {
     // 初始化日志
     common::log::init();
     db::init();
-    service::init();
+    remote::init();
     cache::init();
     // 进入原始模式
     enable_raw_mode()?;
@@ -50,10 +50,10 @@ fn main() -> Result<()> {
     };
     let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
     // 使用token建立TCP连接
-    let (stream, user_id, user_name) = rt.block_on(service::connection::connect_with_token(&token))?;
+    let (stream, user_id, user_name) = rt.block_on(remote::connection::connect_with_token(&token))?;
     let (reader, writer) = stream.into_split();
     // 开启接收消息任务
-    rt.block_on(service::connection::receive_messages(reader));
+    rt.block_on(remote::connection::receive_messages(reader));
     show_main_screen(&mut terminal, token, Me {id: user_id, name: user_name}, writer)?;
     // 退出原始模式
     disable_raw_mode()?;

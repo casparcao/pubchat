@@ -1,7 +1,7 @@
 use anyhow::Result;
 use sqlx::{QueryBuilder, Sqlite, prelude::FromRow};
 use crate::db;
-use crate::service::contact::ContactResponse;
+use crate::remote::contact::ContactResponse;
 
 #[derive(Debug, Clone, FromRow)]
 pub struct Contact {

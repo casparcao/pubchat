@@ -6,7 +6,7 @@ use tokio::io::AsyncWriteExt;
 use core::{proto::message::{ConnectRequest, Message, Type}, response::ApiErr};
 use core::proto::codec::{encode, decode};
 
-use crate::service::connection_host;
+use crate::{cache, remote::connection_host};
 
 
 // 使用token建立TCP连接
@@ -56,11 +56,21 @@ pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf) {
                     // 处理接收到的消息
                     match msg.mtype {
                         t if t == Type::ChatResponse as i32 => {
-                            if let Some(core::proto::message::message::Content::ChatResponse(chat_req)) = msg.content {
+                            if let Some(core::proto::message::message::Content::ChatResponse(chat)) = msg.content {
                                 //存储
                                 //聊天缓存
                                 //ui
-                                //todo 处理聊天消息
+                                let msg = crate::repository::message::Message{
+                                    id: snowflaker::next_id().unwrap() as i64,
+                                    sender: chat.sender as i64,
+                                    receiver: chat.receiver as i64,
+                                    session: chat.session as i64,
+                                    mtype: chat.ctype as i32,
+                                    content: chat.message,
+                                    timestamp: chat.ts as i64,
+                                    uname: chat.uname.clone(),
+                                };
+                                cache::message_cache().add_message(chat.session as i64, msg);
                             }else{
                                 error!("Invalid chat message");
                             }

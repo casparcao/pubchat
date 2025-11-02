@@ -88,7 +88,7 @@ impl ChatScreen {
                 let chat_component = ChatComponent::new(
                     Some(session),
                     messages.iter().map(|m| 
-                        MessageItem::new(m.speaker_id.to_string(), m.content.clone(), true)).collect(),
+                        MessageItem::new(m.sender.to_string(), m.content.clone(), true)).collect(),
                     // self.chat_maximized,
                     // self.mode.clone(),
                     // self.input.clone(),

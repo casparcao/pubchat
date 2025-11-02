@@ -1,23 +1,13 @@
 use core::response::{ApiErr, ApiResult};
 use reqwest;
-use serde::{Deserialize, Serialize};
 use anyhow::Result;
-use crate::service::session_host;
+use crate::{repository::message::Message, remote::session_host};
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct MessageItem {
-    pub id: i64,
-    pub session_id: i64,
-    pub sender_id: i64,
-    pub sender_name: String,
-    pub content: String,
-    pub createtime: i64, // 使用字符串格式的时间
-}
 
 /// 获取指定会话的消息历史
-pub fn get_session_messages(token: &str, session_id: i64) -> Result<Vec<MessageItem>> {
+pub fn get_session_messages(token: &str, session_id: i64) -> Result<Vec<Message>> {
     let client = reqwest::blocking::Client::new();
-    let url = format!("{}/sessions/{}/messages", session_host(), session_id);
+    let url = format!("{}/session/{}/messages", session_host(), session_id);
     
     let response = client
         .get(&url)
@@ -25,7 +15,7 @@ pub fn get_session_messages(token: &str, session_id: i64) -> Result<Vec<MessageI
         .send()?;
         
     if response.status().is_success() {
-        let result: ApiResult<Vec<MessageItem>> = response.json()?;
+        let result: ApiResult<Vec<Message>> = response.json()?;
         if result.ok {
             Ok(result.data.unwrap())
         } else {
