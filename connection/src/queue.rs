@@ -66,10 +66,10 @@ pub async fn receive() -> Result<()> {
                     info!("Received message from RabbitMQ: type={:?}", message.r#type);
                     
                     // 确定消息接收者
-                    let target_uid = match message.r#type {
+                    let session_id = match message.r#type {
                         t if t == Type::Chat as i32 => {
                             if let Some(Content::Chat(chat_resp)) = &message.content {
-                                Some(chat_resp.speaker) // 发送给说话者的客户端
+                                Some(chat_resp.session) // 发送给说话者的客户端
                             } else {
                                 None
                             }
@@ -78,9 +78,9 @@ pub async fn receive() -> Result<()> {
                     };
                     
                     // 如果有目标用户，则发送消息到客户端
-                    if let Some(uid) = target_uid {
-                        if let Err(e) = manager::send_message(uid, &message).await {
-                            error!("Failed to send message to client {}: {}", uid, e);
+                    if let Some(session_id) = session_id {
+                        if let Err(e) = manager::send_message(session_id, &message).await {
+                            error!("Failed to send message to client {}: {}", session_id, e);
                         }
                     }
                     

@@ -44,13 +44,14 @@ pub fn init() {
     KEYS.set(keys).or(Err("")).expect("设置jwtsecret异常");
 }
 
-pub fn issue(id: i64) -> Result<String> {
+pub fn issue(id: i64, name: String) -> Result<String> {
     let keys = KEYS.get();
     if keys.is_none(){
         return Err(ApiErr::Error("JWT密钥异常".to_string()).into());
     }
     let claims = User {
         id,
+        name,
         oid: 0,
         // Mandatory expiry time as UTC timestamp
         exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() + 1800000u128, // May 2033
@@ -131,6 +132,7 @@ impl Keys {
 pub struct User {
     //用户id
     pub id: i64,
+    pub name: String,
     //所在组织id
     pub oid: i64,
     pub exp: u128,

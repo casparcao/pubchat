@@ -50,26 +50,27 @@ pub struct ConnectResponse {
     pub message: ::prost::alloc::string::String,
     #[prost(uint64, tag = "3")]
     pub uid: u64,
+    #[prost(string, tag = "4")]
+    pub uname: ::prost::alloc::string::String,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Chat {
     #[prost(uint64, tag = "1")]
-    pub speaker: u64,
-    #[prost(uint64, tag = "2")]
-    pub receiver: u64,
-    /// 所发生的聊天室id
+    pub sender: u64,
+    /// 发送者昵称
+    #[prost(string, tag = "2")]
+    pub uname: ::prost::alloc::string::String,
+    /// 所发生的聊天室会话id
     #[prost(uint64, tag = "3")]
-    pub room: u64,
+    pub session: u64,
     #[prost(enumeration = "ChatType", tag = "4")]
     pub r#type: i32,
     #[prost(string, tag = "5")]
     pub message: ::prost::alloc::string::String,
     #[prost(uint64, tag = "6")]
     pub ts: u64,
-    #[prost(string, tag = "7")]
-    pub nickname: ::prost::alloc::string::String,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -90,7 +91,7 @@ pub struct Pong {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct Room {
+pub struct Session {
     #[prost(uint64, tag = "1")]
     pub id: u64,
     /// repeated Chat chats = 3;
@@ -119,14 +120,14 @@ pub mod pull {
         pub full: bool,
         /// 指定拉取的聊天室id
         #[prost(uint64, tag = "2")]
-        pub room: u64,
+        pub session: u64,
     }
     #[derive(serde::Serialize, serde::Deserialize)]
     #[serde(rename_all = "snake_case")]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct Response {
         #[prost(message, repeated, tag = "1")]
-        pub rooms: ::prost::alloc::vec::Vec<super::Room>,
+        pub sessions: ::prost::alloc::vec::Vec<super::Session>,
     }
 }
 /// Chat chat = 1;
@@ -202,6 +203,8 @@ pub enum ChatType {
     Code = 3,
     /// * 富文本
     Rtf = 4,
+    /// * 文件
+    File = 5,
 }
 impl ChatType {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -215,6 +218,7 @@ impl ChatType {
             Self::Image => "IMAGE",
             Self::Code => "CODE",
             Self::Rtf => "RTF",
+            Self::File => "FILE",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -225,6 +229,7 @@ impl ChatType {
             "IMAGE" => Some(Self::Image),
             "CODE" => Some(Self::Code),
             "RTF" => Some(Self::Rtf),
+            "FILE" => Some(Self::File),
             _ => None,
         }
     }

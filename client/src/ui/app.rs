@@ -34,7 +34,7 @@ impl App {
     
     // 添加接收消息的方法
     pub fn add_received_message(&mut self, chat_req: Chat) {
-        let target = chat_req.nickname.clone();
+        let target = chat_req.uname.clone();
         
         
     }

@@ -28,6 +28,7 @@ pub async fn handle(message: &Message, mut writer: OwnedWriteHalf) -> Result<Cli
                     code: 0,
                     message: "Connected successfully".to_string(),
                     uid,
+                    uname: user.name.to_string(),
                 })),
             };
             // Send the response

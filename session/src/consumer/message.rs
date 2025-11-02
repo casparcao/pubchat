@@ -29,14 +29,14 @@ pub async fn consume_messages(channel: Channel, queue_name: &str) -> Result<()> 
                             
                             let message = Message {
                                 id: proto_message.id as i64,
-                                speaker_id: chat_response.speaker as i64,
-                                room_id: chat_response.room as i64,
+                                speaker_id: chat_response.sender as i64,
+                                room_id: chat_response.session as i64,
                                 message_type: chat_response.r#type,
                                 content: chat_response.message,
                                 timestamp: chat_response.ts as i64,
-                                nickname: chat_response.nickname,
+                                nickname: chat_response.uname,
                             };
-
+                            // todo: refer to README.md for more details
                             // Save the message to the database
                             if let Err(e) = message::save_message(message).await {
                                 log::error!("Failed to save message to database: {}", e);

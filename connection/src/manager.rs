@@ -30,16 +30,18 @@ pub async fn add_client(uid: u64, client: Client) {
 }
 
 //向特定用户发送消息
-pub async fn send_message(target_uid: u64, message: &Message) -> Result<()> {
+pub async fn send_message(session: u64, message: &Message) -> Result<()> {
+    //todo 查询出session中的用户，向用户发送消息
+    
     let lock = CLIENTS.get().expect("获取客户端列表失败").lock().await;
-    if let Some(client) = lock.get(&target_uid) {
+    if let Some(client) = lock.get(&session) {
         let encoded = core::proto::codec::encode(message)?;
         let mut writer = client.writer.lock().await;
         writer.write_all(&encoded).await?;
         writer.flush().await?;
-        info!("Message sent to client {}", target_uid);
+        info!("Message sent to client {}", session);
     } else {
-        warn!("Client {} not found, message not sent", target_uid);
+        warn!("Client {} not found, message not sent", session);
     }
     Ok(())
 }

@@ -33,16 +33,15 @@ impl App {
                                 .as_millis() as u64,
                             r#type: Type::Chat as i32,
                             content: Some(core::proto::message::message::Content::Chat(Chat{
-                                speaker: self.me.id, // 使用真实的用户ID
-                                receiver: 0, // 使用从好友列表获取的真实ID
-                                room: session_id as u64,
+                                sender: self.me.id, // 使用真实的用户ID
+                                session: session_id as u64,
                                 r#type: ChatType::Text as i32,
                                 message: content.clone(),
                                 ts: std::time::SystemTime::now()
                                     .duration_since(std::time::UNIX_EPOCH)
                                     .unwrap()
                                     .as_millis() as u64,
-                                nickname: self.me.name.to_string(), // 使用真实的用户名
+                                uname: self.me.name.to_string(), // 使用真实的用户名
                             })),
                         };
                         
