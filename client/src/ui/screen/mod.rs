@@ -18,7 +18,7 @@ impl App {
                     chat_screen.render_main_layout(frame, size, session.clone())
                 }
             },
-            View::FriendsList => {
+            View::Contact => {
                 let contact_list = ContactListScreen::new(self.me.id as i64, &self.token);
                 contact_list.render_friends_list_layout(frame, size)
             },

@@ -10,10 +10,7 @@ mod handlers;
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv().ok();
-    // Initialize tracing
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    core::log::init(Some(".pubchat_connection.log"));
     // Initialize RabbitMQ
     core::auth::init();
     queue::init().await?;

@@ -26,8 +26,9 @@ impl Cache {
         // 1. 检查内存缓存
         {
             let cache = self.memory_cache.read().unwrap();
-            if let Some(friends) = cache.get(&uid) {
-                return Ok(friends.clone());
+            if let Some(contacts) = cache.get(&uid) {
+                log::info!("从内存缓存获取联系人列表成功");
+                return Ok(contacts.clone());
             }
         }
 
@@ -39,6 +40,7 @@ impl Cache {
                     let mut cache = self.memory_cache.write().unwrap();
                     cache.insert(uid, contacts.clone());
                 }
+                log::info!("从SQLite缓存获取联系人列表成功");
                 return Ok(contacts);
             }
             Err(e) => {
@@ -59,7 +61,7 @@ impl Cache {
                 if let Err(e) = self.save_to_db(uid, &contacts) {
                     log::error!("保存联系人列表到SQLite失败: {}", e);
                 }
-                
+                log::info!("从远程服务器获取联系人列表成功");
                 Ok(contacts)
             }
             Err(e) => {

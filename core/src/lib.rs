@@ -3,3 +3,4 @@ pub mod request;
 pub mod response;
 pub mod extract;
 pub mod auth;
+pub mod log;

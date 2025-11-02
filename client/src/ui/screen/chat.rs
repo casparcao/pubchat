@@ -16,6 +16,7 @@ impl ChatScreen {
         // Split the TCP stream into read and write halves
         match cache::session_cache().get_sessions(uid, token, Page::default()){
             Ok(sessions) => {
+                log::info!("Sessions: {:?}", sessions);
                 Self {sessions: sessions
                     .into_iter()
                     .map(|s| crate::ui::models::Session::from_session_response(s))

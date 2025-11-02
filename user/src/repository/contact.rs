@@ -22,13 +22,13 @@ pub async fn select_by_here(here: i64) -> Result<Vec<User>> {
         "SELECT u.id, u.name, u.password, cast(u.gender as signed) as gender, \
         u.age, u.createtime, u.open_id, u.union_id, u.avatar \
         FROM user u \
-        INNER JOIN friend f ON u.id = f.there \
+        INNER JOIN contact f ON u.id = f.there \
         WHERE f.here = ? AND f.status = 1"
     )
     .bind(here)
     .fetch_all(connection.as_mut())
     .await?;
-
+    log::info!("select_by_here: {}", friends.len());
     Ok(friends)
 }
 

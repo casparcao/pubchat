@@ -103,7 +103,7 @@ impl App {
             }
             "/friends" => {
                 // 切换到好友列表视图
-                self.view = View::FriendsList;
+                self.view = View::Contact;
                 
                 // if let Some(messages) = self.messages.get_mut(&target) {
                 //     messages.push(MessageItem::system("Opening friends list..."));

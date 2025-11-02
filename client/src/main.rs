@@ -13,7 +13,6 @@ use tokio::sync::Mutex;
 mod ui;
 mod repository;
 mod remote;
-mod common;
 mod cache;
 
 use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, ui::{models::Me, screen::login::{LoginResult, LoginScreen}}};
@@ -23,7 +22,7 @@ use crate::{repository::db, ui::models::App};
 fn main() -> Result<()> {
     dotenv::dotenv().ok();
     // 初始化日志
-    common::log::init();
+    core::log::init(Some(".pubchat_client.log"));
     db::init();
     remote::init();
     cache::init();

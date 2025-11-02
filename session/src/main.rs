@@ -20,13 +20,11 @@ use crate::common::router;
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv().ok();
+    core::log::init(Some(".pubchat_session.log"));
     auth::init();
     rdb::init().await;
     db::init().await;
     queue::init().await?;
-    // 如果session模块有初始化需求，请取消下面这行注释并实现init方法
-    // session::init().await;
-    
     let app = router::init().expect("路由模块初始化失败");
     let listener = TcpListener::bind("0.0.0.0:3001").await.unwrap();
     log::info!("listening on {}", listener.local_addr().unwrap());

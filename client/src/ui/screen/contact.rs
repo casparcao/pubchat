@@ -23,10 +23,11 @@ impl ContactListScreen {
                     .into_iter()
                     .map(|friend| Contact::from_friend_response(friend))
                     .collect();
+                log::info!("Contacts loaded: {:?}", contacts);
                 Self {contacts, selected: None, index: 0}
             },
             Err(e) => {
-                log::error!("Failed to get friends: {:?}", e);
+                log::error!("Failed to get contacts: {:?}", e);
                 Self {contacts: vec![], selected: None, index: 0}
             },
         }

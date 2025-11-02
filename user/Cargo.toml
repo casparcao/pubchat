@@ -28,4 +28,4 @@ chrono = { workspace = true }
 http-body = { workspace = true }
 http = { workspace = true }
 core = { path = "../core" }
-
+env_logger = { workspace = true }

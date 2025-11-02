@@ -20,6 +20,8 @@ log = {workspace = true}
 jsonwebtoken = {workspace = true}
 thiserror = { workspace = true }
 http = { workspace = true }
+env_logger = { workspace = true }
+chrono = { workspace = true }
 
 [build-dependencies]
 prost-build = "0.14" 

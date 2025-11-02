@@ -17,7 +17,7 @@ impl App {
             KeyCode::Char('k') => {
                 // 在好友列表视图中向上导航
                 match self.view {
-                    View::FriendsList => {
+                    View::Contact => {
                         // 在好友列表视图中向上导航
                         self.contact.move_up();
                     }
@@ -32,7 +32,7 @@ impl App {
             KeyCode::Char('j') => {
                 // 在好友列表视图中向下导航
                 match self.view {
-                    View::FriendsList => {
+                    View::Contact => {
                         // 在好友列表视图中向下导航
                         self.contact.move_down();
                     }
@@ -44,7 +44,7 @@ impl App {
             }
             KeyCode::Char('f') => {
                 // 切换到好友列表视图
-                self.view = View::FriendsList;
+                self.view = View::Contact;
             }
             KeyCode::Char('m') => {
                 // 切换聊天窗口最大化状态
@@ -55,7 +55,7 @@ impl App {
             KeyCode::Enter => {
                 // 在好友列表视图中按Enter选择
                 match &self.view {
-                    View::FriendsList => {
+                    View::Contact => {
                         if let Ok(session ) = self.contact.create_session(&self.token, &self.me){
                             self.view = View::Chat { session: session };
                         }else{
@@ -68,13 +68,13 @@ impl App {
             KeyCode::Tab => {
                 // 在不同视图间切换
                 self.view = match self.view {
-                    View::Chat { .. } => View::FriendsList,
-                    View::FriendsList => {
+                    View::Chat { .. } => View::Contact,
+                    View::Contact => {
                         if let Ok(session ) = self.contact.create_session(&self.token, &self.me){
                             View::Chat { session: session}
                         }else{
                             log::warn!("Failed to create session when switching to chat view");
-                            View::FriendsList
+                            View::Contact
                         }
                     },
                 };

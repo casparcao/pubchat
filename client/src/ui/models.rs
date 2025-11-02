@@ -88,7 +88,7 @@ pub enum Status {
 #[derive(Debug, Clone, PartialEq)]
 pub enum View {
     Chat { session: Session },
-    FriendsList, // 添加好友列表视图
+    Contact, // 添加好友列表视图
 }
 
 #[derive(Debug, Clone, PartialEq)]
