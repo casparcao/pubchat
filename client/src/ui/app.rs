@@ -10,7 +10,7 @@ impl App {
     pub fn new(token: String, me: Me) -> Self {
         Self {
             input: String::new(),
-            contact: ContactListScreen::new(&token),
+            contact: ContactListScreen::new(me.id as i64, &token),
             chat: ChatScreen::new(me.id as i64, &token),
             view: View::Chat {
                 session: Session {id:0, name:"session1".to_string()},

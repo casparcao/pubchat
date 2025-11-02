@@ -43,7 +43,7 @@ impl Contact {
     }
     
     // 从好友响应创建联系人
-    pub fn from_friend_response(friend: crate::service::friend::FriendResponse) -> Self {
+    pub fn from_friend_response(friend: crate::service::contact::ContactResponse) -> Self {
         Self {
             id: friend.id,
             name: friend.name,

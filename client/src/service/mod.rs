@@ -1,7 +1,7 @@
 use std::sync::OnceLock;
 
 pub mod connection;
-pub mod friend;
+pub mod contact;
 pub mod login;
 pub mod message;
 pub mod session;

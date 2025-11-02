@@ -19,7 +19,7 @@ impl App {
                 }
             },
             View::FriendsList => {
-                let contact_list = ContactListScreen::new(&self.token);
+                let contact_list = ContactListScreen::new(self.me.id as i64, &self.token);
                 contact_list.render_friends_list_layout(frame, size)
             },
         }
