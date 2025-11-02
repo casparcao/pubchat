@@ -10,7 +10,7 @@ pub mod repository;
 pub mod controller;
 pub mod vo;
 pub mod common;
-pub mod consumer;
+pub mod queue;
 pub mod test;
 
 use crate::repository::{db, rdb};
@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
     auth::init();
     rdb::init().await;
     db::init().await;
-    consumer::init().await?;
+    queue::init().await?;
     // 如果session模块有初始化需求，请取消下面这行注释并实现init方法
     // session::init().await;
     

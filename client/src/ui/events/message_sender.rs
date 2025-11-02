@@ -1,4 +1,4 @@
-use core::proto::{codec::encode, message::{Chat, ChatType, Message, Type}};
+use core::proto::{codec::encode, message::{ChatRequest, ChatType, Message, Type}};
 use std::sync::Arc;
 
 use crate::ui::models::{App, View};
@@ -31,11 +31,12 @@ impl App {
                                 .duration_since(std::time::UNIX_EPOCH)
                                 .unwrap()
                                 .as_millis() as u64,
-                            r#type: Type::Chat as i32,
-                            content: Some(core::proto::message::message::Content::Chat(Chat{
+                            mtype: Type::ChatRequest as i32,
+                            content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest{
                                 sender: self.me.id, // 使用真实的用户ID
                                 session: session_id as u64,
-                                r#type: ChatType::Text as i32,
+                                receivers: vec![session_id as u64],
+                                ctype: ChatType::Text as i32,
                                 message: content.clone(),
                                 ts: std::time::SystemTime::now()
                                     .duration_since(std::time::UNIX_EPOCH)

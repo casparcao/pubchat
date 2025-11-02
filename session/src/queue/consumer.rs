@@ -11,35 +11,31 @@ pub async fn consume_messages(channel: Channel, queue_name: &str) -> Result<()> 
         let mut consumer = channel
             .basic_consume(
                 queue_name,
-                "message_service_consumer",
+                "session_consumer",
                 BasicConsumeOptions::default(),
                 FieldTable::default(),
             )
             .await?;
-
         log::info!("Started consuming messages from RabbitMQ queue: {}", queue_name);
-
         while let Some(delivery) = consumer.next().await {
             if let Ok(delivery) = delivery {
                 match serde_json::from_slice::<core::proto::message::Message>(&delivery.data) {
                     Ok(proto_message) => {
                         // Convert the proto message to our database message model
-                        if let Some(core::proto::message::message::Content::Chat(chat_response)) = 
-                            proto_message.content {
-                            
+                        if let Some(core::proto::message::message::Content::ChatRequest(chat)) = proto_message.content {
                             let message = Message {
                                 id: proto_message.id as i64,
-                                sender: chat_response.sender as i64,
-                                session: chat_response.session as i64,
-                                mtype: chat_response.r#type,
-                                content: chat_response.message,
-                                timestamp: chat_response.ts as i64,
-                                uname: chat_response.uname,
+                                sender: chat.sender as i64,
+                                session: chat.session as i64,
+                                mtype: chat.ctype,
+                                content: chat.message.clone(),
+                                timestamp: chat.ts as i64,
+                                uname: chat.uname.clone(),
                             };
-                            // todo: refer to README.md for more details
                             // Save the message to the database
                             if let Err(e) = message::save_message(message).await {
                                 log::error!("Failed to save message to database: {}", e);
+                                continue;
                             }
                         }
                         

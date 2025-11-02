@@ -8,21 +8,21 @@ use lapin::{
 use tracing::{info, error};
 use core::proto::message::{message::Content, Message, Type};
 use std::{sync::OnceLock};
-use crate::manager;
+use crate::connection;
 
 
 pub static POOL: OnceLock<Pool<Manager>> = OnceLock::new();
 
 pub async fn init() -> Result<()> {
     let connstring = dotenv::var("RABBITMQ_ADDR").expect("请设置RabbitMQ连接地址RABBITMQ_ADDR");
-    let queue_name = dotenv::var("RABBITMQ_QUEUE_NAME").expect("请设置RabbitMQ队列名称RABBITMQ_QUEUE_NAME");
+    let session_message_queue_name = dotenv::var("RABBITMQ_SESSION_MESSAGE_QUEUE_NAME").expect("请设置RabbitMQ队列名称RABBITMQ_SESSION_MESSAGE_QUEUE_NAME");
     let mut cfg = Config::default();
     cfg.url = Some(connstring.into());
     let pool = cfg.create_pool(Some(Runtime::Tokio1))?;
     let channel = pool.get().await?.create_channel().await?;
     let _queue = channel
             .queue_declare(
-                &queue_name,
+                &session_message_queue_name,
                 QueueDeclareOptions::default(),
                 Default::default(),
             )
@@ -40,50 +40,46 @@ pub async fn init() -> Result<()> {
 
 
 pub async fn receive() -> Result<()> {
-    let queue_name = dotenv::var("RABBITMQ_QUEUE_NAME").expect("请设置RabbitMQ队列名称RABBITMQ_QUEUE_NAME");
+    let session_message_queue_name = dotenv::var("RABBITMQ_SESSION_MESSAGE_QUEUE_NAME").expect("请设置RabbitMQ队列名称RABBITMQ_SESSION_MESSAGE_QUEUE_NAME");
     let pool = POOL.get();
     let pool = pool.expect("");
     let conn = pool.get().await?;
     let channel= conn.create_channel().await?;
-
     // 创建消费者
     let mut consumer = channel
         .basic_consume(
-            &queue_name,
-            "connection_service_consumer",
+            &session_message_queue_name,
+            "connection_consumer",
             lapin::options::BasicConsumeOptions::default(),
             Default::default(),
         )
         .await?;
 
-    info!("Started consuming messages from RabbitMQ queue: {}", queue_name);
+    info!("Started consuming messages from RabbitMQ queue: {}", session_message_queue_name);
     // 处理传入的消息
     while let Some(delivery) = consumer.next().await {
         if let std::result::Result::Ok(delivery) = delivery {
             // 解析消息
             match serde_json::from_slice::<Message>(&delivery.data) {
                 std::result::Result::Ok(message) => {
-                    info!("Received message from RabbitMQ: type={:?}", message.r#type);
-                    
+                    info!("Received message from RabbitMQ: type={:?}", message.mtype);
                     // 确定消息接收者
-                    let session_id = match message.r#type {
-                        t if t == Type::Chat as i32 => {
-                            if let Some(Content::Chat(chat_resp)) = &message.content {
-                                Some(chat_resp.session) // 发送给说话者的客户端
+                    let receivers = match message.mtype {
+                        t if t == Type::ChatRequest as i32 => {
+                            if let Some(Content::ChatRequest(chat_resp)) = &message.content {
+                                &chat_resp.receivers // 发送给说话者的客户端
                             } else {
-                                None
+                                &vec![]
                             }
                         },
-                        _ => None,
+                        _ => &vec![],
                     };
-                    
                     // 如果有目标用户，则发送消息到客户端
-                    if let Some(session_id) = session_id {
-                        if let Err(e) = manager::send_message(session_id, &message).await {
-                            error!("Failed to send message to client {}: {}", session_id, e);
+                    for receiver in receivers {
+                        if let Err(e) = connection::send_message(*receiver, &message).await {
+                            error!("Failed to send message to client {}: {}", receiver, e);
                         }
                     }
-                    
                     // 确认消息处理完成
                     if let Err(e) = delivery.ack(lapin::options::BasicAckOptions::default()).await {
                         error!("Failed to acknowledge message: {}", e);
@@ -105,7 +101,7 @@ pub async fn receive() -> Result<()> {
 
 
 pub async fn publish(message: &Message) -> Result<()> {
-    let queue_name = dotenv::var("RABBITMQ_QUEUE_NAME").expect("请设置RabbitMQ队列名称RABBITMQ_QUEUE_NAME");
+    let queue_name = dotenv::var("RABBITMQ_SESSION_MESSAGE_QUEUE_NAME").expect("请设置RabbitMQ队列名称RABBITMQ_SESSION_MESSAGE_QUEUE_NAME");
     let payload = serde_json::to_vec(message)?;
     let pool = POOL.get();
     let pool = pool.expect("");

@@ -7,10 +7,10 @@ use tokio::net::tcp::OwnedWriteHalf;
 use core::proto::message::{ConnectResponse, Type, message};
 use core::proto::codec::encode;
 use std::sync::Arc;
-use crate::manager::Client;
+use crate::connection::Client;
 pub async fn handle(message: &Message, mut writer: OwnedWriteHalf) -> Result<Client> { 
     let mut uid = 0u64;
-    if message.r#type == Type::ConnectRequest as i32 {
+    if message.mtype == Type::ConnectRequest as i32 {
         info!("Client {} registered in connection manager", uid);
         if let Some(message::Content::ConnectRequest(req)) = &message.content {
             info!("Connect request with token: {}", req.token);
@@ -23,7 +23,7 @@ pub async fn handle(message: &Message, mut writer: OwnedWriteHalf) -> Result<Cli
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_millis() as u64,
-                r#type: Type::ConnectResponse as i32,
+                mtype: Type::ConnectResponse as i32,
                 content: Some(message::Content::ConnectResponse(ConnectResponse {
                     code: 0,
                     message: "Connected successfully".to_string(),

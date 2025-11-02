@@ -4,7 +4,7 @@ use crate::ui::screen::chat::ChatScreen;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::net::tcp::OwnedWriteHalf;
-use core::proto::message::Chat;
+use core::proto::message::ChatResponse;
 
 impl App {
     pub fn new(token: String, me: Me) -> Self {
@@ -33,7 +33,7 @@ impl App {
     }
     
     // 添加接收消息的方法
-    pub fn add_received_message(&mut self, chat_req: Chat) {
+    pub fn add_received_message(&mut self, chat_req: ChatResponse) {
         let target = chat_req.uname.clone();
         
         

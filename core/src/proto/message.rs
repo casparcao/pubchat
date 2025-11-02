@@ -11,8 +11,8 @@ pub struct Message {
     pub ts: u64,
     /// 消息类型
     #[prost(enumeration = "Type", tag = "3")]
-    pub r#type: i32,
-    #[prost(oneof = "message::Content", tags = "4, 5, 6, 8, 9")]
+    pub mtype: i32,
+    #[prost(oneof = "message::Content", tags = "4, 5, 6, 7, 8, 9")]
     pub content: ::core::option::Option<message::Content>,
 }
 /// Nested message and enum types in `Message`.
@@ -26,7 +26,9 @@ pub mod message {
         #[prost(message, tag = "5")]
         ConnectResponse(super::ConnectResponse),
         #[prost(message, tag = "6")]
-        Chat(super::Chat),
+        ChatRequest(super::ChatRequest),
+        #[prost(message, tag = "7")]
+        ChatResponse(super::ChatResponse),
         #[prost(message, tag = "8")]
         Ping(super::Ping),
         #[prost(message, tag = "9")]
@@ -56,7 +58,7 @@ pub struct ConnectResponse {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct Chat {
+pub struct ChatRequest {
     #[prost(uint64, tag = "1")]
     pub sender: u64,
     /// 发送者昵称
@@ -65,11 +67,34 @@ pub struct Chat {
     /// 所发生的聊天室会话id
     #[prost(uint64, tag = "3")]
     pub session: u64,
-    #[prost(enumeration = "ChatType", tag = "4")]
-    pub r#type: i32,
-    #[prost(string, tag = "5")]
+    #[prost(uint64, repeated, tag = "4")]
+    pub receivers: ::prost::alloc::vec::Vec<u64>,
+    #[prost(enumeration = "ChatType", tag = "5")]
+    pub ctype: i32,
+    #[prost(string, tag = "6")]
     pub message: ::prost::alloc::string::String,
-    #[prost(uint64, tag = "6")]
+    #[prost(uint64, tag = "7")]
+    pub ts: u64,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ChatResponse {
+    #[prost(uint64, tag = "1")]
+    pub sender: u64,
+    /// 发送者昵称
+    #[prost(string, tag = "2")]
+    pub uname: ::prost::alloc::string::String,
+    /// 所发生的聊天室会话id
+    #[prost(uint64, tag = "3")]
+    pub session: u64,
+    #[prost(uint64, tag = "4")]
+    pub receiver: u64,
+    #[prost(enumeration = "ChatType", tag = "5")]
+    pub ctype: i32,
+    #[prost(string, tag = "6")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "7")]
     pub ts: u64,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -157,7 +182,8 @@ pub enum Type {
     /// 连接初始化，携带令牌
     ConnectRequest = 0,
     ConnectResponse = 1,
-    Chat = 2,
+    ChatRequest = 2,
+    ChatResponse = 3,
     /// 心跳消息
     Ping = 6,
     Pong = 7,
@@ -171,7 +197,8 @@ impl Type {
         match self {
             Self::ConnectRequest => "CONNECT_REQUEST",
             Self::ConnectResponse => "CONNECT_RESPONSE",
-            Self::Chat => "CHAT",
+            Self::ChatRequest => "CHAT_REQUEST",
+            Self::ChatResponse => "CHAT_RESPONSE",
             Self::Ping => "PING",
             Self::Pong => "PONG",
         }
@@ -181,7 +208,8 @@ impl Type {
         match value {
             "CONNECT_REQUEST" => Some(Self::ConnectRequest),
             "CONNECT_RESPONSE" => Some(Self::ConnectResponse),
-            "CHAT" => Some(Self::Chat),
+            "CHAT_REQUEST" => Some(Self::ChatRequest),
+            "CHAT_RESPONSE" => Some(Self::ChatResponse),
             "PING" => Some(Self::Ping),
             "PONG" => Some(Self::Pong),
             _ => None,

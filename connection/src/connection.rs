@@ -30,18 +30,16 @@ pub async fn add_client(uid: u64, client: Client) {
 }
 
 //向特定用户发送消息
-pub async fn send_message(session: u64, message: &Message) -> Result<()> {
-    //todo 查询出session中的用户，向用户发送消息
-    
+pub async fn send_message(uid: u64, message: &Message) -> Result<()> {
     let lock = CLIENTS.get().expect("获取客户端列表失败").lock().await;
-    if let Some(client) = lock.get(&session) {
+    if let Some(client) = lock.get(&uid) {
         let encoded = core::proto::codec::encode(message)?;
         let mut writer = client.writer.lock().await;
         writer.write_all(&encoded).await?;
         writer.flush().await?;
-        info!("Message sent to client {}", session);
+        info!("Message sent to client {}", uid);
     } else {
-        warn!("Client {} not found, message not sent", session);
+        warn!("Client {} not found, message not sent", uid);
     }
     Ok(())
 }
@@ -55,24 +53,24 @@ pub async fn handle_client(
 
     let (mut reader, writer) = socket.into_split();
     let message = decode::<Message, _>(&mut reader).await?;
-    info!("Received message type: {:?}", message.r#type);
+    info!("Received message type: {:?}", message.mtype);
 
-    if message.r#type == Type::ConnectRequest as i32 {
+    if message.mtype == Type::ConnectRequest as i32 {
         let client: Client = handlers::connect::handle(&message, writer).await?;
         add_client(client.uid, client).await;
     }
     loop {
         // Read the connection request
         let message = decode::<Message, _>(&mut reader).await?;
-        info!("Received message type: {:?}", message.r#type);
+        info!("Received message type: {:?}", message.mtype);
 
-        if message.r#type == Type::Ping as i32 {
+        if message.mtype == Type::Ping as i32 {
             let r = handlers::ping::handle(&message).await;
             if let Err(e) = r {
                 error!("Failed to handle ping: {}", e);
             }
         }
-        if message.r#type == Type::Chat as i32 {
+        if message.mtype == Type::ChatRequest as i32 {
             let r = handlers::chat::handle(message).await;
             if let Err(e) = r {
                 error!("Failed to handle chat: {}", e);

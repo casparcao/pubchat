@@ -3,7 +3,7 @@ use tokio::net::TcpListener;
 use tracing::{info, error, Level};
 use tracing_subscriber;
 use dotenv::dotenv;
-mod manager;
+mod connection;
 mod queue;
 mod handlers;
 
@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
     // Initialize RabbitMQ
     core::auth::init();
     queue::init().await?;
-    manager::init().await;
+    connection::init().await;
     
     // Bind the listener to the address
     let listener = TcpListener::bind("127.0.0.1:8080").await?;
@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
         let (socket, _) = listener.accept().await?;
         
         tokio::spawn(async move {
-            if let Err(e) = manager::handle_client(socket).await {
+            if let Err(e) = connection::handle_client(socket).await {
                 error!("Error handling client: {}", e);
             }
         });

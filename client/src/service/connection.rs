@@ -20,7 +20,7 @@ pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64, String)>
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_millis() as u64,
-        r#type: Type::ConnectRequest as i32,
+        mtype: Type::ConnectRequest as i32,
         content: Some(core::proto::message::message::Content::ConnectRequest(ConnectRequest {
             token: token.to_string(),
         })),
@@ -54,19 +54,20 @@ pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf) {
             match decode::<Message, _>(&mut reader).await {
                 Ok(msg) => {
                     // 处理接收到的消息
-                    match msg.r#type {
-                        t if t == Type::Chat as i32 => {
-                            if let Some(core::proto::message::message::Content::Chat(chat_req)) = msg.content {
+                    match msg.mtype {
+                        t if t == Type::ChatResponse as i32 => {
+                            if let Some(core::proto::message::message::Content::ChatResponse(chat_req)) = msg.content {
                                 //存储
                                 //聊天缓存
                                 //ui
+                                //todo 处理聊天消息
                             }else{
                                 error!("Invalid chat message");
                             }
                         }
                         _ => {
                             // 其他类型消息暂不处理
-                            error!("Unhandled message type: {}", msg.r#type);
+                            error!("Unhandled message type: {}", msg.mtype);
                         }
                     }
                 }
