@@ -4,10 +4,10 @@ use sqlx::FromRow;
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct Message {
     pub id: i64,
-    pub speaker_id: i64,
-    pub room_id: i64,
-    pub message_type: i32,
+    pub sender: i64,
+    pub session: i64,
+    pub mtype: i32,
     pub content: String,
     pub timestamp: i64,
-    pub nickname: String,
+    pub uname: String,
 }

@@ -21,11 +21,11 @@ pub async fn create_user_session(user_session: &UserSession) -> Result<UserSessi
     let mut connection = db::connection().await?;
     
     // 插入用户会话关联记录
-    sqlx::query("INSERT INTO user_sessions (id, user_id, user_name, session_id, role, jointime) VALUES (?, ?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO user_sessions (id, uid, uname, sid, role, jointime) VALUES (?, ?, ?, ?, ?, ?)")
         .bind(&user_session.id)
-        .bind(&user_session.user_id)
-        .bind(&user_session.user_name)
-        .bind(&user_session.session_id)
+        .bind(&user_session.uid)
+        .bind(&user_session.uname)
+        .bind(&user_session.sid)
         .bind(&user_session.role)
         .bind(&user_session.jointime)
         .execute(connection.as_mut())
@@ -48,8 +48,8 @@ pub async fn find_sessions_by_user(user_id: i64) -> Result<Vec<Session>> {
     let result = sqlx::query_as::<_, Session>(
         r#"
         SELECT s.* FROM sessions s 
-        JOIN user_sessions us ON s.id = us.session_id 
-        WHERE us.user_id = ?
+        JOIN user_sessions us ON s.id = us.sid 
+        WHERE us.uid = ?
         ORDER BY s.updatetime DESC
         "#
     )
@@ -59,10 +59,10 @@ pub async fn find_sessions_by_user(user_id: i64) -> Result<Vec<Session>> {
     Ok(result)
 }
 
-pub async fn find_user_sessions_by_session(session_id: i64) -> Result<Vec<UserSession>> {
+pub async fn find_user_sessions_by_session(sid: i64) -> Result<Vec<UserSession>> {
     let mut connection = db::connection().await?;
-    let result = sqlx::query_as::<_, UserSession>("SELECT * FROM user_sessions WHERE session_id = ?")
-        .bind(session_id)
+    let result = sqlx::query_as::<_, UserSession>("SELECT * FROM user_sessions WHERE sid = ?")
+        .bind(sid)
         .fetch_all(connection.as_mut())
         .await?;
     Ok(result)

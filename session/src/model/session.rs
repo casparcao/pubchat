@@ -14,9 +14,9 @@ pub struct Session {
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct UserSession {
     pub id: i64,
-    pub user_id: i64,
-    pub user_name: String,
-    pub session_id: i64,
+    pub uid: i64,
+    pub uname: String,
+    pub sid: i64,
     pub role: i8, // 0-普通成员, 1-管理员
     pub jointime: NaiveDateTime,
 }

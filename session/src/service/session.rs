@@ -32,9 +32,9 @@ pub async fn create_session(creator_id: i64, payload: CreateSessionRequest) -> R
     for member in payload.members {
         let user_session = UserSession {
             id: snowflaker::next_id()? as i64,
-            user_id: member.id,
-            user_name: member.name,
-            session_id: session.id,
+            uid: member.id,
+            uname: member.name,
+            sid: session.id,
             role: if member.id == creator_id { 1 } else { 0 }, // 创建者为管理员
             jointime: now,
         };
@@ -59,8 +59,8 @@ pub async fn get_session_by_id(session_id: i64) -> Result<SessionDetailResponse>
         id: session.id,
         name: session.name,
         members: members.into_iter().map(|m| UserSessionResponse {
-            id: m.user_id,
-            name: m.user_name,
+            id: m.uid,
+            name: m.uname,
         }).collect(),
     };
     Ok(detail)
