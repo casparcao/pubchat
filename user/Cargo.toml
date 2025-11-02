@@ -27,4 +27,5 @@ rust_decimal = { workspace = true }
 chrono = { workspace = true }
 http-body = { workspace = true }
 http = { workspace = true }
+core = { path = "../core" }
 

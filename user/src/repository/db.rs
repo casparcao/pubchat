@@ -4,7 +4,7 @@ use anyhow::{Ok, Result};
 use dotenv;
 use sqlx::{migrate, MySql, mysql::MySqlPoolOptions, MySqlPool, pool::PoolConnection};
 
-use crate::common::response::ApiErr;
+use core::response::ApiErr;
 
 pub static POOL: OnceLock<MySqlPool> = OnceLock::new();
 
@@ -23,7 +23,7 @@ pub async fn init(){
 }
 
 async fn get() -> Result<&'static MySqlPool> {
-    POOL.get().ok_or(ApiErr::Error("获取Redis客户端失败").into())
+    POOL.get().ok_or(ApiErr::Error("获取Redis客户端失败".to_string()).into())
 }
 
 

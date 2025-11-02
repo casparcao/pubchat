@@ -1,7 +1,7 @@
 use crate::{common::enums::Gender, model::user::User, repository::user, vo::auth::RegisterRequest};
 use snowflaker;
 use anyhow::Result;
-use crate::common::response::ApiErr;
+use core::response::ApiErr;
 
 pub async fn login(username: &str, password: &str) -> Result<i64> {
     let existed = user::select_user_by_name(username).await?;
@@ -12,11 +12,11 @@ pub async fn login(username: &str, password: &str) -> Result<i64> {
             Ok(user.id)
         } else {
             log::info!("密码错误");
-            Err(ApiErr::Bad(400, "用户名不存在或者密码错误").into())
+            Err(ApiErr::Bad(400, "用户名不存在或者密码错误".to_string()).into())
         }
     }else{
         log::info!("用户名不存在");
-        Err(ApiErr::Bad(400, "用户名不存在或者密码错误").into())
+        Err(ApiErr::Bad(400, "用户名不存在或者密码错误".to_string()).into())
     }
 }
 

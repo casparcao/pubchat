@@ -1,8 +1,8 @@
 use axum::Extension;
-use crate::common::auth::User;
-use crate::common::response::{ApiErr, ApiResponse};
+use core::auth::User;
+use core::response::{ApiErr, ApiResponse};
 use crate::vo::contact::ContactResponse;
-use crate::common::extract::Path;
+use core::extract::Path;
 
 pub async fn add(
     Extension(claims): Extension<User>,

@@ -1,7 +1,7 @@
 use anyhow::{Ok, Result};
-use crate::{common::response::ApiErr, model::food::{Food, Tag}, vo::food::ChoiceResponse};
-use crate::common::auth::User;
-use crate::common::request::Page;
+use crate::{model::food::{Food, Tag}, vo::food::ChoiceResponse};
+use core::{auth::User, response::ApiErr};
+use core::request::Page;
 use crate::model::food::{UserFoodChoice, UserFoodChoiceDetail};
 use crate::repository::food;
 use crate::vo::food::{ChosenRequest, ChosenResponse, DecideRequest, FoodRequest, FoodResponse, FoodTagRequest, TagResponse};
@@ -17,7 +17,7 @@ pub async fn choice(tag: Option<i64>) -> Result<ChoiceResponse> {
         total_count = food::count_by_tag(tag.unwrap()).await?;
     }
     if total_count < 1 {
-        return Err(ApiErr::Error("哎呀...我的饭呢?").into());
+        return Err(ApiErr::Error("哎呀...我的饭呢?".to_string()).into());
     }
     let offset = 0;
     let choice: Option<Food>;
@@ -28,7 +28,7 @@ pub async fn choice(tag: Option<i64>) -> Result<ChoiceResponse> {
         choice = food::select_one_by_tag(tag.unwrap(), offset).await?;
     }
     if choice.is_none(){
-        return Err(ApiErr::Bad(400, "哎呀...要不这顿省省？").into());
+        return Err(ApiErr::Bad(400, "哎呀...要不这顿省省？".to_string()).into());
     }
     let choice = choice.unwrap();
     let tags: Vec<Tag> = food::select_tags(choice.id).await?;

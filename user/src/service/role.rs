@@ -1,6 +1,7 @@
-use crate::common::auth::User;
+use core::auth::User;
+use core::request::Page;
 use crate::vo::role::{RoleCreateRequest, RoleListRequest};
-use crate::{common::request::Page, model::role::Role};
+use crate::model::role::Role;
 use crate::repository::role;
 use anyhow::Result;
 

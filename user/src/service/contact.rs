@@ -2,7 +2,7 @@ use crate::model::contact::Contact;
 use crate::repository;
 use crate::vo::contact::ContactResponse;
 use anyhow::Result;
-use crate::common::auth::User as AuthUser;
+use core::auth::User as AuthUser;
 
 pub async fn add(user: AuthUser, there: i64) -> Result<i64> {
     // Check if friend relationship already exists

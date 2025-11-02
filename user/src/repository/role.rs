@@ -1,7 +1,7 @@
 use anyhow::Result;
 use sqlx::{MySql, QueryBuilder};
 
-use crate::common::request::Page;
+use core::request::Page;
 use crate::model::role::Role;
 use crate::repository::db;
 use crate::vo::role::RoleListRequest;

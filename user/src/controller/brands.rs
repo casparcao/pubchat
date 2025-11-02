@@ -2,9 +2,9 @@ use axum::{
     routing::get,
     Router,
 };
-use crate::common::extract::Path;
-use crate::common::response::ApiErr;
-use crate::{common::response::ApiResponse, model::brand::*};
+use core::extract::Path;
+use core::response::{ApiErr, ApiResponse};
+use crate::model::brand::*;
 use crate::service::brand;
 
 async fn get_brands_by_category(

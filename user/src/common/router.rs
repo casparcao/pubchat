@@ -1,8 +1,7 @@
 use tower::ServiceBuilder;
 use tower_http::{cors::{Any, CorsLayer}, validate_request::ValidateRequestHeaderLayer};
-use crate::common::auth;
-use axum::{error_handling::HandleErrorLayer, routing::any, BoxError, Router};
-use crate::common::response::ApiErr;
+use core::auth;
+use axum::{error_handling::HandleErrorLayer, routing::any, Router};
 
 pub fn init() -> Result<Router, String>{
     let app = Router::new();
@@ -16,10 +15,10 @@ pub fn init() -> Result<Router, String>{
         .merge(crate::controller::brands::router())
         .route("/login", axum::routing::post(crate::controller::auth::login))
         .route("/signup", axum::routing::post(crate::controller::auth::signup))
-        .fallback(any(not_found))
+        .fallback(any(core::response::e404))
         .layer(CorsLayer::new().allow_methods(Any).allow_origin(Any))
         .layer(ServiceBuilder::new()
-                .layer(HandleErrorLayer::new(error_handling))
+                .layer(HandleErrorLayer::new(core::response::e500))
                 .timeout(std::time::Duration::from_secs(3600))))
 }
 
@@ -52,12 +51,4 @@ fn role_route() -> Router{
         .route("/roles", axum::routing::get(crate::controller::role::select_roles))
         .route("/roles", axum::routing::post(crate::controller::role::create_role))
         .route("/roles/{id}", axum::routing::delete(crate::controller::role::delete_role))
-}
-
-pub async fn not_found() -> ApiErr{
-    ApiErr::Bad(404, "未找到指定资源...")
-}
-
-async fn error_handling(err: BoxError) -> ApiErr {
-    ApiErr::Bad(500, "服务器内部错误")
 }

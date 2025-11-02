@@ -3,8 +3,8 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use crate::common::extract::{Json, Path};
-use crate::common::{auth::User, response::{ApiErr, ApiResponse}};
+use core::extract::{Json, Path};
+use core::{auth::User, response::{ApiErr, ApiResponse}};
 use crate::model::rating::{CreateRating, Rating, RatingStats};
 use crate::service::rating;
 

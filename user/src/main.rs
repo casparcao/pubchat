@@ -1,3 +1,5 @@
+use core::auth;
+
 use dotenv::dotenv;
 use tokio::net::TcpListener;
 
@@ -11,7 +13,6 @@ pub mod test;
 
 use crate::repository::db;
 use crate::common::log as logm;
-use crate::common::auth;
 use crate::common::router;
 use crate::repository::rdb;
 

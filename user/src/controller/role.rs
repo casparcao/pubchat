@@ -2,10 +2,10 @@
 use axum::extract::Path;
 use axum::Extension;
 
-use crate::common::auth::User;
-use crate::common::extract::Json;
-use crate::common::{extract::Query, request::Page, response::ApiResponse};
-use crate::common::response::ApiErr;
+use core::auth::User;
+use core::extract::Json;
+use core::{extract::Query, request::Page, response::ApiResponse};
+use core::response::ApiErr;
 use crate::model::role::Role;
 use crate::service::role;
 use crate::vo::role::{RoleCreateRequest, RoleListRequest};

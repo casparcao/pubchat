@@ -1,7 +1,7 @@
 use axum::Extension;
-use crate::common::auth::User;
-use crate::common::extract::{Json, Multipart};
-use crate::common::response::{ApiErr, ApiResponse};
+use core::auth::User;
+use core::extract::{Json, Multipart};
+use core::response::{ApiErr, ApiResponse};
 use crate::vo::user::{SetNameRequest, UserResponse};
 
 pub async fn upload_avatar(Extension(claims): Extension<User>, multipart: Multipart) -> Result<ApiResponse<String>, ApiErr>{

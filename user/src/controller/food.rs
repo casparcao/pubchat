@@ -1,8 +1,8 @@
 use axum::Extension;
-use crate::common::auth::User;
-use crate::common::extract::{Json, Query};
-use crate::common::request::Page;
-use crate::common::response::{ApiErr, ApiResponse};
+use core::auth::User;
+use core::extract::{Json, Query};
+use core::request::Page;
+use core::response::{ApiErr, ApiResponse};
 use crate::vo::food::{ChoiceRequest, ChoiceResponse, ChosenRequest, ChosenResponse, DecideRequest, FoodRequest, FoodResponse, FoodTagRequest, TagResponse};
 
 //随机选择一个食物，返回给前端

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use sqlx::{MySql, QueryBuilder};
 use crate::{model::food::{Food, Tag}, repository::db};
-use crate::common::request::Page;
+use core::request::Page;
 use crate::model::food::{UserFoodChoice, UserFoodChoiceDetail};
 use crate::vo::food::{ChosenRequest, FoodRequest};
 

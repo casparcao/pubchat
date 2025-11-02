@@ -1,9 +1,9 @@
-use crate::common::response::{ApiErr, ApiResponse};
+use core::response::{ApiErr, ApiResponse};
 use axum::{body::Body, http::Request};
 use log;
 use serde::{Deserialize, Serialize};
-use crate::common::auth::User;
-use crate::common::extract::Query;
+use core::auth::User;
+use core::extract::Query;
 
 pub async fn index<'a>(Query(param): Query<IndexRequest>, request: Request<Body>) -> Result<ApiResponse<String>, ApiErr>{
     log::info!("index param: {},{},{}", param.sn, param.ts, param.n);
