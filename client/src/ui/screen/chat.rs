@@ -3,7 +3,6 @@ use core::request::Page;
 use crate::{cache, ui::{component::{chat::ChatComponent, session::SessionListComponent}, models::{App, MessageItem, Mode, Session}}};
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, List, ListItem, Paragraph},
 };
 
 #[derive(Debug, Clone)]
@@ -12,11 +11,10 @@ pub struct ChatScreen {
 }
 
 impl ChatScreen {
-    pub fn new(uid: i64, token: &str) -> Self {
+    pub fn new(token: &str) -> Self {
         // Split the TCP stream into read and write halves
-        match cache::session_cache().get_sessions(uid, token, Page::default()){
+        match cache::session_cache().get_sessions(token, Page::default()){
             Ok(sessions) => {
-                log::info!("Sessions: {:?}", sessions);
                 Self {sessions: sessions
                     .into_iter()
                     .map(|s| crate::ui::models::Session::from_session_response(s))

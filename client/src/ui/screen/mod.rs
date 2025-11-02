@@ -11,7 +11,7 @@ impl App {
         let size = frame.area();
         match &self.view {
             View::Chat { session } => {
-                let chat_screen = ChatScreen::new(self.me.id as i64, &self.token);
+                let chat_screen = ChatScreen::new(&self.token);
                 if self.chat_maximized {
                     chat_screen.render_maximized_chat_layout(frame, size, session.clone())
                 } else {
@@ -19,7 +19,7 @@ impl App {
                 }
             },
             View::Contact => {
-                let contact_list = ContactListScreen::new(self.me.id as i64, &self.token);
+                let contact_list = ContactListScreen::new(&self.token);
                 contact_list.render_friends_list_layout(frame, size)
             },
         }

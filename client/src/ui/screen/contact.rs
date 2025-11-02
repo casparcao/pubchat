@@ -16,8 +16,8 @@ pub struct ContactListScreen {
 }
 
 impl ContactListScreen {
-    pub fn new(uid: i64, token: &str) -> Self {
-        match cache::contact_cache().get_contacts(uid, token){
+    pub fn new(token: &str) -> Self {
+        match cache::contact_cache().get_contacts(token){
             Ok(friends) => {
                 let contacts = friends
                     .into_iter()

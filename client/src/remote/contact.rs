@@ -14,16 +14,15 @@ pub struct ContactResponse {
     pub avatar: Option<String>,
 }
 
-pub async fn get_contacts(token: &str) -> Result<Vec<ContactResponse>> {
-    let client = reqwest::Client::new();
+pub fn get_contacts(token: &str) -> Result<Vec<ContactResponse>> {
+    let client = reqwest::blocking::Client::new();
     let url = format!("{}/contacts", user_host());
     let response = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", token))
-        .send()
-        .await?;
+        .send()?;
     if response.status().is_success() {
-        let result : ApiResult<Vec<ContactResponse>> = response.json().await?;
+        let result : ApiResult<Vec<ContactResponse>> = response.json()?;
         if result.ok {
             return Ok(result.data.unwrap());
         }else{
@@ -31,7 +30,7 @@ pub async fn get_contacts(token: &str) -> Result<Vec<ContactResponse>> {
         }
     } else {
         let status = response.status();
-        let error_text = response.text().await?;
+        let error_text = response.text()?;
         Err(ApiErr::Error(format!("Failed to get contacts: {} - {}", status, error_text).into()).into())
     }
 }

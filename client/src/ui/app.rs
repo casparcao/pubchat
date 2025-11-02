@@ -10,8 +10,8 @@ impl App {
     pub fn new(token: String, me: Me) -> Self {
         Self {
             input: String::new(),
-            contact: ContactListScreen::new(me.id as i64, &token),
-            chat: ChatScreen::new(me.id as i64, &token),
+            contact: ContactListScreen::new(&token),
+            chat: ChatScreen::new(&token),
             view: View::Contact,
             mode: Mode::Normal,
             scroll_offset: 0,
