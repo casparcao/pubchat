@@ -40,8 +40,13 @@ impl Cache {
                     let mut cache = self.memory_cache.write().unwrap();
                     cache.insert(uid, contacts.clone());
                 }
-                log::info!("从SQLite缓存获取联系人列表成功");
-                return Ok(contacts);
+                // 只有当联系人列表不为空时才使用数据库缓存
+                if !contacts.is_empty() {
+                    log::info!("从SQLite缓存获取联系人列表成功");
+                    return Ok(contacts);
+                }
+                // 如果联系人列表为空，继续尝试从远程获取
+                log::info!("SQLite中无联系人数据，尝试从远程服务器获取");
             }
             Err(e) => {
                 log::error!("从SQLite获取联系人列表失败: {}", e);

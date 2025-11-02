@@ -136,8 +136,8 @@ impl ContactListScreen {
                     }
                 ],
             };
+            match cache::session_cache().add_session(token, request){
             // 创建会话
-            match create_session(token, request){
                 Ok(session_response) => {
                     // 创建或更新本地会话列表
                     let app_session = Session::from_session_response(session_response);

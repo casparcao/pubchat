@@ -1,11 +1,12 @@
 // 缓存ui聊天框的聊天列表
 // 实现三级缓存：内存 -> SQLite -> 远程服务器
 
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 use anyhow::Ok;
 use anyhow::Result;
+use crate::remote::session;
+use crate::remote::session::CreateSessionRequest;
 use crate::remote::session::SessionResponse;
 use core::request::Page;
 
@@ -13,13 +14,13 @@ use core::request::Page;
 // 三级缓存结构
 pub struct Cache {
     // 第一级：内存缓存
-    memory_cache: Arc<RwLock<HashMap<i64, Vec<SessionResponse>>>>,
+    memory_cache: Arc<RwLock<Vec<SessionResponse>>,
 }
 
 impl Cache {
     pub fn new() -> Self {
         Self {
-            memory_cache: Arc::new(RwLock::new(HashMap::new())),
+            memory_cache: Arc::new(RwLock::new(vec![])),
         }
     }
 
@@ -31,7 +32,7 @@ impl Cache {
         // 1. 检查内存缓存
         {
             let cache = self.memory_cache.read().unwrap();
-            if let Some(messages) = cache.get(&uid) {
+            if let Some(messages) = cache{
                 // 对于内存缓存，我们简单地返回所有消息
                 // 在实际应用中，可能需要根据分页参数进行处理
                 return Ok(messages.clone());
@@ -39,14 +40,20 @@ impl Cache {
         }
 
         // 2. 检查SQLite数据库
-        match self.get_from_sqlite(uid, page){
+        match self.get_from_db(uid, page){
             std::result::Result::Ok(messages) => {
                 // 将结果存入内存缓存
                 {
                     let mut cache = self.memory_cache.write().unwrap();
-                    cache.insert(uid, messages.clone());
+                    *cache = messages.clone();
                 }
-                return Ok(messages);
+                // 只有当联系人列表不为空时才使用数据库缓存
+                if !messages.is_empty() {
+                    log::info!("从SQLite缓存获取列表成功");
+                    return Ok(messages);
+                }
+                // 如果联系人列表为空，继续尝试从远程获取
+                log::info!("SQLite中数据，尝试从远程服务器获取");
             }
             Err(e) => {
                 log::error!("从SQLite获取消息失败: {}", e);
@@ -55,21 +62,18 @@ impl Cache {
 
         // 3. 从远程服务器获取
         match self.get_from_remote(uid, token){
-            std::result::Result::Ok(messages) => {
+            std::result::Result::Ok(sessions) => {
                 // 将结果存入内存缓存和SQLite数据库
                 {
                     let mut cache = self.memory_cache.write().unwrap();
-                    cache.insert(uid, messages.clone());
+                    *cache = sessions.clone();
                 }
                 
                 // 异步保存到SQLite，不阻塞当前操作
-                let messages_clone = messages.clone();
-                for message in &messages_clone {
-                    if let Err(e) = self.save_to_sqlite(message) {
-                        log::error!("保存消息到SQLite失败: {}", e);
-                    }
+                if let Err(e) = self.save_to_sqlite(uid, &sessions) {
+                    log::error!("保存消息到SQLite失败: {}", e);
                 }
-                Ok(messages)
+                Ok(sessions)
             }
             Err(e) => {
                 log::error!("从远程服务器获取消息失败: {}", e);
@@ -80,16 +84,27 @@ impl Cache {
     }
 
     /// 从SQLite数据库获取消息
-    fn get_from_sqlite(&self, room_id: i64, page: Page) -> Result<Vec<SessionResponse>> {
+    fn get_from_db(&self, uid: i64, page: Page) -> Result<Vec<SessionResponse>> {
         let rt = tokio::runtime::Runtime::new()?;
-        // let (messages, _total) = rt.block_on(select_messages(room_id, page))?;
-        Ok(vec![])
+        let contacts = rt.block_on(crate::repository::session::select(uid))?;
+        let contacts = contacts.into_iter().map(|contact| SessionResponse {
+            id: contact.id,
+            name: contact.name,
+        }).collect::<Vec<_>>();
+        Ok(contacts)
     }
 
     /// 将消息保存到SQLite数据库
-    fn save_to_sqlite(&self, message: &SessionResponse) -> Result<()> {
+    fn save_to_sqlite(&self, uid: i64, sessions: &[SessionResponse]) -> Result<()> {
         let rt = tokio::runtime::Runtime::new()?;
-        // rt.block_on(crate::repository::::save(message))
+        let sessions = sessions.iter().map(|session| crate::repository::session::Session {
+            id: session.id,
+            uid: uid,
+            sid: session.id,
+            name: session.name.clone(),
+            avatar: None,
+        }).collect::<Vec<_>>();
+        rt.block_on(crate::repository::session::save(uid, &sessions));
         Ok(())
     }
 
@@ -102,21 +117,21 @@ impl Cache {
     }
 
     /// 向缓存中添加单条消息
-    pub fn add_session(&self, room_id: i64, message: SessionResponse) {
+    pub fn add_session(&self, token: &str, payload: CreateSessionRequest) -> Result<SessionResponse> {
         // 添加到内存缓存
         {
             let mut cache = self.memory_cache.write().unwrap();
-            if let Some(messages) = cache.get_mut(&room_id) {
-                messages.push(message.clone());
-            } else {
-                cache.insert(room_id, vec![message.clone()]);
-            }
+            let message = SessionResponse{
+                id: payload.id,
+                name: payload.name.clone()
+            };
+            cache.push(message);
         }
-
         // 保存到SQLite
         if let Err(e) = self.save_to_sqlite(&message){
             log::error!("保存消息到SQLite失败: {}", e);
         }
+        session::create_session(token, payload)
     }
 
     /// 清除指定房间的缓存
