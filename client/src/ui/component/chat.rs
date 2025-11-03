@@ -39,6 +39,26 @@ impl ChatComponent {
             }
         }
     }
+    
+    pub fn change_mode(&mut self, mode: Mode) {
+        self.mode = mode;
+    }
+
+    pub fn input(&mut self, c: char) {
+        if self.mode == Mode::Normal {
+            return;
+        }
+        self.input.push(c);
+    }
+
+    pub fn delete(&mut self) {
+        if self.mode == Mode::Normal {
+            return;
+        }
+        if !self.input.is_empty() {
+            self.input.pop();
+        }
+    }
 
     pub fn render(&self, frame: &mut Frame, area: Rect) {
         let chunks = Layout::default()
