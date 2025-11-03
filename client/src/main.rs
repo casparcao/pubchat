@@ -100,10 +100,9 @@ fn show_main_screen(
     writer: tokio::net::tcp::OwnedWriteHalf
 ) -> Result<()> {
     
-    // 登录成功后，创建应用状态
-    let mut app = App::new(token, me);
     let shared_writer = Arc::new(Mutex::new(writer));
-    app.set_stream(shared_writer);
+    // 登录成功后，创建应用状态
+    let mut app = App::new(token, me, shared_writer);
     // 主事件循环
     loop {
         terminal.draw(|frame| app.render(frame))?;

@@ -1,4 +1,4 @@
-use crate::ui::models::{App, Session, View};
+use crate::ui::models::{App, View};
 use crossterm::event::{KeyEvent, KeyCode, KeyModifiers};
 
 impl App {
@@ -48,8 +48,8 @@ impl App {
             }
             KeyCode::Char('m') => {
                 // 切换聊天窗口最大化状态
-                if matches!(self.view, View::Chat { .. }) {
-                    self.chat_maximized = !self.chat_maximized;
+                if matches!(self.view, View::Chat) {
+                    self.chat.maximized = !self.chat.maximized;
                 }
             }
             KeyCode::Enter => {
@@ -57,7 +57,8 @@ impl App {
                 match &self.view {
                     View::Contact => {
                         if let Ok(session ) = self.contact.create_session(&self.token, &self.me){
-                            self.view = View::Chat { session: session };
+                            self.view = View::Chat;
+                            self.chat.chat.change_session(session);
                         }else{
                             log::warn!("Failed to create session when entering chat view");
                         }
@@ -68,15 +69,8 @@ impl App {
             KeyCode::Tab => {
                 // 在不同视图间切换
                 self.view = match self.view {
-                    View::Chat { .. } => View::Contact,
-                    View::Contact => {
-                        if let Ok(session ) = self.contact.create_session(&self.token, &self.me){
-                            View::Chat { session: session}
-                        }else{
-                            log::warn!("Failed to create session when switching to chat view");
-                            View::Contact
-                        }
-                    },
+                    View::Chat => View::Contact,
+                    View::Contact => View::Chat,
                 };
             }
             _ => {}

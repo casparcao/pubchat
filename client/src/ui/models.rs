@@ -7,25 +7,26 @@ use crate::ui::screen::contact::ContactListScreen;
 
 
 #[derive(Debug, Clone)]
-pub struct MessageItem {
+pub struct Message {
     pub sender: String,
     pub content: String,
     pub timestamp: String,
-    pub is_user: bool,
+    //是否是系统消息
+    pub system: bool,
 }
 
-impl MessageItem {
-    pub fn new(sender: String, content: String, is_user: bool) -> Self {
+impl Message {
+    pub fn new(sender: String, content: String, system: bool) -> Self {
         Self {
             sender,
             content,
             timestamp: chrono::Local::now().format("%H:%M").to_string(),
-            is_user,
+            system,
         }
     }
 
     pub fn system(content: &str) -> Self {
-        Self::new("SYSTEM".to_string(), content.to_string(), false)
+        Self::new("SYSTEM".to_string(), content.to_string(), true)
     }
 }
 
@@ -87,7 +88,7 @@ pub enum Status {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum View {
-    Chat { session: Session },
+    Chat,
     Contact, // 添加好友列表视图
 }
 
@@ -106,19 +107,15 @@ pub struct Me {
 // 应用状态
 #[derive(Debug, Clone)]
 pub struct App {
-    pub input: String,
     // 联系人列表组件渲染逻辑
     pub contact: ContactListScreen,
     // 会话列表组件渲染逻辑
     pub chat: ChatScreen,
     //当前页面处于哪个视图
     pub view: View,
-    pub mode: Mode,
-    pub scroll_offset: u16,
     pub me: Me,
-    pub chat_maximized: bool,
     // 添加token字段存储用户认证信息
     pub token: String,
     // 添加TCP流用于发送消息
-    pub stream: Option<Arc<Mutex<OwnedWriteHalf>>>,
+    pub stream: Arc<Mutex<OwnedWriteHalf>>,
 }

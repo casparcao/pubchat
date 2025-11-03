@@ -1,6 +1,6 @@
 use ratatui::Frame;
 
-use crate::ui::{models::{App, View}, screen::{chat::ChatScreen, contact::ContactListScreen}};
+use crate::ui::{models::{App, View}};
 
 pub mod login;
 pub mod contact;
@@ -10,12 +10,8 @@ impl App {
     pub fn render(&self, frame: &mut Frame) {
         let size = frame.area();
         match &self.view {
-            View::Chat { session } => {
-                if self.chat_maximized {
-                    self.chat.render_maximized_chat_layout(frame, size, session.clone())
-                } else {
-                    self.chat.render_main_layout(frame, size, session.clone())
-                }
+            View::Chat => {
+                self.chat.render(frame, size)
             },
             View::Contact => {
                 self.contact.render_friends_list_layout(frame, size)

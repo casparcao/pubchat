@@ -1,6 +1,6 @@
 pub mod normal_mode;
 pub mod insert_mode;
-pub mod message_sender;
+pub mod send;
 
 use crate::ui::models::{App, Mode};
 use crossterm::event::KeyEvent;

@@ -1,12 +1,12 @@
 use core::proto::{codec::encode, message::{ChatRequest, ChatType, Message, Type}};
 use std::sync::Arc;
 
-use crate::ui::models::{App, View};
-use tokio::{io::AsyncWriteExt, sync::Mutex};
+use crate::ui::component::chat::ChatComponent;
+use tokio::{io::AsyncWriteExt, net::tcp::OwnedWriteHalf, sync::Mutex};
 
-impl App {
+impl ChatComponent {
     /// 发送消息的主要逻辑
-    pub fn send_message(&mut self) -> bool {
+    pub fn send_message(&mut self, stream: &Arc<Mutex<OwnedWriteHalf>>) -> bool {
         if self.input.is_empty() {
             return false;
         }
@@ -15,57 +15,48 @@ impl App {
         let should_exit = if self.input.starts_with('/') {
             self.handle_command()
         } else {
-            // 发送普通消息
-            match &self.view {
-                View::Chat { session } => {
-                    // 实际通过TCP发送消息
-                    let content = self.input.clone();
-                    // 获取接收者ID，如果找不到则使用默认值
-                    let session_id = session.id;
-                    if let Some(stream) = &self.stream {
-                        let stream_clone = stream.clone();
-                        // 创建聊天请求消息
-                        let chat_request = Message {
-                            id: 2, // 简化处理，实际应该使用唯一ID生成器
-                            ts: std::time::SystemTime::now()
-                                .duration_since(std::time::UNIX_EPOCH)
-                                .unwrap()
-                                .as_millis() as u64,
-                            mtype: Type::ChatRequest as i32,
-                            content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest{
-                                sender: self.me.id, // 使用真实的用户ID
-                                session: session_id as u64,
-                                receivers: vec![session_id as u64],
-                                ctype: ChatType::Text as i32,
-                                message: content.clone(),
-                                ts: std::time::SystemTime::now()
-                                    .duration_since(std::time::UNIX_EPOCH)
-                                    .unwrap()
-                                    .as_millis() as u64,
-                                uname: self.me.name.to_string(), // 使用真实的用户名
-                            })),
-                        };
-                        
-                        // 发送消息
-                        let encoded = match encode(&chat_request) {
-                            Ok(data) => data,
-                            Err(e) => {
-                                log::error!("Failed to encode message: {}", e);
-                                return false;
-                            }
-                        };
-                        let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
-                        rt.block_on(self.do_send_message(stream_clone, encoded));
-                    }
-                    false
-                },
-                _ => {
-                    
-                    false
-                }
+            if self.session.is_none() {
+                return false;
             }
+            // 实际通过TCP发送消息
+            let content = self.input.clone();
+            // 获取接收者ID，如果找不到则使用默认值
+            let session_id = self.session.unwrap().id;
+            let stream_clone = stream.clone();
+            // 创建聊天请求消息
+            let chat_request = Message {
+                id: 2, // 简化处理，实际应该使用唯一ID生成器
+                ts: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u64,
+                mtype: Type::ChatRequest as i32,
+                content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest{
+                    sender: 0, // 使用真实的用户ID
+                    session: session_id as u64,
+                    receivers: vec![session_id as u64],
+                    ctype: ChatType::Text as i32,
+                    message: content.clone(),
+                    ts: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis() as u64,
+                    uname: "".to_string(), // 使用真实的用户名
+                })),
+            };
+            
+            // 发送消息
+            let encoded = match encode(&chat_request) {
+                Ok(data) => data,
+                Err(e) => {
+                    log::error!("Failed to encode message: {}", e);
+                    return false;
+                }
+            };
+            let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+            rt.block_on(self.do_send_message(stream_clone, encoded));
+            false
         };
-
         self.input.clear();
         self.mode = crate::ui::models::Mode::Normal;
         should_exit
@@ -103,7 +94,7 @@ impl App {
             }
             "/friends" => {
                 // 切换到好友列表视图
-                self.view = View::Contact;
+                // self.view = View::Contact;
                 
                 // if let Some(messages) = self.messages.get_mut(&target) {
                 //     messages.push(MessageItem::system("Opening friends list..."));

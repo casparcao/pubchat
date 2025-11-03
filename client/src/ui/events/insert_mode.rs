@@ -11,7 +11,7 @@ impl App {
                 self.mode = Mode::Normal;
             }
             KeyCode::Enter => {
-                self.send_message();
+                self.chat.chat.send_message(&self.stream);
             }
             KeyCode::Char(c) => {
                 self.input.push(c);

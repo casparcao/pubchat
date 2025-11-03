@@ -1,6 +1,8 @@
+use core::request::Page;
+
 use ratatui::{Frame, layout::Rect, widgets::{Block, Borders, List, ListItem}};
 
-use crate::ui::models::Session;
+use crate::{cache, ui::models::Session};
 
 #[derive(Debug, Clone)]
 pub struct SessionListComponent {
@@ -8,9 +10,18 @@ pub struct SessionListComponent {
 }
 
 impl SessionListComponent {
-    pub fn new(sessions: Vec<Session>) -> Self {
-        Self {
-            sessions
+    pub fn new(token: &str) -> Self {
+        match cache::session_cache().get_sessions(token, Page::default()){
+            Ok(sessions) => {
+                Self {sessions: sessions
+                    .into_iter()
+                    .map(|s| crate::ui::models::Session::from_session_response(s))
+                    .collect()}
+            },
+            Err(e) => {
+                log::error!("Failed to get sessions: {:?}", e);
+                Self {sessions: vec![]}
+            },
         }
     }
     

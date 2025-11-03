@@ -1,40 +1,20 @@
-use crate::ui::models::{App, Mode, Session, View, Me};
+use crate::ui::models::{App, View, Me};
 use crate::ui::screen::contact::ContactListScreen;
 use crate::ui::screen::chat::ChatScreen;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::net::tcp::OwnedWriteHalf;
-use core::proto::message::ChatResponse;
 
 impl App {
-    pub fn new(token: String, me: Me) -> Self {
+    pub fn new(token: String, me: Me, stream: Arc<Mutex<OwnedWriteHalf>>) -> Self {
         Self {
-            input: String::new(),
             contact: ContactListScreen::new(&token),
             chat: ChatScreen::new(&token),
             view: View::Contact,
-            mode: Mode::Normal,
-            scroll_offset: 0,
             me: me,
-            chat_maximized: false,
             token: token,
-            stream: None,
+            stream: stream,
         }
-    }
-    
-    pub fn set_token(&mut self, token: String) {
-        self.token = token;
-    }
-    
-    pub fn set_stream(&mut self, stream: Arc<Mutex<OwnedWriteHalf>>) {
-        self.stream = Some(stream);
-    }
-    
-    // 添加接收消息的方法
-    pub fn add_received_message(&mut self, chat_req: ChatResponse) {
-        let target = chat_req.uname.clone();
-        
-        
     }
     
 }

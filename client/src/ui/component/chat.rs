@@ -1,26 +1,42 @@
 
-use crate::{ui::{models::{MessageItem, Mode, Session}}};
+use core::request::Page;
+
+use crate::{cache, ui::models::{Message, Mode, Session}};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
+
+#[derive(Debug, Clone)]
 pub struct ChatComponent {
     // 聊天窗口布局
     pub session: Option<Session>,
-    pub messages: Vec<MessageItem>,
-    pub chat_maximized: bool,
+    pub messages: Vec<Message>,
     pub mode: Mode,
     pub input: String,
+    pub token: String,
 }
 
 impl ChatComponent {
-    pub fn new(session: Option<Session>, messages: Vec<MessageItem>, chat_maximized: bool, mode: Mode, input: String) -> Self {
-        Self {
-            session,
-            messages,
-            chat_maximized,
-            mode,
-            input,
+    pub fn new(token: &str) -> Self {
+        Self { session: None, messages: vec![], mode: Mode::Normal, input: String::new(), token: token.to_string() }
+    }
+
+    pub fn change_session(&mut self, session: Option<Session>) {
+        self.session = session;
+        if let Some(session) = &self.session {
+            // 获取当前聊天目标的消息
+            match cache::message_cache().get_messages(session.id, &self.token, Page::default()){
+                Ok(messages) => {
+                    self.messages = messages
+                    .iter()
+                    .map(|m| Message::new(m.uname.clone(), m.content.clone(), false))
+                    .collect();
+                },
+                Err(err) => {
+                    log::error!("Error fetching messages: {}", err);
+                }
+            }
         }
     }
 
@@ -35,14 +51,13 @@ impl ChatComponent {
 
         // 渲染消息区域
         self.render_messages(frame, chunks[0]);
-        
         // 渲染输入框
         self.render_input(frame, chunks[1]);
     }
 
     fn render_messages(&self, frame: &mut Frame, area: Rect) {
         let list_items: Vec<ListItem> = self.messages.iter().map(|m| {
-            let style = if m.is_user {
+            let style = if m.system {
                 Style::default().fg(Color::Blue)
             } else if m.sender == "SYSTEM" {
                 Style::default().fg(Color::Yellow)
@@ -57,11 +72,7 @@ impl ChatComponent {
         let title = if let Some(session) = &self.session {
             format!("Chat with {} {}", 
                 session.name,
-                if self.chat_maximized { 
-                    "[M] (Press 'm' to restore)" 
-                } else { 
-                    "[M] (Press 'm' to maximize)" 
-                })
+                "[M] (Press 'm' to switch maximized)" )
         } else {
             "Messages".to_string()
         };
