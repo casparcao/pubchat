@@ -1,7 +1,3 @@
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use tokio::net::tcp::OwnedWriteHalf;
-
 use crate::ui::screen::chat::ChatScreen;
 use crate::ui::screen::contact::ContactListScreen;
 
@@ -30,7 +26,7 @@ impl Message {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Contact {
     pub id: i64,
     pub name: String,
@@ -44,7 +40,7 @@ impl Contact {
     }
     
     // 从好友响应创建联系人
-    pub fn from_friend_response(friend: crate::remote::contact::ContactResponse) -> Self {
+    pub fn from_contact_response(friend: crate::remote::contact::ContactResponse) -> Self {
         Self {
             id: friend.id,
             name: friend.name,
@@ -58,6 +54,7 @@ impl Contact {
 pub struct Session {
     pub id: i64,
     pub name: String,
+    pub members: Vec<Contact>,
 }
 
 impl Session {
@@ -65,18 +62,23 @@ impl Session {
         Self {
             id: session.id,
             name: session.name,
+            members: vec![],
+        }
+    }
+    
+    pub fn from_session_detail_response(session: crate::remote::session::SessionDetailResponse) -> Self {
+        let mut members = vec![];
+        for member in session.members {
+            members.push(Contact::from_contact_response(member));
+        }
+        Self {
+            id: session.id,
+            name: session.name,
+            members,
         }
     }
 }
 
-impl Default for Session {
-    fn default() -> Self {
-        Self {
-            id: 0,
-            name: "None".to_string(),
-        }
-    }
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Status {
@@ -113,9 +115,6 @@ pub struct App {
     pub chat: ChatScreen,
     //当前页面处于哪个视图
     pub view: View,
-    pub me: Me,
     // 添加token字段存储用户认证信息
-    pub token: String,
-    // 添加TCP流用于发送消息
-    pub stream: Arc<Mutex<OwnedWriteHalf>>,
+    pub token: String,    
 }

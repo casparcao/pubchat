@@ -24,6 +24,7 @@ impl ChatComponent {
 
     pub fn change_session(&mut self, session: Option<Session>) {
         self.session = session;
+
         if let Some(session) = &self.session {
             // 获取当前聊天目标的消息
             match cache::message_cache().get_messages(session.id, &self.token, Page::default()){
@@ -58,6 +59,20 @@ impl ChatComponent {
         if !self.input.is_empty() {
             self.input.pop();
         }
+    }
+
+    pub fn scroll_up(&mut self) {
+        if self.mode == Mode::Normal {
+            return;
+        }
+        //todo 消息列表滚动
+    }
+
+    pub fn scroll_down(&mut self) {
+        if self.mode == Mode::Normal {
+            return;
+        }
+        //todo 消息列表滚动
     }
 
     pub fn render(&self, frame: &mut Frame, area: Rect) {

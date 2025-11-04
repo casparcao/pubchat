@@ -4,12 +4,19 @@ use reqwest;
 use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
-use crate::remote::session_host;
+use crate::remote::{contact::ContactResponse, session_host};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SessionResponse {
     pub id: i64,
     pub name: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct SessionDetailResponse {
+    pub id: i64,
+    pub name: String,
+    pub members: Vec<ContactResponse>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -44,6 +51,27 @@ pub fn get_sessions(token: &str) -> Result<Vec<SessionResponse>> {
         let status = response.status();
         let error_text = response.text()?;
         Err(ApiErr::Error(format!("Failed to get sessions: {} - {}", status, error_text).into()).into())
+    }
+}
+
+pub fn get_session(token: &str, id: i64) -> Result<SessionDetailResponse> {
+    let client = reqwest::blocking::Client::new();
+    let url = format!("{}/sessions/{}", session_host(), id);
+    let response = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", token))
+        .send()?;
+    if response.status().is_success() {
+        let result: ApiResult<SessionDetailResponse> = response.json()?;
+        if result.ok {
+            Ok(result.data.unwrap())
+        } else {
+            Err(ApiErr::Error(result.message.unwrap()).into())
+        }
+    } else {
+        let status = response.status();
+        let error_text = response.text()?;
+        Err(ApiErr::Error(format!("Failed to get session: {} - {}", status, error_text).into()).into())
     }
 }
 

@@ -29,10 +29,10 @@ pub async fn get_current_user_sessions(
 }
 
 pub async fn get_session_details(
-    Path(session_id): Path<i64>,
+    Path(id): Path<i64>,
 ) -> Result<ApiResponse<SessionDetailResponse>, ApiErr> {
     // 获取会话基本信息
-    let detail = session::get_session_by_id(session_id).await?;
+    let detail = session::get_session_by_id(id).await?;
     Ok(ApiResponse::One(detail))
 }
 
@@ -40,5 +40,5 @@ pub fn router() -> Router {
     Router::new()
         .route("/sessions", post(create_session))
         .route("/user/sessions", get(get_current_user_sessions))
-        .route("/sessions/{session_id}", get(get_session_details))
+        .route("/sessions/{id}", get(get_session_details))
 }

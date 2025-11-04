@@ -9,11 +9,9 @@ impl App {
     pub fn new(token: String, me: Me, stream: Arc<Mutex<OwnedWriteHalf>>) -> Self {
         Self {
             contact: ContactListScreen::new(&token),
-            chat: ChatScreen::new(&token),
+            chat: ChatScreen::new(&token, me, stream),
             view: View::Contact,
-            me: me,
             token: token,
-            stream: stream,
         }
     }
     

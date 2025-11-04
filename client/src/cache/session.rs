@@ -1,12 +1,14 @@
 // 缓存ui聊天框的聊天列表
 // 实现三级缓存：内存 -> SQLite -> 远程服务器
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 use anyhow::Ok;
 use anyhow::Result;
 use crate::remote::session;
 use crate::remote::session::CreateSessionRequest;
+use crate::remote::session::SessionDetailResponse;
 use crate::remote::session::SessionResponse;
 use core::request::Page;
 
@@ -15,12 +17,14 @@ use core::request::Page;
 pub struct Cache {
     // 第一级：内存缓存
     memory_cache: Arc<RwLock<Vec<SessionResponse>>>,
+    session_detail_cache: Arc<RwLock<HashMap<i64, SessionDetailResponse>>>,
 }
 
 impl Cache {
     pub fn new() -> Self {
         Self {
             memory_cache: Arc::new(RwLock::new(vec![])),
+            session_detail_cache: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -79,6 +83,37 @@ impl Cache {
                 log::error!("从远程服务器获取消息失败: {}", e);
                 // 如果所有缓存级别都失败，返回空列表
                 Ok(vec![])
+            }
+        }
+    }
+
+    pub fn get_session(&self, token: &str, id: i64) -> Result<SessionDetailResponse> {
+        // 1. 检查内存缓存
+        {
+            let cache = self.session_detail_cache.read().unwrap();
+            if let Some(detail) = cache.get(&id) {
+                return Ok(detail.clone());
+            }
+        }
+
+        match session::get_session(token, id){
+            std::result::Result::Ok(session) => {
+                // 将结果存入内存缓存和SQLite数据库
+                {
+                    let mut cache = self.session_detail_cache.write().unwrap();
+                    cache.insert(id, session.clone());
+                }
+                
+                // 异步保存到SQLite，不阻塞当前操作
+                // if let Err(e) = self.save_to_sqlite(uid, &sessions) {
+                //     log::error!("保存消息到SQLite失败: {}", e);
+                // }
+                Ok(session)
+            }
+            Err(e) => {
+                log::error!("从远程服务器获session失败: {}", e);
+                // 如果所有缓存级别都失败，返回空列表
+                Err(e)
             }
         }
     }

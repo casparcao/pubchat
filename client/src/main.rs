@@ -117,9 +117,7 @@ fn show_main_screen(
                 return Ok(());
             }
             // 将所有按键事件交给应用程序处理
-            if app.handle(key) {
-                return Ok(());
-            }
+            app.handle(key);
         }
     }
 }

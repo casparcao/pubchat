@@ -1,40 +1,40 @@
 use core::proto::{codec::encode, message::{ChatRequest, ChatType, Message, Type}};
 use std::sync::Arc;
 
-use crate::ui::component::chat::ChatComponent;
+use crate::ui::{component::chat::ChatComponent, models::Me};
 use tokio::{io::AsyncWriteExt, net::tcp::OwnedWriteHalf, sync::Mutex};
 
 impl ChatComponent {
     /// 发送消息的主要逻辑
-    pub fn send_message(&mut self, stream: &Arc<Mutex<OwnedWriteHalf>>) -> bool {
+    pub fn send_message(&mut self, me: &Me, stream: &Arc<Mutex<OwnedWriteHalf>>) -> bool {
         if self.input.is_empty() {
             return false;
         }
-
         // 处理命令
-        let should_exit = if self.input.starts_with('/') {
-            self.handle_command()
-        } else {
-            if self.session.is_none() {
-                return false;
-            }
+        if self.input.starts_with('/') {
+            return self.handle_command();
+        }
+        if let Some(session) = &self.session {
             // 实际通过TCP发送消息
             let content = self.input.clone();
             // 获取接收者ID，如果找不到则使用默认值
-            let session_id = self.session.unwrap().id;
+            let session_id = session.id;
             let stream_clone = stream.clone();
             // 创建聊天请求消息
             let chat_request = Message {
-                id: 2, // 简化处理，实际应该使用唯一ID生成器
+                id: snowflaker::next_id().unwrap(), // 简化处理，实际应该使用唯一ID生成器
                 ts: std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_millis() as u64,
                 mtype: Type::ChatRequest as i32,
                 content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest{
-                    sender: 0, // 使用真实的用户ID
+                    sender: me.id, // 使用真实的用户ID
                     session: session_id as u64,
-                    receivers: vec![session_id as u64],
+                    receivers: session.members.iter()
+                        .map(|m| m.id as u64)
+                        .filter(|id| *id != me.id)
+                        .collect(),
                     ctype: ChatType::Text as i32,
                     message: content.clone(),
                     ts: std::time::SystemTime::now()
@@ -55,11 +55,10 @@ impl ChatComponent {
             };
             let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
             rt.block_on(self.do_send_message(stream_clone, encoded));
-            false
-        };
+        }
         self.input.clear();
         self.mode = crate::ui::models::Mode::Normal;
-        should_exit
+        false
     }
 
     pub async fn do_send_message(&self, stream_clone: Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>, encoded: Vec<u8>) {

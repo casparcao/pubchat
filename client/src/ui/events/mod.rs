@@ -6,11 +6,11 @@ use crate::ui::models::{App, View};
 use crossterm::event::{KeyCode, KeyEvent};
 
 impl App {
-    pub fn handle(&mut self, key: KeyEvent) -> bool {
+    pub fn handle(&mut self, key: KeyEvent) {
         match self.view {
             View::Contact => self.contact.handle(key),
             View::Chat => self.chat.handle(key),
-        };
+        }
         match key.code {
             KeyCode::Tab => {
                 // 在不同视图间切换
@@ -19,7 +19,7 @@ impl App {
                     View::Contact => View::Chat,
                 };
             }
+            _ => {}
         }
-        false
     }
 }

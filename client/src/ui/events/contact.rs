@@ -3,7 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use crate::ui::screen::contact::ContactListScreen;
 
 impl ContactListScreen {
-    pub fn handle(&mut self, key: KeyEvent) -> bool {
+    pub fn handle(&mut self, key: KeyEvent)  {
         match key.code {
             KeyCode::Char('i') => {
             }
@@ -25,6 +25,5 @@ impl ContactListScreen {
             }
             _ => {}
         }
-        false
     }
 }
