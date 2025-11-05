@@ -44,7 +44,7 @@ impl ChatComponent {
                     uname: "".to_string(), // 使用真实的用户名
                 })),
             };
-            
+            log::info!("Sending message body: {:?}", chat_request);
             // 发送消息
             let encoded = match encode(&chat_request) {
                 Ok(data) => data,

@@ -1,18 +1,13 @@
-use crate::ui::{component::{chat::ChatComponent, session::SessionListComponent}, models::Me};
+use crate::ui::{component::{chat::ChatComponent, session::SessionListComponent}};
 use ratatui::{
     prelude::*,
 };
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use tokio::net::tcp::OwnedWriteHalf;
 
 #[derive(Debug, Clone)]
 pub struct ChatScreen {
     pub sessions: SessionListComponent,
     pub chat: ChatComponent,
     pub maximized: bool,
-    pub stream: Arc<Mutex<OwnedWriteHalf>>,
-    pub me: Me,
     //焦点在session列表还是在聊天窗口
     pub focus: Focus
 }
@@ -24,14 +19,12 @@ pub enum Focus {
 }
 
 impl ChatScreen {
-    pub fn new(token: &str, me: Me, stream: Arc<Mutex<OwnedWriteHalf>>) -> Self {
+    pub fn new(token: &str) -> Self {
         // Split the TCP stream into read and write halves
         Self {
             sessions: SessionListComponent::new(token),
             chat: ChatComponent::new(token),
             maximized: false,
-            stream: stream,
-            me: me,
             focus: Focus::Sessions,
         }
         

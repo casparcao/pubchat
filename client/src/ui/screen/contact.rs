@@ -13,10 +13,12 @@ pub struct ContactListScreen {
     pub selected: Option<Contact>,
     //选中联系人在列表中的索引
     pub index: usize,
+    pub me: Me,
+    pub token: String,
 }
 
 impl ContactListScreen {
-    pub fn new(token: &str) -> Self {
+    pub fn new(token: &str, me: Me) -> Self {
         match cache::contact_cache().get_contacts(token){
             Ok(friends) => {
                 let contacts = friends
@@ -24,11 +26,11 @@ impl ContactListScreen {
                     .map(|friend| Contact::from_contact_response(friend))
                     .collect();
                 log::info!("Contacts loaded: {:?}", contacts);
-                Self {contacts, selected: None, index: 0}
+                Self {contacts, selected: None, index: 0, me, token: token.to_string()}
             },
             Err(e) => {
                 log::error!("Failed to get contacts: {:?}", e);
-                Self {contacts: vec![], selected: None, index: 0}
+                Self {contacts: vec![], selected: None, index: 0, me, token: token.to_string()}
             },
         }
     }
@@ -117,18 +119,18 @@ impl ContactListScreen {
         self.selected = Some(self.contacts[self.index].clone());
     }
 
-    pub fn create_session(&self, token: &str, me: &Me) -> Result<Session>{
+    pub fn create_session(&self) -> Result<Session>{
         if let Some(selected) = &self.selected {
              // 计算会话ID
-            let session_id = calc_session_id(me.id as i64, selected.id) as i64;
+            let session_id = calc_session_id(self.me.id as i64, selected.id) as i64;
             // 构造创建会话请求
             let request = CreateSessionRequest {
                 id: session_id,
-                name: format!("{} and {}", me.name, selected.name),
+                name: format!("{} and {}", self.me.name, selected.name),
                 members: vec![
                     CreateSessionUserRequest {
-                        id: me.id as i64,
-                        name: me.name.clone(),
+                        id: self.me.id as i64,
+                        name: self.me.name.clone(),
                     },
                     CreateSessionUserRequest {
                         id: selected.id,
@@ -136,7 +138,7 @@ impl ContactListScreen {
                     }
                 ],
             };
-            match cache::session_cache().add_session(token, request){
+            match cache::session_cache().add_session(&self.token, request){
             // 创建会话
                 Ok(session_response) => {
                     // 创建或更新本地会话列表

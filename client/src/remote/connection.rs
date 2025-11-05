@@ -31,10 +31,10 @@ pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64, String)>
     // 读取连接响应
     let response = decode::<Message, _>(&mut stream).await?;
     // 检查连接响应是否成功并获取用户ID
-    let user_id = if let Some(core::proto::message::message::Content::ConnectResponse(resp)) = response.content {
+    let (user_id, uname) = if let Some(core::proto::message::message::Content::ConnectResponse(resp)) = response.content {
         if resp.code == 0 {
             info!("Connection established successfully, user ID: {}", resp.uid);
-            resp.uid // 返回用户ID
+            (resp.uid, resp.uname) // 返回用户ID
         } else {
             error!("Connection failed: {}", resp.message);
             return Err(ApiErr::Error(format!("Connection failed: {}", resp.message)).into());
@@ -43,7 +43,7 @@ pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64, String)>
         error!("Invalid connection response");
         return Err(ApiErr::Error("Invalid connection response".to_string()).into());
     };
-    Ok((stream, user_id, "".to_string()))
+    Ok((stream, user_id, uname))
 }
 
 // 接收消息的异步任务

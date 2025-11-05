@@ -24,7 +24,6 @@ impl ChatComponent {
 
     pub fn change_session(&mut self, session: Option<Session>) {
         self.session = session;
-
         if let Some(session) = &self.session {
             // 获取当前聊天目标的消息
             match cache::message_cache().get_messages(session.id, &self.token, Page::default()){
@@ -36,8 +35,11 @@ impl ChatComponent {
                 },
                 Err(err) => {
                     log::error!("Error fetching messages: {}", err);
+                    self.messages = vec![];
                 }
             }
+        }else{
+            self.messages = vec![];
         }
     }
     
@@ -66,6 +68,7 @@ impl ChatComponent {
             return;
         }
         //todo 消息列表滚动
+        
     }
 
     pub fn scroll_down(&mut self) {

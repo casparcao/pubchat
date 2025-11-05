@@ -18,4 +18,8 @@ impl App {
             },
         }
     }
+
+    pub fn change_view(&mut self, view: View) {
+        self.view = view;
+    }
 }

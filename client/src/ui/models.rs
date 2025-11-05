@@ -1,3 +1,8 @@
+use std::sync::Arc;
+
+use tokio::net::tcp::OwnedWriteHalf;
+use tokio::sync::Mutex;
+
 use crate::ui::screen::chat::ChatScreen;
 use crate::ui::screen::contact::ContactListScreen;
 
@@ -116,5 +121,7 @@ pub struct App {
     //当前页面处于哪个视图
     pub view: View,
     // 添加token字段存储用户认证信息
-    pub token: String,    
+    pub token: String,
+    pub stream: Arc<Mutex<OwnedWriteHalf>>,
+    pub me: Me,
 }

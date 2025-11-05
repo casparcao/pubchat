@@ -1,64 +1,31 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::ui::{component::{chat::ChatComponent, session::SessionListComponent}, models::Mode, screen::chat::{ChatScreen, Focus}};
+use crate::ui::{component::{chat::ChatComponent, session::SessionListComponent}, events::EventResult, models::Mode, screen::chat::{ChatScreen, Focus}};
 
 impl ChatScreen {
-    pub fn handle(&mut self, key: KeyEvent) {
-        match self.focus {
+    pub fn handle(&mut self, key: KeyEvent) -> EventResult{
+        let result = match self.focus {
             Focus::Chat => {
-                self.chat.handle(key);
+                self.chat.handle(key)
             }
             Focus::Sessions => {
-                self.sessions.handle(key);
+                self.sessions.handle(key)
             }
-        }
-        match key.code {
-            KeyCode::Char('h') => {
-                self.focus_left();
-            }
-            KeyCode::Char('l') => {
-                self.focus_right();
-            }
-        }
-    }
-
-    pub fn handle_normal_mode(&mut self, key: KeyEvent) {
-        match key.code {
-            KeyCode::Char('m') => {
-                // 切换聊天窗口最大化状态
-                self.maximized = !self.maximized;
-            }
-            KeyCode::Char('k') => {
-                self.chat.scroll_up();
-            }
-            KeyCode::Char('j') => {
-                self.chat.scroll_down();
+        };
+        match result {
+            EventResult::Nav2SessionList => {
+                self.focus = Focus::Sessions;
             }
             _ => {}
         }
+        result
     }
 
-    pub fn handle_insert_mode(&mut self, key: KeyEvent) {
-        match key.code {
-            KeyCode::Esc => {
-                self.chat.change_mode(Mode::Normal);
-            }
-            KeyCode::Enter => {
-                self.chat.send_message(&self.me, &self.stream);
-            }
-            KeyCode::Char(c) => {
-                self.chat.input(c);
-            }
-            KeyCode::Backspace => {
-                self.chat.delete();
-            }
-            _ => {}
-        }
-    }
+
 }
 
 impl SessionListComponent {
-    pub fn handle(&mut self, key: KeyEvent)  {
+    pub fn handle(&mut self, key: KeyEvent) -> EventResult {
         match key.code {
             KeyCode::Char('k') => {
                 self.move_up();
@@ -66,17 +33,33 @@ impl SessionListComponent {
             KeyCode::Char('j') => {
                 self.move_down();
             }
+            KeyCode::Char('c') => {
+                return EventResult::Nav2Contact;
+            }
             KeyCode::Enter => {
-                if let Some(session) = self.get_selected_session() {
-                    self.change_session(session);
+                if let Some(session) = self.select() {
+                    return EventResult::CreateSession(session.clone());
                 }
             }
+            _ => {}
         }
+        EventResult::None
     }
 }
 
 impl ChatComponent {
-    pub fn handle(&mut self, key: KeyEvent)  {
+    pub fn handle(&mut self, key: KeyEvent) -> EventResult  {
+        match self.mode {
+            Mode::Normal => {
+                return self.handle_normal_mode(key);
+            }
+            Mode::Insert => {
+                return self.handle_insert_mode(key);
+            }
+        }
+    }
+
+    pub fn handle_normal_mode(&mut self, key: KeyEvent) -> EventResult {
         match key.code {
             KeyCode::Char('i') => {
                 self.change_mode(Mode::Insert);
@@ -87,8 +70,33 @@ impl ChatComponent {
             KeyCode::Char('j') => {
                 self.scroll_down();
             }
+            KeyCode::Char('c') => {
+                return EventResult::Nav2Contact;
+            }
             KeyCode::Char('h') => {
-}
+                return EventResult::Nav2SessionList;
+            }
+            _ => {}
         }
+        EventResult::None
+    }
+
+    pub fn handle_insert_mode(&mut self, key: KeyEvent) -> EventResult{
+        match key.code {
+            KeyCode::Esc => {
+                self.change_mode(Mode::Normal);
+            }
+            KeyCode::Enter => {
+                return EventResult::SendMessage();
+            }
+            KeyCode::Char(c) => {
+                self.input(c);
+            }
+            KeyCode::Backspace => {
+                self.delete();
+            }
+            _ => {}
+        }
+        EventResult::None
     }
 }
