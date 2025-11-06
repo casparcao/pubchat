@@ -2,7 +2,7 @@ use core::request::Page;
 
 use ratatui::{Frame, layout::Rect, style, widgets::{Block, Borders, List, ListItem}};
 
-use crate::{cache, ui::models::Session};
+use crate::{cache, ui::{models::Session, screen::chat::Focus}};
 
 #[derive(Debug, Clone)]
 pub struct SessionListComponent {
@@ -27,7 +27,7 @@ impl SessionListComponent {
         }
     }
     
-    pub fn render(&self, frame: &mut Frame, area: Rect) {
+    pub fn render(&self, frame: &mut Frame, area: Rect, focus: &Focus) {
         let sessions: Vec<ListItem> = self.sessions
             .iter()
             .enumerate()
@@ -41,8 +41,12 @@ impl SessionListComponent {
             })
             .collect();
         let title = "Sessions";
+        let style = match focus {
+            Focus::Sessions => style::Style::default().fg(style::Color::Yellow),
+            _ => style::Style::default(),
+        };
         let sessions_list = List::new(sessions)
-            .block(Block::default().title(title).borders(Borders::ALL));
+            .block(Block::default().title(title).style(style).borders(Borders::ALL));
         frame.render_widget(sessions_list, area);
     }
 

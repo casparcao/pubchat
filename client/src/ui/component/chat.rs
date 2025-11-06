@@ -1,7 +1,7 @@
 
 use core::request::Page;
 
-use crate::{cache, ui::models::{Message, Mode, Session}};
+use crate::{cache, ui::{models::{Message, Mode, Session}, screen::chat::Focus}};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},
@@ -78,7 +78,7 @@ impl ChatComponent {
         //todo 消息列表滚动
     }
 
-    pub fn render(&self, frame: &mut Frame, area: Rect) {
+    pub fn render(&self, frame: &mut Frame, area: Rect, focus: &Focus) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -88,12 +88,12 @@ impl ChatComponent {
             .split(area);
 
         // 渲染消息区域
-        self.render_messages(frame, chunks[0]);
+        self.render_messages(frame, chunks[0], focus);
         // 渲染输入框
         self.render_input(frame, chunks[1]);
     }
 
-    fn render_messages(&self, frame: &mut Frame, area: Rect) {
+    fn render_messages(&self, frame: &mut Frame, area: Rect, focus: &Focus) {
         let list_items: Vec<ListItem> = self.messages.iter().map(|m| {
             let style = if m.system {
                 Style::default().fg(Color::Blue)
@@ -114,9 +114,12 @@ impl ChatComponent {
         } else {
             "Messages".to_string()
         };
-
+        let style = match focus {
+            Focus::Chat => style::Style::default().fg(style::Color::Yellow),
+            _ => style::Style::default(),
+        };
         let messages_list = List::new(list_items)
-            .block(Block::default().title(title).borders(Borders::ALL))
+            .block(Block::default().title(title).style(style).borders(Borders::ALL))
             .scroll_padding(1);
         frame.render_widget(messages_list, area);
     }

@@ -52,7 +52,7 @@ impl ChatScreen {
             .split(area);
 
         // 获取当前聊天目标的消息
-        self.chat.render(frame, chunks[0]);
+        self.chat.render(frame, chunks[0], &Focus::Chat);
         
     }
 
@@ -66,10 +66,9 @@ impl ChatScreen {
             ])
             .split(area);
         // 左侧会话列表
-        self.sessions.render(frame, chunks[0]);
-
+        self.sessions.render(frame, chunks[0], &self.focus);
         // 右侧聊天区域
-        self.chat.render(frame, chunks[1]);
+        self.chat.render(frame, chunks[1], &self.focus);
     }
 
 }
