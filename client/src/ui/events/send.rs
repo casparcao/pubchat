@@ -1,7 +1,7 @@
 use core::proto::{codec::encode, message::{ChatRequest, ChatType, Message, Type}};
 use std::sync::Arc;
 
-use crate::ui::{component::chat::ChatComponent, models::Me};
+use crate::{cache, ui::{component::chat::ChatComponent, models::Me}};
 use tokio::{io::AsyncWriteExt, net::tcp::OwnedWriteHalf, sync::Mutex};
 
 impl ChatComponent {
@@ -44,6 +44,18 @@ impl ChatComponent {
                     uname: me.name.to_string(), // 使用真实的用户名
                 })),
             };
+            self.messages.push(crate::ui::models::Message::new(me.name.to_string(), content.clone(), false));
+            let message = crate::repository::message::Message{
+                id: chat_request.id as i64,
+                sender: me.id as i64,
+                receiver: 0,
+                uname: me.name.to_string(),
+                session: session_id,
+                mtype: Type::ChatRequest as i32,
+                content: content,
+                timestamp: chat_request.ts as i64,
+            };
+            cache::message_cache().add_message(session.id, message);
             log::info!("Sending message body: {:?}", chat_request);
             // 发送消息
             let encoded = match encode(&chat_request) {

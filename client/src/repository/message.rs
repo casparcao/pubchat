@@ -49,7 +49,7 @@ pub(crate) async fn select_messages(sid: i64, page: Page) -> Result<(Vec<Message
 
 pub async fn save(message: &Message) -> Result<()> {
     let mut connection = db::connection().await?;
-    sqlx::query("INSERT INTO messages (id, sender, receiver, session, mtype, content, timestamp, uname) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    sqlx::query("INSERT INTO messages (id, sender, receiver, session, mtype, content, timestamp, uname) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&message.id)
         .bind(&message.sender)
         .bind(&message.receiver)
