@@ -1,6 +1,6 @@
 use core::response::ApiErr;
 
-use crate::{cache, remote::session::{CreateSessionRequest, CreateSessionUserRequest, calc_session_id, create_session}, ui::models::{Contact, Me, Session, Status}};
+use crate::{cache, remote::session::{CreateSessionRequest, CreateSessionUserRequest, calc_session_id}, ui::models::{Contact, Me, Session, Status}};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},
@@ -58,8 +58,6 @@ impl ContactListScreen {
                 match selected.status {
                     Status::Online => "Online",
                     Status::Offline => "Offline",
-                    Status::Busy => "Busy",
-                    Status::Away => "Away",
                 })
         }else{
             "Select a friend to view their information".to_string()
@@ -79,8 +77,8 @@ impl ContactListScreen {
                 let status_char = match friend.status {
                     Status::Online => "🟢",
                     Status::Offline => "🔴",
-                    Status::Busy => "🔴",
-                    Status::Away => "🟡",
+                    // Status::Busy => "🔴",
+                    // Status::Away => "🟡",
                 };
                 let content = format!("{} {}", status_char, friend.name);
                 let mut item = ListItem::new(content);
@@ -123,10 +121,11 @@ impl ContactListScreen {
         if let Some(selected) = &self.selected {
              // 计算会话ID
             let session_id = calc_session_id(self.me.id as i64, selected.id) as i64;
+            let session_name = format!("{} and {}", self.me.name, selected.name);
             // 构造创建会话请求
             let request = CreateSessionRequest {
                 id: session_id,
-                name: format!("{} and {}", self.me.name, selected.name),
+                name: session_name.clone(),
                 members: vec![
                     CreateSessionUserRequest {
                         id: self.me.id as i64,
@@ -140,10 +139,15 @@ impl ContactListScreen {
             };
             match cache::session_cache().add_session(&self.token, request){
             // 创建会话
-                Ok(session_response) => {
+                Ok(_) => {
                     // 创建或更新本地会话列表
-                    let app_session = Session::from_session_response(session_response);
-                    Ok(app_session)
+                    Ok(Session { id: session_id, 
+                        name: session_name, 
+                        members: vec![Contact{id: selected.id, 
+                            name: selected.name.clone(), 
+                            avatar: None,
+                            status: Status::Online}]
+                     })
                 }
                 Err(e) => {
                     Err(ApiErr::Error(format!("Failed to create session: {}", e)).into())

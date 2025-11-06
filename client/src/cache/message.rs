@@ -117,22 +117,4 @@ impl Cache {
         }
     }
 
-    /// 清除指定房间的缓存
-    pub fn invalidate_room_cache(&self, session: i64) {
-        // 清除内存缓存
-        {
-            let mut cache = self.memory_cache.write().unwrap();
-            cache.remove(&session);
-        }
-        
-        // 注意：在实际应用中，您可能还需要清除SQLite中的相关数据
-        // 或者标记为需要更新
-    }
-
-    /// 清除所有缓存
-    pub fn clear_cache(&self) {
-        let mut cache = self.memory_cache.write().unwrap();
-        cache.clear();
-        // 注意：在实际应用中，您可能还需要处理SQLite数据
-    }
 }

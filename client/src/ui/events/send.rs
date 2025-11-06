@@ -41,7 +41,7 @@ impl ChatComponent {
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
                         .as_millis() as u64,
-                    uname: "".to_string(), // 使用真实的用户名
+                    uname: me.name.to_string(), // 使用真实的用户名
                 })),
             };
             log::info!("Sending message body: {:?}", chat_request);

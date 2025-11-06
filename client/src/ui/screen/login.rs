@@ -222,8 +222,4 @@ impl LoginScreen {
         }
     }
     
-    // 获取登录状态
-    pub fn is_logging_in(&self) -> bool {
-        self.is_logging_in
-    }
 }

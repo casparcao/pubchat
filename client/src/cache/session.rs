@@ -32,7 +32,7 @@ impl Cache {
     /// 1. 首先检查内存缓存
     /// 2. 然后检查SQLite数据库
     /// 3. 最后从远程服务器获取
-    pub fn get_sessions(&self, token: &str, page: Page) -> Result<Vec<SessionResponse>> {
+    pub fn get_sessions(&self, token: &str, _page: Page) -> Result<Vec<SessionResponse>> {
         // 1. 检查内存缓存
         {
             let cache = self.memory_cache.read().unwrap();
@@ -169,10 +169,4 @@ impl Cache {
         session::create_session(token, payload)
     }
 
-    /// 清除所有缓存
-    pub fn clear_cache(&self) {
-        let mut cache = self.memory_cache.write().unwrap();
-        cache.clear();
-        // 注意：在实际应用中，您可能还需要处理SQLite数据
-    }
 }

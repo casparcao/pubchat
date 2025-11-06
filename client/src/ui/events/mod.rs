@@ -2,7 +2,7 @@ pub mod send;
 pub mod chat;
 pub mod contact;
 
-use crate::ui::{models::{App, Session, View}, screen::chat::Focus};
+use crate::{cache, ui::{models::{App, Session, View}, screen::chat::Focus}};
 use crossterm::event::{KeyCode, KeyEvent};
 
 pub enum EventResult {
@@ -28,7 +28,12 @@ impl App {
             EventResult::CreateSession(session) => {
                 // 切换到聊天页面
                 self.change_view(View::Chat);
-                self.chat.chat.change_session(Some(session));
+                let session = cache::session_cache().get_session(&self.token, session.id);
+                log::info!("Create session event: {:?}", session);
+                let session = session
+                    .map(|s| Session::from_session_detail_response(s))
+                    .ok();
+                self.chat.chat.change_session(session);
                 self.chat.focus = Focus::Chat;
             },
             EventResult::Nav2Contact => {

@@ -26,9 +26,6 @@ impl Message {
         }
     }
 
-    pub fn system(content: &str) -> Self {
-        Self::new("SYSTEM".to_string(), content.to_string(), true)
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -40,9 +37,6 @@ pub struct Contact {
 }
 
 impl Contact {
-    pub fn new(id: i64, name: String, status: Status, avatar: Option<String>) -> Self {
-        Self { id, name, status, avatar }
-    }
     
     // 从好友响应创建联系人
     pub fn from_contact_response(friend: crate::remote::contact::ContactResponse) -> Self {
@@ -89,8 +83,6 @@ impl Session {
 pub enum Status {
     Online,
     Offline,
-    Busy,
-    Away,
 }
 
 #[derive(Debug, Clone, PartialEq)]

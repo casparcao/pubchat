@@ -1,7 +1,6 @@
 use anyhow::Result;
 use tokio::net::TcpListener;
-use tracing::{info, error, Level};
-use tracing_subscriber;
+use tracing::{info, error};
 use dotenv::dotenv;
 mod connection;
 mod queue;

@@ -25,6 +25,7 @@ impl ChatComponent {
     pub fn change_session(&mut self, session: Option<Session>) {
         self.session = session;
         if let Some(session) = &self.session {
+            log::info!("Change session to {:?}", session);
             // 获取当前聊天目标的消息
             match cache::message_cache().get_messages(session.id, &self.token, Page::default()){
                 Ok(messages) => {
