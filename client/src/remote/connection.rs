@@ -47,7 +47,7 @@ pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64, String)>
 }
 
 // 接收消息的异步任务
-pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf) {
+pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf, sx: tokio::sync::mpsc::Sender<crate::repository::message::Message>) {
     // 启动接收消息的任务
     tokio::spawn(async move {
         loop {
@@ -71,7 +71,8 @@ pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf) {
                                     timestamp: chat.ts as i64,
                                     uname: chat.uname.clone(),
                                 };
-                                cache::message_cache().async_add_message(chat.session as i64, msg).await;
+                                cache::message_cache().async_add_message(chat.session as i64, msg.clone()).await;
+                                sx.send(msg).await;
                             }else{
                                 error!("Invalid chat message");
                             }

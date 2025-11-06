@@ -58,9 +58,10 @@ fn main() -> Result<()> {
     // 使用token建立TCP连接
     let (stream, user_id, user_name) = asynrt::get().block_on(remote::connection::connect_with_token(&token))?;
     let (reader, writer) = stream.into_split();
+    let (sx, mut rx) = tokio::sync::mpsc::channel(100);
     // 开启接收消息任务
-    asynrt::get().block_on(remote::connection::receive_messages(reader));
-    show_main_screen(&mut terminal, token, Me {id: user_id, name: user_name}, writer)?;
+    asynrt::get().block_on(remote::connection::receive_messages(reader, sx));
+    show_main_screen(&mut terminal, token, Me {id: user_id, name: user_name}, writer, &mut rx)?;
     // 退出原始模式
     disable_raw_mode()?;
     stdout().execute(LeaveAlternateScreen)?;
@@ -107,7 +108,8 @@ fn show_main_screen(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>, 
     token: String,
     me: Me,
-    writer: tokio::net::tcp::OwnedWriteHalf
+    writer: tokio::net::tcp::OwnedWriteHalf,
+    rx: &mut tokio::sync::mpsc::Receiver<crate::repository::message::Message>,
 ) -> Result<()> {
     
     let shared_writer = Arc::new(Mutex::new(writer));
@@ -116,18 +118,24 @@ fn show_main_screen(
     // 主事件循环
     loop {
         terminal.draw(|frame| app.render(frame))?;
-        if let Event::Key(key) = event::read()? {
-            // 只处理按键按下事件，忽略按键释放事件
-            // 这可以解决Windows系统上重复字符输入的问题
-            if key.kind != KeyEventKind::Press {
-                continue;
+        if event::poll(std::time::Duration::from_millis(50))? {
+            if let Event::Key(key) = event::read()? {
+                // 只处理按键按下事件，忽略按键释放事件
+                // 这可以解决Windows系统上重复字符输入的问题
+                if key.kind != KeyEventKind::Press {
+                    continue;
+                }
+                if key.code == KeyCode::Char('c') && key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) {
+                    // 按下Ctrl+C，退出程序
+                    return Ok(());
+                }
+                // 将所有按键事件交给应用程序处理
+                app.handle(key);
             }
-            if key.code == KeyCode::Char('c') && key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) {
-                // 按下Ctrl+C，退出程序
-                return Ok(());
-            }
-            // 将所有按键事件交给应用程序处理
-            app.handle(key);
+        }
+        if let Ok(message) = rx.try_recv() {
+            // 接收到消息，将消息添加到缓存中
+            app.chat.chat.messages.push(crate::ui::models::Message::new(message.uname, message.content, false));
         }
     }
 }
