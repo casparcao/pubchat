@@ -65,4 +65,12 @@ impl SessionListComponent {
     pub fn select(&self) -> Option<&Session> {
         self.sessions.get(self.index)
     }
+
+    pub fn add_session(&mut self, session: Option<Session>) {
+        if let Some(session) = session {
+            if !self.sessions.iter().any(|s| s.id == session.id) {
+                self.sessions.push(session);
+            }
+        }
+    }
 }

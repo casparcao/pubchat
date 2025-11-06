@@ -33,6 +33,7 @@ impl App {
                 let session = session
                     .map(|s| Session::from_session_detail_response(s))
                     .ok();
+                self.chat.sessions.add_session(session.clone());
                 self.chat.chat.change_session(session);
                 self.chat.focus = Focus::Chat;
             },

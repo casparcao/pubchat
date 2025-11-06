@@ -72,7 +72,7 @@ pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf, sx: to
                                     uname: chat.uname.clone(),
                                 };
                                 cache::message_cache().async_add_message(chat.session as i64, msg.clone()).await;
-                                sx.send(msg).await;
+                                let _ = sx.send(msg).await;
                             }else{
                                 error!("Invalid chat message");
                             }
