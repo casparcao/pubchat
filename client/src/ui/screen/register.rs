@@ -183,12 +183,12 @@ impl RegisterScreen {
     pub fn render(&mut self, frame: &mut Frame) {
         let size = frame.area();
         
-        // 创建注册框区域
+        // 创建注册框区域，增加高度以提供更多空间
         let popup_area = Rect {
             x: size.width.saturating_sub(50) / 2,
-            y: size.height.saturating_sub(15) / 2,
+            y: size.height.saturating_sub(18) / 2, // 增加窗口高度从15到18
             width: std::cmp::min(50, size.width),
-            height: std::cmp::min(15, size.height),
+            height: std::cmp::min(18, size.height), // 增加窗口高度从15到18
         };
         
         // 清除背景
@@ -202,7 +202,7 @@ impl RegisterScreen {
         let inner_area = block.inner(popup_area);
         frame.render_widget(block, popup_area);
         
-        // 布局表单元素
+        // 布局表单元素，为每个输入框提供更多空间
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -212,7 +212,7 @@ impl RegisterScreen {
                 Constraint::Length(3), // Password输入框
                 Constraint::Length(1), // Confirm Password标签
                 Constraint::Length(3), // Confirm Password输入框
-                Constraint::Length(2), // 消息区域
+                Constraint::Length(3), // 消息区域，增加空间
             ])
             .split(inner_area);
         
