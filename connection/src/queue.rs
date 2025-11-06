@@ -16,6 +16,7 @@ pub static POOL: OnceLock<Pool<Manager>> = OnceLock::new();
 pub async fn init() -> Result<()> {
     let connstring = dotenv::var("RABBITMQ_ADDR").expect("请设置RabbitMQ连接地址RABBITMQ_ADDR");
     let session_message_queue_name = dotenv::var("RABBITMQ_SESSION_MESSAGE_QUEUE_NAME").expect("请设置RabbitMQ队列名称RABBITMQ_SESSION_MESSAGE_QUEUE_NAME");
+    let exc_name = dotenv::var("RABBITMQ_MESSAGE_EXCHANGE").expect("请设置RabbitMQ交换机名称RABBITMQ_MESSAGE_EXCHANGE");
     let mut cfg = Config::default();
     cfg.url = Some(connstring.into());
     let pool = cfg.create_pool(Some(Runtime::Tokio1))?;
@@ -27,6 +28,21 @@ pub async fn init() -> Result<()> {
                 Default::default(),
             )
             .await?; 
+    let _exchange = channel
+            .exchange_declare(
+                &exc_name,
+                lapin::ExchangeKind::Topic,
+                ExchangeDeclareOptions::default(),
+                Default::default(),
+            )
+            .await?;
+    channel
+            .queue_bind(
+                &session_message_queue_name, 
+                &exc_name, 
+                "#", 
+                QueueBindOptions::default(), 
+                Default::default()).await?;
     // 启动RabbitMQ消息消费
     tokio::spawn(async move {
         if let Err(e) = receive().await {
@@ -119,6 +135,7 @@ pub async fn receive() -> Result<()> {
 
 pub async fn publish(message: &Message) -> Result<()> {
     let queue_name = dotenv::var("RABBITMQ_SESSION_MESSAGE_QUEUE_NAME").expect("请设置RabbitMQ队列名称RABBITMQ_SESSION_MESSAGE_QUEUE_NAME");
+    let exc_name = dotenv::var("RABBITMQ_MESSAGE_EXCHANGE").expect("请设置RabbitMQ交换机名称RABBITMQ_MESSAGE_EXCHANGE");
     let payload = serde_json::to_vec(message)?;
     let pool = POOL.get();
     let pool = pool.expect("");
@@ -126,7 +143,7 @@ pub async fn publish(message: &Message) -> Result<()> {
     let channel= conn.create_channel().await?;
     
     let _confirm = channel.basic_publish(
-            "", // default exchange
+            &exc_name, // default exchange
             &queue_name,
             lapin::options::BasicPublishOptions::default(),
             &payload,
