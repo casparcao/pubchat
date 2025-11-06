@@ -71,7 +71,7 @@ pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf) {
                                     timestamp: chat.ts as i64,
                                     uname: chat.uname.clone(),
                                 };
-                                cache::message_cache().add_message(chat.session as i64, msg);
+                                cache::message_cache().async_add_message(chat.session as i64, msg).await;
                             }else{
                                 error!("Invalid chat message");
                             }

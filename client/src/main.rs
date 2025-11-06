@@ -14,6 +14,7 @@ mod ui;
 mod repository;
 mod remote;
 mod cache;
+mod asynrt;
 
 use crate::{repository::token::{clear_token, is_token_valid, load_token, save_token}, ui::{models::Me, screen::login::{LoginResult, LoginScreen}}};
 
@@ -23,6 +24,7 @@ fn main() -> Result<()> {
     dotenv::dotenv().ok();
     // 初始化日志
     core::log::init(Some(".pubchat_client.log"));
+    asynrt::init();
     db::init();
     remote::init();
     cache::init();
@@ -53,12 +55,11 @@ fn main() -> Result<()> {
         return Err(token.unwrap_err());
     }
     let token = token.unwrap();
-    let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
     // 使用token建立TCP连接
-    let (stream, user_id, user_name) = rt.block_on(remote::connection::connect_with_token(&token))?;
+    let (stream, user_id, user_name) = asynrt::get().block_on(remote::connection::connect_with_token(&token))?;
     let (reader, writer) = stream.into_split();
     // 开启接收消息任务
-    rt.block_on(remote::connection::receive_messages(reader));
+    asynrt::get().block_on(remote::connection::receive_messages(reader));
     show_main_screen(&mut terminal, token, Me {id: user_id, name: user_name}, writer)?;
     // 退出原始模式
     disable_raw_mode()?;

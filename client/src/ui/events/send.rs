@@ -65,8 +65,7 @@ impl ChatComponent {
                     return false;
                 }
             };
-            let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
-            rt.block_on(self.do_send_message(stream_clone, encoded));
+            crate::asynrt::get().block_on(self.do_send_message(stream_clone, encoded));
         }
         self.input.clear();
         self.mode = crate::ui::models::Mode::Normal;

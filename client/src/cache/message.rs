@@ -81,15 +81,13 @@ impl Cache {
 
     /// 从SQLite数据库获取消息
     fn get_from_sqlite(&self, session_id: i64, page: Page) -> Result<Vec<Message>> {
-        let rt = tokio::runtime::Runtime::new()?;
-        let (messages, _total) = rt.block_on(select_messages(session_id, page))?;
+        let (messages, _total) = crate::asynrt::get().block_on(select_messages(session_id, page))?;
         Ok(messages)
     }
 
     /// 将消息保存到SQLite数据库
     fn save_to_sqlite(&self, message: &Message) -> Result<()> {
-        let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(crate::repository::message::save(message))
+        crate::asynrt::get().block_on(crate::repository::message::save(message))
     }
 
     /// 从远程服务器获取消息
@@ -113,6 +111,22 @@ impl Cache {
         }
         // 保存到SQLite
         if let Err(e) = self.save_to_sqlite(&message){
+            log::error!("保存消息到SQLite失败: {}", e);
+        }
+    }
+
+    pub async fn async_add_message(&self, session: i64, message: Message) {
+        // 添加到内存缓存
+        {
+            let mut cache = self.memory_cache.write().unwrap();
+            if let Some(messages) = cache.get_mut(&session) {
+                messages.push(message.clone());
+            } else {
+                cache.insert(session, vec![message.clone()]);
+            }
+        }
+        // 异步保存到SQLite
+        if let Err(e) = crate::repository::message::save(&message).await{
             log::error!("保存消息到SQLite失败: {}", e);
         }
     }
