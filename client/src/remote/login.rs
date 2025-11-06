@@ -12,8 +12,17 @@ pub(crate) struct LoginRequest {
     pub(crate) password: String,
 }
 
+// 注册请求结构
+#[derive(Serialize)]
+pub(crate) struct RegisterRequest {
+    pub(crate) username: String,
+    pub(crate) password: String,
+    pub(crate) gender: String,
+    pub(crate) age: i8,
+}
 
-    // 执行登录操作
+
+// 执行登录操作
 pub fn login(body: &LoginRequest) -> Result<Token> {
     // 创建HTTP客户端
     let client = reqwest::blocking::Client::new();
@@ -30,6 +39,35 @@ pub fn login(body: &LoginRequest) -> Result<Token> {
             .json()?;
         if response.ok {
             Ok(response.data.unwrap())
+        } else {
+            let message = response.message.unwrap_or("".to_string());
+            Err(ApiErr::Error(message).into())
+        }
+    } else {
+        let status = response.status();
+        let error_text = response
+            .text()?;
+        Err(ApiErr::Error(format!("{} {}", status.as_u16(), error_text)).into())
+    }
+}
+
+// 执行注册操作
+pub fn register(body: &RegisterRequest) -> Result<()> {
+    // 创建HTTP客户端
+    let client = reqwest::blocking::Client::new();
+    
+    // 发送注册请求
+    let response = client
+        .post(format!("{}/register", user_host()))
+        .json(body)
+        .send()?;
+    
+    // 检查响应状态
+    if response.status().is_success() {
+        let response: ApiResult<()> = response
+            .json()?;
+        if response.ok {
+            Ok(())
         } else {
             let message = response.message.unwrap_or("".to_string());
             Err(ApiErr::Error(message).into())

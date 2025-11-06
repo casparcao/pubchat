@@ -5,6 +5,7 @@ use crate::ui::{models::{App, View}};
 pub mod login;
 pub mod contact;
 pub mod chat;
+pub mod register;
 
 impl App {
     pub fn render(&self, frame: &mut Frame) {
