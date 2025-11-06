@@ -1,5 +1,5 @@
 use anyhow::{Ok, Result};
-use tracing::{info, error};
+use log::{info, error};
 use core::proto::message::Message;
 use core::proto::message::message;
 use crate::queue;

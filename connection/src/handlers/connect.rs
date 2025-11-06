@@ -1,6 +1,6 @@
 use anyhow::{Ok, Result};
 use tokio::{io::AsyncWriteExt, sync::Mutex};
-use tracing::info;
+use log::info;
 use core::proto::message::Message;
 use core::response::ApiErr;
 use tokio::net::tcp::OwnedWriteHalf;

@@ -34,7 +34,7 @@ fn main() -> Result<()> {
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
     
     // 首先尝试从本地文件加载token
-    let token = if let Ok(Some(stored_token)) = load_token() {
+    let token = if let Ok(Some(stored_token)) = load_token() && false  {
         if is_token_valid(&stored_token) {
             // Token有效，尝试直接连接
             Ok(stored_token.token)

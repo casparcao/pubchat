@@ -5,8 +5,8 @@ use futures::StreamExt;
 use lapin::{
     options::*, BasicProperties
 };
-use tracing::{info, error};
-use core::proto::message::{message::Content, Message, Type};
+use log::{info, error};
+use core::proto::message::{ChatResponse, Message, Type, message::Content};
 use std::{sync::OnceLock};
 use crate::connection;
 
@@ -64,22 +64,39 @@ pub async fn receive() -> Result<()> {
                 std::result::Result::Ok(message) => {
                     info!("Received message from RabbitMQ: type={:?}", message.mtype);
                     // 确定消息接收者
-                    let receivers = match message.mtype {
+                    match message.mtype {
                         t if t == Type::ChatRequest as i32 => {
-                            if let Some(Content::ChatRequest(chat_resp)) = &message.content {
-                                &chat_resp.receivers // 发送给说话者的客户端
+                            if let Some(Content::ChatRequest(resp)) = &message.content {
+                                // 如果有目标用户，则发送消息到客户端
+                                for receiver in &resp.receivers {
+                                    let response = Message {
+                                        id: message.id,
+                                        ts: message.ts,
+                                        mtype: Type::ChatResponse as i32,
+                                        content: Some(Content::ChatResponse(ChatResponse{
+                                            sender: resp.sender,
+                                            receiver: *receiver,
+                                            session: resp.session,
+                                            ctype: resp.ctype,
+                                            message: resp.message.clone(),
+                                            ts: resp.ts,
+                                            uname: resp.uname.clone(),
+
+                                        }))
+                                    };
+                                    if let Err(e) = connection::send_message(*receiver , &response).await {
+                                        error!("Failed to send message to client {}: {}", receiver, e);
+                                    }
+                                }
                             } else {
-                                &vec![]
+                                error!("Invalid chat message");
                             }
                         },
-                        _ => &vec![],
+                        _ => {
+                            error!("Unhandled message type: {}", message.mtype);
+                        },
                     };
-                    // 如果有目标用户，则发送消息到客户端
-                    for receiver in receivers {
-                        if let Err(e) = connection::send_message(*receiver, &message).await {
-                            error!("Failed to send message to client {}: {}", receiver, e);
-                        }
-                    }
+                    
                     // 确认消息处理完成
                     if let Err(e) = delivery.ack(lapin::options::BasicAckOptions::default()).await {
                         error!("Failed to acknowledge message: {}", e);

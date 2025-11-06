@@ -21,7 +21,7 @@ impl Message {
         Self {
             sender,
             content,
-            timestamp: chrono::Local::now().format("%H:%M").to_string(),
+            timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
             system,
         }
     }

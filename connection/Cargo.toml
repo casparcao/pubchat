@@ -18,3 +18,5 @@ lapin = { workspace = true }
 dotenv = { workspace = true }
 deadpool = { workspace = true }
 deadpool-lapin = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }

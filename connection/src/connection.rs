@@ -1,6 +1,6 @@
 use anyhow::Result;
 use tokio::{io::AsyncWriteExt, sync::Mutex};
-use tracing::{info, warn, error};
+use log::{info, warn, error};
 use core::proto::message::Message;
 use std::{collections::HashMap, sync::OnceLock};
 use tokio::net::tcp::OwnedWriteHalf;

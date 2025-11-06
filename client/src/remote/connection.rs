@@ -53,6 +53,7 @@ pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf) {
         loop {
             match decode::<Message, _>(&mut reader).await {
                 Ok(msg) => {
+                    log::info!("Received message: {:?}", msg);
                     // 处理接收到的消息
                     match msg.mtype {
                         t if t == Type::ChatResponse as i32 => {
