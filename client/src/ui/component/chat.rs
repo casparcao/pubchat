@@ -68,7 +68,6 @@ impl ChatComponent {
             return;
         }
         //todo 消息列表滚动
-        
     }
 
     pub fn scroll_down(&mut self) {
@@ -83,7 +82,7 @@ impl ChatComponent {
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Min(1),         // 消息区域
-                Constraint::Length(3),      // 输入框区域
+                Constraint::Length(6),      // 输入框区域 - 增加高度从3到5
             ])
             .split(area);
 
@@ -127,30 +126,16 @@ impl ChatComponent {
             Mode::Insert => ("INSERT (Esc to normal)", Style::default().fg(Color::Green)),
         };
 
-        // 创建一个内部区域，保留底部一行用于模式提示
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Min(1),        // 输入区域
-                Constraint::Length(1),     // 模式提示
-            ])
-            .split(area);
-
         let input = Paragraph::new(self.input.as_str())
-            .block(Block::default().borders(Borders::ALL));
+            .block(Block::default().title(text).style(style).borders(Borders::ALL));
 
-        let mode = Paragraph::new(text)
-            .style(style)
-            .alignment(Alignment::Left);
-
-        frame.render_widget(input, chunks[0]);
-        frame.render_widget(mode, chunks[1]);
+        frame.render_widget(input, area);
         
         // 只在插入模式下设置光标位置
         if let Mode::Insert = self.mode {
             frame.set_cursor_position(
-                (chunks[0].x + self.input.len() as u16 + 1,
-                 chunks[0].y + 1)
+                (area.x + self.input.len() as u16 + 1,
+                 area.y + 1)
             );
         }
     }

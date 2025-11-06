@@ -37,16 +37,22 @@ fn main() -> Result<()> {
     let token = if let Ok(Some(stored_token)) = load_token() {
         if is_token_valid(&stored_token) {
             // Token有效，尝试直接连接
-            stored_token.token
+            Ok(stored_token.token)
         } else {
             // Token过期，清除它并重新登录
             let _ = clear_token();
-            show_login_screen(&mut terminal)?
+            show_login_screen(&mut terminal)
         }
     } else {
         // 没有找到存储的token，显示登录界面
-        show_login_screen(&mut terminal)?
+        show_login_screen(&mut terminal)
     };
+    if token.is_err() {
+        disable_raw_mode()?;
+        stdout().execute(LeaveAlternateScreen)?;
+        return Err(token.unwrap_err());
+    }
+    let token = token.unwrap();
     let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
     // 使用token建立TCP连接
     let (stream, user_id, user_name) = rt.block_on(remote::connection::connect_with_token(&token))?;
@@ -70,7 +76,10 @@ fn show_login_screen(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>)
             if key.kind != KeyEventKind::Press {
                 continue;
             }
-            
+            if key.code == KeyCode::Char('c') && key.modifiers.contains(crossterm::event::KeyModifiers::CONTROL) {
+                // 按下Ctrl+C，退出程序
+                return Err(anyhow::anyhow!("Exiting..."));
+            }
             let result = login_screen.handle_key_event(key);
             match result {
                 LoginResult::Success(token) => {

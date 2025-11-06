@@ -69,14 +69,7 @@ impl ChatScreen {
         self.sessions.render(frame, chunks[0]);
 
         // 右侧聊天区域
-        let chat_chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Min(1),         // 消息区域
-                Constraint::Length(5),      // 增大输入框区域
-            ])
-            .split(chunks[1]);
-        self.chat.render(frame, chat_chunks[0]);
+        self.chat.render(frame, chunks[1]);
     }
 
 }
