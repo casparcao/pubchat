@@ -107,7 +107,7 @@ impl RegisterScreen {
                 let request = login::RegisterRequest {
                     username: self.username.clone(),
                     password: self.password.clone(),
-                    gender: "unknown".to_string(), // 默认性别
+                    gender: "U".to_string(), // 默认性别
                     age: 0, // 默认年龄
                 };
                 

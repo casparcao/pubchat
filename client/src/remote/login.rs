@@ -58,13 +58,13 @@ pub fn register(body: &RegisterRequest) -> Result<()> {
     
     // 发送注册请求
     let response = client
-        .post(format!("{}/register", user_host()))
+        .post(format!("{}/signup", user_host()))
         .json(body)
         .send()?;
     
     // 检查响应状态
     if response.status().is_success() {
-        let response: ApiResult<()> = response
+        let response: ApiResult<i64> = response
             .json()?;
         if response.ok {
             Ok(())
