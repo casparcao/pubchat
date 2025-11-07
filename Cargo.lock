@@ -597,6 +597,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "blob"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "axum-extra",
+ "bytes",
+ "chrono",
+ "core",
+ "deadpool",
+ "deadpool-lapin",
+ "dotenv",
+ "env_logger",
+ "futures",
+ "http",
+ "http-body",
+ "jsonwebtoken",
+ "lapin",
+ "log 0.4.28",
+ "redis",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "snowflaker",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "validator",
+]
+
+[[package]]
 name = "block-buffer"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

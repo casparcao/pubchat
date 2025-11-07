@@ -6,6 +6,7 @@ members = [
     "connection",
     "user",
     "session",
+    "blob",
 ]
 
 [workspace.package]

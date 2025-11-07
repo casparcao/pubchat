@@ -8,7 +8,7 @@ CREATE TABLE blobs (
     -- 文件大小（字节）
     size BIGINT NOT NULL DEFAULT 0,
     -- MIME 类型（如 image/jpeg, application/pdf）
-    `type` varchar(64) NOT NULL DEFAULT 'application/octet-stream',
+    `btype` varchar(64) NOT NULL DEFAULT 'application/octet-stream',
     -- 存储提供商（枚举：local, s3, minio, aliyun_oss, tencent_cos, azure_blob 等）
     provider VARCHAR(32) NOT NULL DEFAULT 'local',
     -- 可选：所属 bucket 名称（适用于 S3/OSS 等）
