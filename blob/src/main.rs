@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
     rdb::init().await;
     db::init().await;
     let app = router::init().expect("路由模块初始化失败");
-    let listener = TcpListener::bind("0.0.0.0:3001").await.unwrap();
+    let listener = TcpListener::bind("0.0.0.0:3002").await.unwrap();
     log::info!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
     Ok(())

@@ -1,7 +1,7 @@
 use core::proto::{codec::encode, message::{ChatRequest, ChatType, Message, Type}};
 use std::sync::Arc;
 
-use crate::{cache, ui::{component::chat::ChatComponent, models::Me}};
+use crate::{cache, remote::blob, ui::{component::chat::ChatComponent, models::Me}};
 use tokio::{io::AsyncWriteExt, net::tcp::OwnedWriteHalf, sync::Mutex};
 
 impl ChatComponent {
@@ -12,7 +12,7 @@ impl ChatComponent {
         }
         // 处理命令
         if self.input.starts_with('/') {
-            return self.handle_command();
+            return self.handle_command(me, stream);
         }
         if let Some(session) = &self.session {
             // 实际通过TCP发送消息
@@ -88,19 +88,115 @@ impl ChatComponent {
     }
 
     /// 处理命令
-    pub fn handle_command(&mut self) -> bool {
+    pub fn handle_command(&mut self, me: &Me, stream: &Arc<Mutex<OwnedWriteHalf>>) -> bool {
         let mut should_exit = false;
-        let cmd = self.input.split_whitespace().next().unwrap_or("");
+        let input = self.input.clone();
+        let parts: Vec<&str> = input.split_whitespace().collect();
+        let cmd = parts.get(0).unwrap_or(&"");
         
-        match cmd {
+        match *cmd {
             "/help" => {
-                // if let Some(messages) = self.messages.get_mut(&target) {
-                //     messages.push(MessageItem::system("Available commands:"));
-                //     messages.push(MessageItem::system("/help - Show this help"));
-                //     messages.push(MessageItem::system("/friends - Open friends list"));
-                //     messages.push(MessageItem::system("/clear - Clear chat history"));
-                //     messages.push(MessageItem::system("/quit or /exit - Exit the application"));
-                // }
+                self.messages.push(crate::ui::models::Message::new(
+                    "SYSTEM".to_string(), 
+                    "Available commands:".to_string(), 
+                    true
+                ));
+                self.messages.push(crate::ui::models::Message::new(
+                    "SYSTEM".to_string(), 
+                    "/help - Show this help".to_string(), 
+                    true
+                ));
+                self.messages.push(crate::ui::models::Message::new(
+                    "SYSTEM".to_string(), 
+                    "/file <path> - Send a file".to_string(), 
+                    true
+                ));
+                self.messages.push(crate::ui::models::Message::new(
+                    "SYSTEM".to_string(), 
+                    "/download <file_id> <save_path> - Download a file".to_string(), 
+                    true
+                ));
+                self.messages.push(crate::ui::models::Message::new(
+                    "SYSTEM".to_string(), 
+                    "/friends - Open friends list".to_string(), 
+                    true
+                ));
+                self.messages.push(crate::ui::models::Message::new(
+                    "SYSTEM".to_string(), 
+                    "/clear - Clear chat history".to_string(), 
+                    true
+                ));
+                self.messages.push(crate::ui::models::Message::new(
+                    "SYSTEM".to_string(), 
+                    "/quit or /exit - Exit the application".to_string(), 
+                    true
+                ));
+            }
+            "/file" => {
+                if let Some(file_path) = parts.get(1) {
+                    match self.send_file(me, stream, file_path) {
+                        Ok(_) => {
+                            self.messages.push(crate::ui::models::Message::new(
+                                "SYSTEM".to_string(), 
+                                format!("File {} sent successfully", file_path), 
+                                true
+                            ));
+                        }
+                        Err(e) => {
+                            self.messages.push(crate::ui::models::Message::new(
+                                "SYSTEM".to_string(), 
+                                format!("Failed to send file {}: {}", file_path, e), 
+                                true
+                            ));
+                        }
+                    }
+                } else {
+                    self.messages.push(crate::ui::models::Message::new(
+                        "SYSTEM".to_string(), 
+                        "Usage: /file <path>".to_string(), 
+                        true
+                    ));
+                }
+            }
+            "/download" => {
+                if parts.len() >= 3 {
+                    let file_id = parts[1];
+                    let save_path = parts[2];
+                    
+                    match file_id.parse::<i64>() {
+                        Ok(id) => {
+                            match blob::download_file(&self.token, id, save_path) {
+                                Ok(_) => {
+                                    self.messages.push(crate::ui::models::Message::new(
+                                        "SYSTEM".to_string(), 
+                                        format!("File downloaded successfully to {}", save_path), 
+                                        true
+                                    ));
+                                }
+                                Err(e) => {
+                                    self.messages.push(crate::ui::models::Message::new(
+                                        "SYSTEM".to_string(), 
+                                        format!("Failed to download file: {}", e), 
+                                        true
+                                    ));
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            self.messages.push(crate::ui::models::Message::new(
+                                "SYSTEM".to_string(), 
+                                "Invalid file ID".to_string(), 
+                                true
+                            ));
+                        }
+                    }
+                } else {
+                    self.messages.push(crate::ui::models::Message::new(
+                        "SYSTEM".to_string(), 
+                        "Usage: /download <file_id> <save_path>".to_string(), 
+                        true
+                    ));
+                }
             }
             "/friends" => {
                 // 切换到好友列表视图
@@ -119,14 +215,83 @@ impl ChatComponent {
                 should_exit = true;
             }
             _ => {
-                // if let Some(messages) = self.messages.get_mut(&target) {
-                //     messages.push(MessageItem::system(&format!("Unknown command: {}", cmd)));
-                // }
+                self.messages.push(crate::ui::models::Message::new(
+                    "SYSTEM".to_string(), 
+                    format!("Unknown command: {}", cmd), 
+                    true
+                ));
             }
         }
         
         self.input.clear();
         self.mode = crate::ui::models::Mode::Normal;
         should_exit
+    }
+
+    /// Send a file to the current session
+    fn send_file(&mut self, me: &Me, stream: &Arc<Mutex<OwnedWriteHalf>>, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(session) = &self.session {
+            // Upload file to blob service
+            let upload_result = blob::upload_file(&self.token, file_path)?;
+            
+            // Create file message
+            let session_id = session.id;
+            let stream_clone = stream.clone();
+            
+            // Create chat request with file type
+            let chat_request = Message {
+                id: snowflaker::next_id().unwrap(),
+                ts: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u64,
+                mtype: Type::ChatRequest as i32,
+                content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest{
+                    sender: me.id,
+                    session: session_id as u64,
+                    receivers: session.members.iter()
+                        .map(|m| m.id as u64)
+                        .filter(|id| *id != me.id)
+                        .collect(),
+                    ctype: ChatType::File as i32,
+                    message: serde_json::to_string(&upload_result)?, // Send file info as JSON
+                    ts: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis() as u64,
+                    uname: me.name.to_string(),
+                })),
+            };
+            
+            // Add to local message list
+            self.messages.push(crate::ui::models::Message::new(
+                me.name.to_string(), 
+                format!("[File] {}", file_path), 
+                false
+            ));
+            
+            // Add to cache
+            let message = crate::repository::message::Message{
+                id: chat_request.id as i64,
+                sender: me.id as i64,
+                receiver: 0,
+                uname: me.name.to_string(),
+                session: session_id,
+                mtype: Type::ChatRequest as i32,
+                content: format!("[File] {}", file_path),
+                timestamp: chat_request.ts as i64,
+            };
+            cache::message_cache().add_message(session.id, message);
+            
+            // Send message
+            let encoded = encode(&chat_request)
+                .map_err(|e| anyhow::anyhow!("Failed to encode message: {}", e))?;
+            
+            crate::asynrt::get().block_on(self.do_send_message(stream_clone, encoded));
+            
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("No session selected").into())
+        }
     }
 }
