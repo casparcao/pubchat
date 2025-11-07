@@ -2,10 +2,9 @@ use ratatui::Frame;
 
 use crate::ui::{models::{App, View}};
 
-pub mod login;
 pub mod contact;
 pub mod chat;
-pub mod register;
+pub mod auth;
 
 impl App {
     pub fn render(&self, frame: &mut Frame) {
