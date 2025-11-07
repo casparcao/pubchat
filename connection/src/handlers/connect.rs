@@ -4,15 +4,15 @@ use log::info;
 use core::proto::message::Message;
 use core::response::ApiErr;
 use tokio::net::tcp::OwnedWriteHalf;
-use core::proto::message::{ConnectResponse, Type, message};
+use core::proto::message::{Cors, Type, message};
 use core::proto::codec::encode;
 use std::sync::Arc;
 use crate::connection::Client;
 pub async fn handle(message: &Message, mut writer: OwnedWriteHalf) -> Result<Client> { 
     let mut uid = 0u64;
-    if message.mtype == Type::ConnectRequest as i32 {
+    if message.mtype == Type::Cort as i32 {
         info!("Client {} registered in connection manager", uid);
-        if let Some(message::Content::ConnectRequest(req)) = &message.content {
+        if let Some(message::Content::Cort(req)) = &message.content {
             info!("Connect request with token: {}", req.token);
             let user = core::auth::verify(&req.token)?;
             uid = user.id as u64;
@@ -23,8 +23,8 @@ pub async fn handle(message: &Message, mut writer: OwnedWriteHalf) -> Result<Cli
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_millis() as u64,
-                mtype: Type::ConnectResponse as i32,
-                content: Some(message::Content::ConnectResponse(ConnectResponse {
+                mtype: Type::Cors as i32,
+                content: Some(message::Content::Cors(Cors {
                     code: 0,
                     message: "Connected successfully".to_string(),
                     uid,

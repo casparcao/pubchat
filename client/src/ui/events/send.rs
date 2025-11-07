@@ -1,4 +1,4 @@
-use core::proto::{codec::encode, message::{ChatRequest, ChatType, Message, Type}};
+use core::proto::{codec::encode, message::{ChatType, Chrt, Message, Text, Type}};
 use std::sync::Arc;
 
 use crate::{cache, remote::blob, ui::{component::chat::ChatComponent, models::Me}};
@@ -27,8 +27,8 @@ impl ChatComponent {
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_millis() as u64,
-                mtype: Type::ChatRequest as i32,
-                content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest{
+                mtype: Type::Chrt as i32,
+                content: Some(core::proto::message::message::Content::Chrt(Chrt{
                     sender: me.id, // 使用真实的用户ID
                     session: session_id as u64,
                     receivers: session.members.iter()
@@ -36,7 +36,7 @@ impl ChatComponent {
                         .filter(|id| *id != me.id)
                         .collect(),
                     ctype: ChatType::Text as i32,
-                    message: content.clone(),
+                    message: Some(core::proto::message::chrt::Message::Text(Text{ text: content.clone() })),
                     ts: std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
@@ -51,7 +51,7 @@ impl ChatComponent {
                 receiver: 0,
                 uname: me.name.to_string(),
                 session: session_id,
-                mtype: Type::ChatRequest as i32,
+                mtype: Type::Chrt as i32,
                 content: content,
                 timestamp: chat_request.ts as i64,
             };
@@ -245,8 +245,8 @@ impl ChatComponent {
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_millis() as u64,
-                mtype: Type::ChatRequest as i32,
-                content: Some(core::proto::message::message::Content::ChatRequest(ChatRequest{
+                mtype: Type::Chrt as i32,
+                content: Some(core::proto::message::message::Content::Chrt(Chrt{
                     sender: me.id,
                     session: session_id as u64,
                     receivers: session.members.iter()
@@ -277,7 +277,7 @@ impl ChatComponent {
                 receiver: 0,
                 uname: me.name.to_string(),
                 session: session_id,
-                mtype: Type::ChatRequest as i32,
+                mtype: Type::Chrt as i32,
                 content: format!("[File] {}", file_path),
                 timestamp: chat_request.ts as i64,
             };

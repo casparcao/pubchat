@@ -55,7 +55,7 @@ pub async fn handle_client(
     let message = decode::<Message, _>(&mut reader).await?;
     info!("Received message type: {:?}", message.mtype);
 
-    if message.mtype == Type::ConnectRequest as i32 {
+    if message.mtype == Type::Cort as i32 {
         let client: Client = handlers::connect::handle(&message, writer).await?;
         add_client(client.uid, client).await;
     }
@@ -70,7 +70,7 @@ pub async fn handle_client(
                 error!("Failed to handle ping: {}", e);
             }
         }
-        if message.mtype == Type::ChatRequest as i32 {
+        if message.mtype == Type::Chrt as i32 {
             let r = handlers::chat::handle(message).await;
             if let Err(e) = r {
                 error!("Failed to handle chat: {}", e);

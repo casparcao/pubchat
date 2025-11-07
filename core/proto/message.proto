@@ -3,10 +3,10 @@ syntax = "proto3";
 package message;
 
 enum Type {
-    CONNECT_REQUEST = 0; //连接初始化，携带令牌
-    CONNECT_RESPONSE = 1;
-    CHAT_REQUEST = 2;
-    CHAT_RESPONSE = 3;
+    CORT = 0; //连接初始化，携带令牌
+    CORS = 1;
+    CHRT = 2;
+    CHRS = 3;
     PING = 6;//心跳消息
     PONG = 7;
 }
@@ -16,44 +16,67 @@ message Message{
     uint64 ts = 2;     //时间戳(单位:毫秒)
     Type mtype = 3;  //消息类型
     oneof content {
-        ConnectRequest connect_request = 4;
-        ConnectResponse connect_response = 5;
-        ChatRequest chat_request = 6;
-        ChatResponse chat_response = 7;
+        Cort cort = 4;
+        Cors cors = 5;
+        Chrt chrt = 6;
+        Chrs chrs = 7;
         Ping ping = 8;
         Pong pong = 9;
     } //消息内容
 }
 
-message ConnectRequest{
+//ConnectRequest
+message Cort{
     string token = 1;
 }
 
-message ConnectResponse{
+//ConnectResponse
+message Cors{
     uint32 code = 1;
     string message = 2;
     uint64 uid = 3;
     string uname = 4;
 }
 
-message ChatRequest {
+//ChatRequest
+message Chrt {
     uint64 sender = 1;
     string uname = 2; //发送者昵称
     uint64 session = 3; //所发生的聊天室会话id
     repeated uint64 receivers = 4;
     ChatType ctype = 5;
-    string message = 6;
-    uint64 ts = 7;
+    uint64 ts = 6;
+    oneof message {
+        Text text = 7;
+        Blob blob = 8;
+    }
 }
 
-message ChatResponse {
+//ChatResponse
+message Chrs {
     uint64 sender = 1;
     string uname = 2; //发送者昵称
     uint64 session = 3; //所发生的聊天室会话id
     uint64 receiver = 4;
     ChatType ctype = 5;
-    string message = 6;
-    uint64 ts = 7;
+    uint64 ts = 6;
+    oneof message {
+        Text text = 7;
+        Blob blob = 8;
+    }
+}
+
+//普通文本消息
+message Text{
+    string text = 1;
+}
+
+//文件消息
+message Blob{
+    uint64 id = 1;
+    string name = 2;
+    string size = 3;
+    string exp = 4;
 }
 
 message Ping {

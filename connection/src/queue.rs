@@ -6,7 +6,7 @@ use lapin::{
     options::*, BasicProperties
 };
 use log::{info, error};
-use core::proto::message::{ChatResponse, Message, Type, message::Content};
+use core::proto::message::{Chrs, Message, Type, message::Content};
 use std::{sync::OnceLock};
 use crate::connection;
 
@@ -81,15 +81,15 @@ pub async fn receive() -> Result<()> {
                     info!("Received message from RabbitMQ: type={:?}", message.mtype);
                     // 确定消息接收者
                     match message.mtype {
-                        t if t == Type::ChatRequest as i32 => {
-                            if let Some(Content::ChatRequest(resp)) = &message.content {
+                        t if t == Type::Chrt as i32 => {
+                            if let Some(Content::Chrt(resp)) = &message.content {
                                 // 如果有目标用户，则发送消息到客户端
                                 for receiver in &resp.receivers {
                                     let response = Message {
                                         id: message.id,
                                         ts: message.ts,
-                                        mtype: Type::ChatResponse as i32,
-                                        content: Some(Content::ChatResponse(ChatResponse{
+                                        mtype: Type::Chrs as i32,
+                                        content: Some(Content::Chrs(Chrs{
                                             sender: resp.sender,
                                             receiver: *receiver,
                                             session: resp.session,

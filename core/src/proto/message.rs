@@ -22,30 +22,32 @@ pub mod message {
     #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
     pub enum Content {
         #[prost(message, tag = "4")]
-        ConnectRequest(super::ConnectRequest),
+        Cort(super::Cort),
         #[prost(message, tag = "5")]
-        ConnectResponse(super::ConnectResponse),
+        Cors(super::Cors),
         #[prost(message, tag = "6")]
-        ChatRequest(super::ChatRequest),
+        Chrt(super::Chrt),
         #[prost(message, tag = "7")]
-        ChatResponse(super::ChatResponse),
+        Chrs(super::Chrs),
         #[prost(message, tag = "8")]
         Ping(super::Ping),
         #[prost(message, tag = "9")]
         Pong(super::Pong),
     }
 }
+/// ConnectRequest
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ConnectRequest {
+pub struct Cort {
     #[prost(string, tag = "1")]
     pub token: ::prost::alloc::string::String,
 }
+/// ConnectResponse
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ConnectResponse {
+pub struct Cors {
     #[prost(uint32, tag = "1")]
     pub code: u32,
     #[prost(string, tag = "2")]
@@ -55,10 +57,11 @@ pub struct ConnectResponse {
     #[prost(string, tag = "4")]
     pub uname: ::prost::alloc::string::String,
 }
+/// ChatRequest
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ChatRequest {
+pub struct Chrt {
     #[prost(uint64, tag = "1")]
     pub sender: u64,
     /// 发送者昵称
@@ -71,15 +74,28 @@ pub struct ChatRequest {
     pub receivers: ::prost::alloc::vec::Vec<u64>,
     #[prost(enumeration = "ChatType", tag = "5")]
     pub ctype: i32,
-    #[prost(string, tag = "6")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(uint64, tag = "7")]
+    #[prost(uint64, tag = "6")]
     pub ts: u64,
+    #[prost(oneof = "chrt::Message", tags = "7, 8")]
+    pub message: ::core::option::Option<chrt::Message>,
 }
+/// Nested message and enum types in `Chrt`.
+pub mod chrt {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Message {
+        #[prost(message, tag = "7")]
+        Text(super::Text),
+        #[prost(message, tag = "8")]
+        Blob(super::Blob),
+    }
+}
+/// ChatResponse
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ChatResponse {
+pub struct Chrs {
     #[prost(uint64, tag = "1")]
     pub sender: u64,
     /// 发送者昵称
@@ -92,10 +108,44 @@ pub struct ChatResponse {
     pub receiver: u64,
     #[prost(enumeration = "ChatType", tag = "5")]
     pub ctype: i32,
-    #[prost(string, tag = "6")]
-    pub message: ::prost::alloc::string::String,
-    #[prost(uint64, tag = "7")]
+    #[prost(uint64, tag = "6")]
     pub ts: u64,
+    #[prost(oneof = "chrs::Message", tags = "7, 8")]
+    pub message: ::core::option::Option<chrs::Message>,
+}
+/// Nested message and enum types in `Chrs`.
+pub mod chrs {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    pub enum Message {
+        #[prost(message, tag = "7")]
+        Text(super::Text),
+        #[prost(message, tag = "8")]
+        Blob(super::Blob),
+    }
+}
+/// 普通文本消息
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct Text {
+    #[prost(string, tag = "1")]
+    pub text: ::prost::alloc::string::String,
+}
+/// 文件消息
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct Blob {
+    #[prost(uint64, tag = "1")]
+    pub id: u64,
+    #[prost(string, tag = "2")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub size: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub exp: ::prost::alloc::string::String,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -180,10 +230,10 @@ pub struct Error {
 #[repr(i32)]
 pub enum Type {
     /// 连接初始化，携带令牌
-    ConnectRequest = 0,
-    ConnectResponse = 1,
-    ChatRequest = 2,
-    ChatResponse = 3,
+    Cort = 0,
+    Cors = 1,
+    Chrt = 2,
+    Chrs = 3,
     /// 心跳消息
     Ping = 6,
     Pong = 7,
@@ -195,10 +245,10 @@ impl Type {
     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            Self::ConnectRequest => "CONNECT_REQUEST",
-            Self::ConnectResponse => "CONNECT_RESPONSE",
-            Self::ChatRequest => "CHAT_REQUEST",
-            Self::ChatResponse => "CHAT_RESPONSE",
+            Self::Cort => "CORT",
+            Self::Cors => "CORS",
+            Self::Chrt => "CHRT",
+            Self::Chrs => "CHRS",
             Self::Ping => "PING",
             Self::Pong => "PONG",
         }
@@ -206,10 +256,10 @@ impl Type {
     /// Creates an enum from field names used in the ProtoBuf definition.
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
-            "CONNECT_REQUEST" => Some(Self::ConnectRequest),
-            "CONNECT_RESPONSE" => Some(Self::ConnectResponse),
-            "CHAT_REQUEST" => Some(Self::ChatRequest),
-            "CHAT_RESPONSE" => Some(Self::ChatResponse),
+            "CORT" => Some(Self::Cort),
+            "CORS" => Some(Self::Cors),
+            "CHRT" => Some(Self::Chrt),
+            "CHRS" => Some(Self::Chrs),
             "PING" => Some(Self::Ping),
             "PONG" => Some(Self::Pong),
             _ => None,

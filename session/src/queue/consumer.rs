@@ -22,7 +22,7 @@ pub async fn consume_messages(channel: Channel, queue_name: &str) -> Result<()> 
                 match serde_json::from_slice::<core::proto::message::Message>(&delivery.data) {
                     Ok(proto_message) => {
                         // Convert the proto message to our database message model
-                        if let Some(core::proto::message::message::Content::ChatRequest(chat)) = proto_message.content {
+                        if let Some(core::proto::message::message::Content::Chrt(chat)) = proto_message.content {
                             let message = Message {
                                 id: proto_message.id as i64,
                                 sender: chat.sender as i64,

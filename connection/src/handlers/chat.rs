@@ -4,8 +4,8 @@ use core::proto::message::Message;
 use core::proto::message::message;
 use crate::queue;
 pub async fn handle(message: Message) -> Result<()> { 
-    if let Some(message::Content::ChatRequest(chat_req)) = &message.content {
-        info!("Processing ChatRequest from user {}: session={}, message='{}', timestamp={}",
+    if let Some(message::Content::Chrt(chat_req)) = &message.content {
+        info!("Processing ChatRequest from user {}: session={}, message='{:?}', timestamp={}",
                 chat_req.sender, chat_req.session, chat_req.message, chat_req.ts);
         // Publish message to RabbitMQ
         if let Err(e) = queue::publish(&message).await {
