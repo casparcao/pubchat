@@ -7,6 +7,7 @@ use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
 use crate::model::blob::Blob;
 use crate::repository::blob::{create_blob, get_blob_by_id};
+use crate::vo::blob::{BlobResponse, BlobUploadResponse};
 use core::auth::User;
 
 
@@ -20,7 +21,7 @@ const ACCESS_PATH: &str = "/images/";
 
 pub async fn upload_file(
     claims: User, mut multipart: Multipart
-) -> Result<i64> {
+) -> Result<BlobUploadResponse> {
     if let Some(field) = multipart.inner.next_field().await? {
         let origin_name = field.file_name();
         if origin_name.is_none(){
@@ -62,11 +63,23 @@ pub async fn upload_file(
             createtime: now,
         };
         create_blob(create_req).await?;
-        return Ok(id as i64);
+        return Ok(BlobUploadResponse{id: id as i64, url: format!("{}{}", ACCESS_PATH, id)});
     }
     Err(ApiErr::Bad(400, "文件信息缺失".to_string()).into())
 }
 
-pub async fn get_blob(id: i64) -> Result<Option<Blob>> {
-    get_blob_by_id(id).await
+pub async fn get_blob(id: i64) -> Result<BlobResponse> {
+    let opt: Option<Blob> = get_blob_by_id(id).await?;
+    if opt.is_none() {
+        return Err(ApiErr::Bad(404, "文件不存在".to_string()).into());
+    }
+    let b = opt.unwrap();
+    if b.exp.is_some() && b.exp.unwrap() < chrono::Utc::now() {
+        return Err(ApiErr::Bad(410, "文件已过期".to_string()).into());
+    }
+    Ok(BlobResponse{id: b.id, name: b.name, size: b.size, 
+        exp: b.exp.map(|e| format!("{}", e.format("%Y-%m-%d"))),
+        //todo 返回访问路径
+        path: b.path
+    })
 }
