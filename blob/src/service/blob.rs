@@ -1,82 +1,70 @@
 use anyhow::Result;
+use chrono::Datelike;
 use core::extract::Multipart;
 use core::response::ApiErr;
-use std::path::Path;
+use std::path::{Path};
 use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
 use crate::model::blob::Blob;
-use crate::repository::blob::{CreateBlobRequest, create_blob, get_blob_by_id};
-use crate::vo::blob::UploadBlobResponse;
+use crate::repository::blob::{create_blob, get_blob_by_id};
 use core::auth::User;
 
-// Directory to store uploaded files locally
-const UPLOADS_DIR: &str = "./uploads";
 
+#[cfg(target_os="linux")]
+const STORE_PATH: &str = "/home/data/images/";
+#[cfg(target_os="windows")]
+const STORE_PATH: &str = "D:/tmp/";
+
+//该路径对应nginx中location /images {}
+const ACCESS_PATH: &str = "/images/";
 
 pub async fn upload_file(
     claims: User, mut multipart: Multipart
-) -> Result<UploadBlobResponse> {
+) -> Result<i64> {
     if let Some(field) = multipart.inner.next_field().await? {
         let origin_name = field.file_name();
         if origin_name.is_none(){
             return Err(ApiErr::Bad(400, "文件名缺失".to_string()).into());
         }
-        let name = origin_name.unwrap();
-        let path = Path::new(name);
-        let ext = path.extension();
-        if ext.is_none(){
-            return Err(ApiErr::Bad(400, "无法确认文件类型".to_string()).into());
-        }
-        let ext = ext.unwrap();
-        let name = format!("{}.{}", snowflaker::next_id()?, ext.to_string_lossy());
-        let path = format!("{}{}", STORE_PATH, name);
+        let now = chrono::Utc::now();
+        let ctype = field.content_type().unwrap_or("unknown").to_string();
+        let name = origin_name.unwrap().to_string();
+        let id = snowflaker::next_id()?;
+        //文件存储目录
+        let dir = Path::new(STORE_PATH)
+            .join(now.year().to_string())
+            .join(now.month().to_string())
+            .join(now.day().to_string());
+        // Create uploads directory if it doesn't exist
+        fs::create_dir_all(&dir).await?;
+        //最终文件存储路径
+        let abpath = dir.join(id.to_string());
         let data = field.bytes().await?;
-        let mut file = File::create(&path).await?;
+        let size = data.len() as i64;
+        let mut file = File::create(&abpath).await?;
         file.write_all(data.as_ref()).await?;
         file.flush().await?;
-        log::info!("Length of `{}` is {} bytes", path, data.len());
-        
-        let path = format!("{}{}", ACCESS_PATH, name);
-        // Create uploads directory if it doesn't exist
-        fs::create_dir_all(UPLOADS_DIR).await?;
-
-        // Generate a unique file path
-        let id = snowflaker::next_id()?;
-        let file_path = format!("{}/{}", UPLOADS_DIR, id);
-        
-        // Write file to disk
-        let mut file = fs::File::create(&file_path).await?;
-        file.write_all(&data).await?;
-        
-        // Get file size
-        let size = data.len() as i64;
-        
+        log::info!("Length of `{}` is {} bytes", &abpath.display(), size);
         // Save blob metadata to database
         let create_req = Blob {
-            name: filename.clone(),
-            path: file_path.clone(),
+            id: id as i64,
+            name: name,
+            path: abpath.display().to_string(),
             size,
-            btype: mime_type.clone(),
+            btype: ctype,
             provider: "local".to_string(),
             bucket: None,
             open: false,
-            exp: None,
-            uid: user.map(|u| u.id),
+            exp: Some(now + chrono::Duration::days(7)),
+            uid: claims.id,
             hash: None, // In a real implementation, we would calculate a hash
+            deleted: false,
+            createtime: now,
         };
-        
-        let blob = create_blob(create_req).await?;
-        return Ok(path);
+        create_blob(create_req).await?;
+        return Ok(id as i64);
     }
     Err(ApiErr::Bad(400, "文件信息缺失".to_string()).into())
-    
-    
-    let url = format!("/blobs/{}/{}", blob.id, filename);
-    
-    Ok(UploadBlobResponse {
-        id: blob.id,
-        url,
-    })
 }
 
 pub async fn get_blob(id: i64) -> Result<Option<Blob>> {

@@ -1,15 +1,10 @@
 use anyhow::Result;
-use sqlx::MySqlPool;
-use chrono::Utc;
 use crate::model::blob::Blob;
 use crate::repository::db;
 
 
-pub async fn create_blob(req: CreateBlobRequest) -> Result<Blob> {
-    let pool = db::pool().await;
-    
-    let id = snowflaker::next_id()?;
-    let now = Utc::now();
+pub async fn create_blob(req: Blob) -> Result<()> {
+    let pool = db::get().await;
     
     let blob = sqlx::query_as!(
         Blob,
@@ -39,7 +34,7 @@ pub async fn create_blob(req: CreateBlobRequest) -> Result<Blob> {
     .fetch_one(pool)
     .await?;
 
-    Ok(blob)
+    Ok(())
 }
 
 pub async fn get_blob_by_id(id: i64) -> Result<Option<Blob>> {

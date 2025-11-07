@@ -22,7 +22,7 @@ CREATE TABLE blobs (
 	-- 上传时间
     createtime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- 上传者用户 ID（可选，如果你有用户系统）
-    uid bigint,
+    uid bigint not null default 0,
     -- 内容哈希（推荐 SHA-256 或 BLAKE3），用于去重和完整性校验
     hash CHAR(64),
     -- 软删除标记（逻辑删除）

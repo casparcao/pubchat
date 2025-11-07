@@ -13,7 +13,7 @@ pub struct Blob {
     pub open: bool,   // Publicly readable?
     pub exp: Option<DateTime<Utc>>, // Expiration time
     pub createtime: DateTime<Utc>, // Upload time
-    pub uid: Option<i64>, // Uploader user ID
+    pub uid: i64, // Uploader user ID
     pub hash: Option<String>, // Content hash
     pub deleted: bool, // Soft delete flag
 }
