@@ -23,19 +23,21 @@ pub async fn consume_messages(channel: Channel, queue_name: &str) -> Result<()> 
                     Ok(proto_message) => {
                         // Convert the proto message to our database message model
                         if let Some(core::proto::message::message::Content::Chrt(chat)) = proto_message.content {
-                            let message = Message {
-                                id: proto_message.id as i64,
-                                sender: chat.sender as i64,
-                                session: chat.session as i64,
-                                mtype: chat.ctype,
-                                content: chat.message.clone(),
-                                timestamp: chat.ts as i64,
-                                uname: chat.uname.clone(),
-                            };
-                            // Save the message to the database
-                            if let Err(e) = message::save_message(message).await {
-                                log::error!("Failed to save message to database: {}", e);
-                                continue;
+                            if let Some(m) = chat.message { 
+                                let message = Message {
+                                    id: proto_message.id as i64,
+                                    sender: chat.sender as i64,
+                                    session: chat.session as i64,
+                                    mtype: chat.ctype,
+                                    content: format!("{}", m),
+                                    timestamp: chat.ts as i64,
+                                    uname: chat.uname.clone(),
+                                };
+                                // Save the message to the database
+                                if let Err(e) = message::save_message(message).await {
+                                    log::error!("Failed to save message to database: {}", e);
+                                    continue;
+                                }
                             }
                         }
                         

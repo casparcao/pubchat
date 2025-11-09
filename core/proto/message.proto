@@ -76,7 +76,7 @@ message Blob{
     uint64 id = 1;
     string name = 2;
     string size = 3;
-    string exp = 4;
+    optional string exp = 4;
 }
 
 message Ping {

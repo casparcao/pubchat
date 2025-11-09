@@ -61,27 +61,14 @@ pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf, sx: to
                                 //存储
                                 //聊天缓存
                                 //ui
-                                if let Some(core::proto::message::chrs::Message::Text(text)) = chat.message {
+                                if let Some(m) = chat.message {
                                     let msg = crate::repository::message::Message{
                                         id: snowflaker::next_id().unwrap() as i64,
                                         sender: chat.sender as i64,
                                         receiver: chat.receiver as i64,
                                         session: chat.session as i64,
                                         mtype: chat.ctype as i32,
-                                        content: text.text,
-                                        timestamp: chat.ts as i64,
-                                        uname: chat.uname.clone(),
-                                    };
-                                    cache::message_cache().async_add_message(chat.session as i64, msg.clone()).await;
-                                    let _ = sx.send(msg).await;
-                                }else if let Some(core::proto::message::chrs::Message::Blob(blob)) = chat.message {
-                                    let msg = crate::repository::message::Message{
-                                        id: snowflaker::next_id().unwrap() as i64,
-                                        sender: chat.sender as i64,
-                                        receiver: chat.receiver as i64,
-                                        session: chat.session as i64,
-                                        mtype: chat.ctype as i32,
-                                        content: format!("[File] {} (size: {}, exp: {})", blob.name, blob.size, blob.exp),
+                                        content: format!("{}", m),
                                         timestamp: chat.ts as i64,
                                         uname: chat.uname.clone(),
                                     };

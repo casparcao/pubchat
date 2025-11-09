@@ -1,14 +1,17 @@
 use anyhow::Result;
 use reqwest;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use core::response::{ApiErr, ApiResult};
+use std::{fmt::Display, path::Path};
 
 use crate::remote::blob_host;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlobUploadResponse {
     pub id: i64,
-    pub url: String,
+    pub name: String,
+    pub size: i64,
+    pub exp: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,6 +21,12 @@ pub struct BlobResponse {
     pub size: i64,
     pub exp: Option<String>,
     pub path: String,
+}
+
+impl Display for BlobUploadResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[File] {} (size: {}, exp: {})", self.name, self.size, self.exp.as_ref().unwrap_or(&"never".to_string()))
+    }
 }
 
 /// Upload a file to the blob service
@@ -45,8 +54,12 @@ pub fn upload_file(token: &str, file_path: &str) -> Result<BlobUploadResponse> {
         .send()?;
     
     if response.status().is_success() {
-        let result: BlobUploadResponse = response.json()?;
-        Ok(result)
+        let result: ApiResult<BlobUploadResponse> = response.json()?;
+        if result.ok {
+            return Ok(result.data.unwrap());
+        }else{
+            return Err(ApiErr::Error(result.message.unwrap()).into());
+        }
     } else {
         let status = response.status();
         let error_text = response.text()?;

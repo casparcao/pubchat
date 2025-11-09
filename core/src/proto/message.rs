@@ -144,8 +144,8 @@ pub struct Blob {
     pub name: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub size: ::prost::alloc::string::String,
-    #[prost(string, tag = "4")]
-    pub exp: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "4")]
+    pub exp: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]

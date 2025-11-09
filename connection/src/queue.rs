@@ -94,7 +94,9 @@ pub async fn receive() -> Result<()> {
                                             receiver: *receiver,
                                             session: resp.session,
                                             ctype: resp.ctype,
-                                            message: resp.message.clone(),
+                                            message: resp.message
+                                                .as_ref()
+                                                .map(|m|core::proto::message::chrs::Message::from(m)),
                                             ts: resp.ts,
                                             uname: resp.uname.clone(),
 

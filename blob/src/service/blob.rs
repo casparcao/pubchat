@@ -17,7 +17,7 @@ const STORE_PATH: &str = "/home/data/images/";
 const STORE_PATH: &str = "D:/tmp/";
 
 //该路径对应nginx中location /images {}
-const ACCESS_PATH: &str = "/images/";
+const _ACCESS_PATH: &str = "/images/";
 
 pub async fn upload_file(
     claims: User, mut multipart: Multipart
@@ -46,24 +46,30 @@ pub async fn upload_file(
         file.write_all(data.as_ref()).await?;
         file.flush().await?;
         log::info!("Length of `{}` is {} bytes", &abpath.display(), size);
+        let exp = now + chrono::Duration::days(7);
         // Save blob metadata to database
         let create_req = Blob {
             id: id as i64,
-            name: name,
+            name: name.clone(),
             path: abpath.display().to_string(),
             size,
             btype: ctype,
             provider: "local".to_string(),
             bucket: None,
             open: false,
-            exp: Some(now + chrono::Duration::days(7)),
+            exp: Some(exp),
             uid: claims.id,
             hash: None, // In a real implementation, we would calculate a hash
             deleted: false,
             createtime: now,
         };
         create_blob(create_req).await?;
-        return Ok(BlobUploadResponse{id: id as i64, url: format!("{}{}", ACCESS_PATH, id)});
+        return Ok(BlobUploadResponse{
+            id: id as i64, 
+            name: name,
+            exp: Some(format!("{}", exp.format("%Y-%m-%d"))),
+            size: size as i64,
+        });
     }
     Err(ApiErr::Bad(400, "文件信息缺失".to_string()).into())
 }

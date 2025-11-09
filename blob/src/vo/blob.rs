@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlobUploadResponse {
     pub id: i64,
-    pub url: String,
+    pub name: String,
+    pub size: i64,
+    pub exp: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

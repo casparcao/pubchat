@@ -1,4 +1,4 @@
-use core::proto::{codec::encode, message::{ChatType, Chrt, Message, Text, Type}};
+use core::proto::{codec::encode, message::{Blob, ChatType, Chrt, Message, Text, Type}};
 use std::sync::Arc;
 
 use crate::{cache, remote::blob, ui::{component::chat::ChatComponent, models::Me}};
@@ -233,11 +233,9 @@ impl ChatComponent {
         if let Some(session) = &self.session {
             // Upload file to blob service
             let upload_result = blob::upload_file(&self.token, file_path)?;
-            
             // Create file message
             let session_id = session.id;
             let stream_clone = stream.clone();
-            
             // Create chat request with file type
             let chat_request = Message {
                 id: snowflaker::next_id().unwrap(),
@@ -254,7 +252,12 @@ impl ChatComponent {
                         .filter(|id| *id != me.id)
                         .collect(),
                     ctype: ChatType::File as i32,
-                    message: serde_json::to_string(&upload_result)?, // Send file info as JSON
+                    message: Some(core::proto::message::chrt::Message::Blob(Blob{
+                        id: upload_result.id as u64,
+                        name: upload_result.name.clone(),
+                        size: upload_result.size.to_string(),
+                        exp: upload_result.exp.as_ref().map(|e| e.clone()),
+                    })),
                     ts: std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
@@ -266,7 +269,7 @@ impl ChatComponent {
             // Add to local message list
             self.messages.push(crate::ui::models::Message::new(
                 me.name.to_string(), 
-                format!("[File] {}", file_path), 
+                format!("{}", upload_result), 
                 false
             ));
             
@@ -278,15 +281,13 @@ impl ChatComponent {
                 uname: me.name.to_string(),
                 session: session_id,
                 mtype: Type::Chrt as i32,
-                content: format!("[File] {}", file_path),
+                content: format!("{}", upload_result),
                 timestamp: chat_request.ts as i64,
             };
             cache::message_cache().add_message(session.id, message);
-            
             // Send message
             let encoded = encode(&chat_request)
                 .map_err(|e| anyhow::anyhow!("Failed to encode message: {}", e))?;
-            
             crate::asynrt::get().block_on(self.do_send_message(stream_clone, encoded));
             
             Ok(())
