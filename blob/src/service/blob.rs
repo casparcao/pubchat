@@ -1,5 +1,7 @@
 use anyhow::Result;
-use chrono::Datelike;
+use base64::engine::general_purpose;
+use base64::Engine;
+use chrono::{Datelike};
 use core::extract::Multipart;
 use core::response::ApiErr;
 use std::path::{Path};
@@ -16,8 +18,8 @@ const STORE_PATH: &str = "/home/data/images/";
 #[cfg(target_os="windows")]
 const STORE_PATH: &str = "D:/tmp/";
 
-//该路径对应nginx中location /images {}
-const _ACCESS_PATH: &str = "/images/";
+//该路径对应nginx中location /blobs {}
+const ACCESS_PATH: &str = "/blobs/";
 
 pub async fn upload_file(
     claims: User, mut multipart: Multipart
@@ -31,11 +33,10 @@ pub async fn upload_file(
         let ctype = field.content_type().unwrap_or("unknown").to_string();
         let name = origin_name.unwrap().to_string();
         let id = snowflaker::next_id()?;
+        let relative_path = format!("{}/{}/{}/", now.year(), now.month(), now.day());
         //文件存储目录
         let dir = Path::new(STORE_PATH)
-            .join(now.year().to_string())
-            .join(now.month().to_string())
-            .join(now.day().to_string());
+            .join(&relative_path);
         // Create uploads directory if it doesn't exist
         fs::create_dir_all(&dir).await?;
         //最终文件存储路径
@@ -51,7 +52,7 @@ pub async fn upload_file(
         let create_req = Blob {
             id: id as i64,
             name: name.clone(),
-            path: abpath.display().to_string(),
+            path: format!("{}{}{}", ACCESS_PATH, relative_path, id),
             size,
             btype: ctype,
             provider: "local".to_string(),
@@ -83,9 +84,24 @@ pub async fn get_blob(id: i64) -> Result<BlobResponse> {
     if b.exp.is_some() && b.exp.unwrap() < chrono::Utc::now() {
         return Err(ApiErr::Bad(410, "文件已过期".to_string()).into());
     }
+    let key = dotenv::var("ACCESS_PRIVATE_KEY")?;
+    let now = chrono::Utc::now();
+    let exp = now + chrono::Duration::minutes(30);
+    let exp = exp.timestamp();
+    let path = b.path;
+    let sign_content = format!("{}{}{}", exp, path, key);
+    log::info!("sign content: {}", sign_content);
+    let md5_bytes = md5::compute(sign_content.as_bytes());
+    // Base64 URL 安全编码
+    let b64 = general_purpose::STANDARD.encode(md5_bytes.as_slice());
+    let token = b64
+        .replace('+', "-")
+        .replace('/', "_")
+        .trim_end_matches('=')
+        .to_string();
+    let path = format!("{}?token={}&expire={}", path, token, exp);
     Ok(BlobResponse{id: b.id, name: b.name, size: b.size, 
         exp: b.exp.map(|e| format!("{}", e.format("%Y-%m-%d"))),
-        //todo 返回访问路径
-        path: b.path
+        path: path
     })
 }

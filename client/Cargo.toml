@@ -16,7 +16,6 @@ tracing-subscriber = {workspace = true}
 chrono = {workspace = true}
 bytes = {workspace = true}
 prost = {workspace = true}
-#reqwest = { workspace = true , features = ["blocking", "multipart"] }
 core = { path = "../core" }
 sqlx = { workspace = true }
 anyhow = {workspace = true}

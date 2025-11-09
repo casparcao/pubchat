@@ -1,0 +1,22 @@
+version: '3.8'
+# project/
+# ├── docker-compose.yml
+# ├── nginx/
+# │   ├── nginx.conf          # Nginx 主配置
+# │   └── .htpasswd           # （可选）如果需要 basic auth 管理上传
+# └── private/
+#     └── uploads/            # 实际存储目录（挂载到容器内）
+#         ├── 2025/
+#         │   └── 11/
+#         │       └── photo.jpg
+services:
+  secure-static:
+    image: nginx:alpine
+    container_name: secure-static-nginx
+    ports:
+      - "8080:80"   # 本地访问 http://localhost:8080/blobs/...
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./private/uploads:/var/www/private/uploads:ro  # 只读挂载！
+    restart: unless-stopped
+    
