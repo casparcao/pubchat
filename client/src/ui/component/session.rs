@@ -17,7 +17,7 @@ impl SessionListComponent {
             Ok(sessions) => {
                 Self {sessions: sessions
                     .into_iter()
-                    .map(|s| crate::ui::models::Session::from_session_response(s))
+                    .map(|s| crate::ui::models::Session::from(s))
                     .collect(), index: 0}
             },
             Err(e) => {

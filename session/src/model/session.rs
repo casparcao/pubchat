@@ -20,3 +20,12 @@ pub struct UserSession {
     pub role: i8, // 0-普通成员, 1-管理员
     pub jointime: NaiveDateTime,
 }
+
+impl Into<core::api::types::session::SessionResponse> for Session { 
+    fn into(self) -> core::api::types::session::SessionResponse {
+        core::api::types::session::SessionResponse {
+            id: self.id,
+            name: self.name,
+        }
+    }
+}

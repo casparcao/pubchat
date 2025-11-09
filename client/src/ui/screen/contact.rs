@@ -23,7 +23,7 @@ impl ContactListScreen {
             Ok(friends) => {
                 let contacts = friends
                     .into_iter()
-                    .map(|friend| Contact::from_contact_response(friend))
+                    .map(|friend| Contact::from(friend))
                     .collect();
                 log::info!("Contacts loaded: {:?}", contacts);
                 Self {contacts, selected: None, index: 0, me, token: token.to_string()}

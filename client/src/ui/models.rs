@@ -36,18 +36,17 @@ pub struct Contact {
     pub avatar: Option<String>,
 }
 
-impl Contact {
-    
-    // 从好友响应创建联系人
-    pub fn from_contact_response(friend: core::api::types::contact::ContactResponse) -> Self {
+impl From<core::api::types::contact::ContactResponse> for Contact {
+    fn from(contact: core::api::types::contact::ContactResponse) -> Self {
         Self {
-            id: friend.id,
-            name: friend.name,
+            id: contact.id,
+            name: contact.name,
             status: Status::Offline, // 默认状态为离线
-            avatar: friend.avatar,
+            avatar: contact.avatar,
         }
     }
 }
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Session {
@@ -56,24 +55,26 @@ pub struct Session {
     pub members: Vec<Contact>,
 }
 
-impl Session {
-    pub fn from_session_response(session: core::api::types::session::SessionResponse) -> Self {
+impl From<core::api::types::session::SessionResponse> for Session {
+    fn from(session: core::api::types::session::SessionResponse) -> Self {
         Self {
             id: session.id,
             name: session.name,
             members: vec![],
         }
     }
-    
-    pub fn from_session_detail_response(session: core::api::types::session::SessionDetailResponse) -> Self {
+}
+
+impl From<core::api::types::session::SessionDetailResponse> for Session {
+    fn from(session: core::api::types::session::SessionDetailResponse) -> Self {
         let mut members = vec![];
         for member in session.members {
-            members.push(Contact::from_contact_response(member));
+            members.push(Contact::from(member));
         }
         Self {
             id: session.id,
             name: session.name,
-            members,
+            members: members,
         }
     }
 }

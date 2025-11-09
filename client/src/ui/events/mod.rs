@@ -31,7 +31,7 @@ impl App {
                 let session = cache::session_cache().get_session(&self.token, session.id);
                 log::info!("Create session event: {:?}", session);
                 let session = session
-                    .map(|s| Session::from_session_detail_response(s))
+                    .map(|s| Session::from(s))
                     .ok();
                 self.chat.sessions.add_session(session.clone());
                 self.chat.chat.change_session(session);
