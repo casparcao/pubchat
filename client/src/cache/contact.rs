@@ -1,8 +1,9 @@
+use core::api::types::contact::ContactResponse;
 // 实现好友列表的三级缓存：内存 -> SQLite -> 远程服务器
 use std::sync::Arc;
 use std::sync::RwLock;
 use anyhow::Result;
-use crate::remote::contact::{get_contacts, ContactResponse};
+use core::api::client::contact::get_contacts as get_contacts_from_remote;
 
 /// 三级缓存结构
 pub struct Cache {
@@ -91,7 +92,7 @@ impl Cache {
     /// 从远程服务器获取好友列表
     fn get_from_remote(&self, token: &str) -> Result<Vec<ContactResponse>> {
         log::info!("从远程服务器获取联系人列表");
-        get_contacts(token)
+        get_contacts_from_remote(token)
     }
 
 }

@@ -1,3 +1,39 @@
+use std::sync::OnceLock;
+
 pub mod blob;
-pub mod user;
 pub mod session;
+pub mod login;
+pub mod contact;
+pub mod message;
+
+static CONNECTION_HOST : OnceLock<String> = OnceLock::new();
+static USER_HOST : OnceLock<String> = OnceLock::new();
+static SESSION_HOST: OnceLock<String> = OnceLock::new();
+static BLOB_HOST: OnceLock<String> = OnceLock::new();
+
+pub fn init() {
+    let user_host = dotenv::var("USER_SERVER_URL").expect("请设置USER_SERVER_URL环境变量");
+    let connection_host = dotenv::var("CONNECTION_SERVER_URL").expect("请设置CONNECTION_SERVER_URL环境变j'j");
+    let session_host = dotenv::var("SESSION_SERVER_URL").expect("请设置SESSION_SERVER_URL环境变j'j");
+    let blob_host = dotenv::var("BLOB_SERVER_URL").expect("请设置BLOB_SERVER_URL环境变j'j");
+    USER_HOST.set(user_host).expect("初始化USER_HOST失败");
+    CONNECTION_HOST.set(connection_host).expect("初始化CONNECTION_HOST失败");
+    SESSION_HOST.set(session_host).expect("初始化SESSION_HOST失败");
+    BLOB_HOST.set(blob_host).expect("初始化BLOB_HOST失败");
+}
+
+pub(crate) fn user_host() -> String {
+    USER_HOST.get().expect("USER_HOST未初始化").clone()
+}
+
+pub fn connection_host() -> String {
+    CONNECTION_HOST.get().expect("CONNECTION_HOST未初始化").clone()
+}
+
+pub(crate) fn session_host() -> String {
+    SESSION_HOST.get().expect("SESSION_HOST未初始化").clone()
+}
+
+pub(crate) fn blob_host() -> String {
+    BLOB_HOST.get().expect("BLOB_HOST未初始化").clone()
+}

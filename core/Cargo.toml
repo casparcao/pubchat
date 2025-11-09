@@ -23,6 +23,8 @@ http = { workspace = true }
 env_logger = { workspace = true }
 chrono = { workspace = true }
 base62 = { workspace = true }
+reqwest = { workspace = true , features = ["blocking", "multipart"] }
+dotenv = { workspace = true }
 
 [build-dependencies]
 prost-build = "0.14" 

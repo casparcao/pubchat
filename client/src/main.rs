@@ -8,7 +8,8 @@ use ratatui::prelude::CrosstermBackend;
 use std::io::stdout;
 use std::sync::Arc;
 use anyhow::Result;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex};
+use core::api::client;
 
 mod ui;
 mod repository;
@@ -27,7 +28,7 @@ fn main() -> Result<()> {
     core::log::init(Some(".pubchat_client.log"));
     asynrt::init();
     db::init();
-    remote::init();
+    client::init();
     cache::init();
     
     // 进入原始模式
@@ -48,7 +49,7 @@ fn main() -> Result<()> {
     // 使用token建立TCP连接
     let (stream, user_id, user_name) = asynrt::get().block_on(remote::connection::connect_with_token(&token))?;
     let (reader, writer) = stream.into_split();
-    let (sx, mut rx) = tokio::sync::mpsc::channel(100);
+    let (sx, mut rx) = tokio::sync::mpsc::channel::<core::api::types::message::Message>(100);
     // 开启接收消息任务
     asynrt::get().block_on(remote::connection::receive_messages(reader, sx));
     show_main_screen(&mut terminal, token, Me {id: user_id, name: user_name}, writer, &mut rx)?;
@@ -64,7 +65,7 @@ fn show_main_screen(
     token: String,
     me: Me,
     writer: tokio::net::tcp::OwnedWriteHalf,
-    rx: &mut tokio::sync::mpsc::Receiver<crate::repository::message::Message>,
+    rx: &mut tokio::sync::mpsc::Receiver<core::api::types::message::Message>,
 ) -> Result<()> {
     
     let shared_writer = Arc::new(Mutex::new(writer));

@@ -17,6 +17,51 @@ pub struct Message {
     pub uname: String,
 }
 
+impl From<&core::api::types::message::Message> for Message {
+    fn from(message: &core::api::types::message::Message) -> Self {
+        Message {
+            id: message.id,
+            sender: message.sender,
+            receiver: message.receiver,
+            session: message.session,
+            mtype: message.mtype,
+            content: message.content.clone(),
+            timestamp: message.timestamp,
+            uname: message.uname.clone(),
+        }
+    }
+}
+
+impl From<core::api::types::message::Message> for Message {
+    fn from(message: core::api::types::message::Message) -> Self {
+        Message {
+            id: message.id,
+            sender: message.sender,
+            receiver: message.receiver,
+            session: message.session,
+            mtype: message.mtype,
+            content: message.content,
+            timestamp: message.timestamp,
+            uname: message.uname,
+        }
+    }
+}
+
+impl Into<core::api::types::message::Message> for &Message {
+    fn into(self) -> core::api::types::message::Message {
+        core::api::types::message::Message {
+            id: self.id,
+            sender: self.sender,
+            receiver: self.receiver,
+            session: self.session,
+            mtype: self.mtype,
+            content: self.content.clone(),
+            timestamp: self.timestamp,
+            uname: self.uname.clone(),
+        }
+    }
+}
+
 //查询指定聊天室的最新的n条消息
 pub(crate) async fn select_messages(sid: i64, page: Page) -> Result<(Vec<Message>, i64)>{
     let mut connection = db::connection().await?;

@@ -1,7 +1,7 @@
 use axum::Extension;
 use core::auth::User;
 use core::response::{ApiErr, ApiResponse};
-use crate::vo::contact::ContactResponse;
+use core::api::types::contact::ContactResponse;
 use core::extract::Path;
 
 pub async fn add(

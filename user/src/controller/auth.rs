@@ -1,7 +1,8 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use core::auth::Token;
 use core::extract::Json;
-use crate::vo::auth::{LoginRequest, RegisterRequest, Token};
+use core::api::types::auth::{LoginRequest, RegisterRequest};
 use log;
 use core::auth;
 use core::response::{ApiErr, ApiResponse};

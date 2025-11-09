@@ -1,6 +1,6 @@
 use crate::model::contact::Contact;
 use crate::repository;
-use crate::vo::contact::ContactResponse;
+use core::api::types::contact::ContactResponse;
 use anyhow::Result;
 use core::auth::User as AuthUser;
 

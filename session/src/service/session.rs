@@ -1,7 +1,8 @@
+use core::api::types::contact::ContactResponse;
 use core::response::ApiErr;
 
 use anyhow::{Ok, Result};
-use crate::vo::session::{CreateSessionRequest, SessionDetailResponse, UserSessionResponse};
+use core::api::types::session::{CreateSessionRequest, SessionDetailResponse};
 use crate::model::session::{Session, UserSession};
 use crate::repository::session as session_repo;
 use chrono::Utc;
@@ -58,9 +59,10 @@ pub async fn get_session_by_id(session_id: i64) -> Result<SessionDetailResponse>
     let detail = SessionDetailResponse {
         id: session.id,
         name: session.name,
-        members: members.into_iter().map(|m| UserSessionResponse {
+        members: members.into_iter().map(|m| ContactResponse {
             id: m.uid,
             name: m.uname,
+            avatar: None,
         }).collect(),
     };
     Ok(detail)

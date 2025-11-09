@@ -1,11 +1,11 @@
-use core::auth::Token;
+use core::{api::types::auth::LoginRequest, auth::Token};
 use log::info;
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Paragraph, Clear},
 };
 use crossterm::event::{KeyCode, KeyEvent};
-use crate::remote::login;
+use core::api::client::login;
 use anyhow::Result;
 
 #[derive(Debug, Clone)]
@@ -60,7 +60,7 @@ impl LoginScreen {
                     self.error_message = None;
                     
                     // 执行登录操作
-                    let request = login::LoginRequest {
+                    let request = LoginRequest {
                         username: self.username.clone(),
                         password: self.password.clone(),
                     };

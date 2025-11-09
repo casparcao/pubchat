@@ -3,7 +3,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Clear},
 };
 use crossterm::event::{KeyCode, KeyEvent};
-use crate::remote::login;
+use core::api::{client::login, types::auth::RegisterRequest};
 
 #[derive(Debug, Clone)]
 pub struct RegisterScreen {
@@ -104,7 +104,7 @@ impl RegisterScreen {
                 self.success_message = None;
                 
                 // 执行注册操作
-                let request = login::RegisterRequest {
+                let request = RegisterRequest {
                     username: self.username.clone(),
                     password: self.password.clone(),
                     gender: "U".to_string(), // 默认性别

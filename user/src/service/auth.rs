@@ -1,7 +1,7 @@
-use crate::{common::enums::Gender, model::user::User, repository::user, vo::auth::RegisterRequest};
+use crate::{common::enums::Gender, model::user::User, repository::user};
 use snowflaker;
 use anyhow::Result;
-use core::response::ApiErr;
+use core::{api::types::auth::RegisterRequest, response::ApiErr};
 
 pub async fn login(username: &str, password: &str) -> Result<i64> {
     let existed = user::select_user_by_name(username).await?;

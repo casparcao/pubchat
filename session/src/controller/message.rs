@@ -8,7 +8,7 @@ use axum::Router;
 use core::extract::Path;
 use core::extract::Query;
 use crate::service::message;
-use crate::model::message::Message;
+use core::api::types::message::Message;
 
 pub async fn get_messages_by_session(
     Path(session): Path<i64>,

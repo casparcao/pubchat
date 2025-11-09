@@ -1,7 +1,7 @@
-use core::proto::{codec::encode, message::{Blob, ChatType, Chrt, Message, Text, Type}};
+use core::{api::client::blob::{download_file, upload_file}, proto::{codec::encode, message::{Blob, ChatType, Chrt, Message, Text, Type}}};
 use std::sync::Arc;
 
-use crate::{cache, remote::blob, ui::{component::chat::ChatComponent, models::Me}};
+use crate::{cache, ui::{component::chat::ChatComponent, models::Me}};
 use tokio::{io::AsyncWriteExt, net::tcp::OwnedWriteHalf, sync::Mutex};
 
 impl ChatComponent {
@@ -45,7 +45,7 @@ impl ChatComponent {
                 })),
             };
             self.messages.push(crate::ui::models::Message::new(me.name.to_string(), content.clone(), false));
-            let message = crate::repository::message::Message{
+            let message = core::api::types::message::Message{
                 id: chat_request.id as i64,
                 sender: me.id as i64,
                 receiver: 0,
@@ -165,7 +165,7 @@ impl ChatComponent {
                     
                     match base62::decode(file_id) {
                         Ok(id) => {
-                            match blob::download_file(&self.token, id as i64, save_path) {
+                            match download_file(&self.token, id as i64, save_path) {
                                 Ok(_) => {
                                     self.messages.push(crate::ui::models::Message::new(
                                         "SYSTEM".to_string(), 
@@ -232,7 +232,7 @@ impl ChatComponent {
     fn send_file(&mut self, me: &Me, stream: &Arc<Mutex<OwnedWriteHalf>>, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(session) = &self.session {
             // Upload file to blob service
-            let upload_result = blob::upload_file(&self.token, file_path)?;
+            let upload_result = upload_file(&self.token, file_path)?;
             // Create file message
             let session_id = session.id;
             let stream_clone = stream.clone();
@@ -274,7 +274,7 @@ impl ChatComponent {
             ));
             
             // Add to cache
-            let message = crate::repository::message::Message{
+            let message = core::api::types::message::Message{
                 id: chat_request.id as i64,
                 sender: me.id as i64,
                 receiver: 0,

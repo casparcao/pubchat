@@ -8,7 +8,6 @@ pub mod model;
 pub mod service;
 pub mod repository;
 pub mod controller;
-pub mod vo;
 pub mod common;
 pub mod test;
 

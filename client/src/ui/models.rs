@@ -39,7 +39,7 @@ pub struct Contact {
 impl Contact {
     
     // 从好友响应创建联系人
-    pub fn from_contact_response(friend: crate::remote::contact::ContactResponse) -> Self {
+    pub fn from_contact_response(friend: core::api::types::contact::ContactResponse) -> Self {
         Self {
             id: friend.id,
             name: friend.name,
@@ -57,7 +57,7 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn from_session_response(session: crate::remote::session::SessionResponse) -> Self {
+    pub fn from_session_response(session: core::api::types::session::SessionResponse) -> Self {
         Self {
             id: session.id,
             name: session.name,
@@ -65,7 +65,7 @@ impl Session {
         }
     }
     
-    pub fn from_session_detail_response(session: crate::remote::session::SessionDetailResponse) -> Self {
+    pub fn from_session_detail_response(session: core::api::types::session::SessionDetailResponse) -> Self {
         let mut members = vec![];
         for member in session.members {
             members.push(Contact::from_contact_response(member));

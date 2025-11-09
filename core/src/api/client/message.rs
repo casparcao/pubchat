@@ -1,7 +1,7 @@
-use core::response::{ApiErr, ApiResult};
+use crate::{api::types::message::Message, response::{ApiErr, ApiResult}};
 use reqwest;
 use anyhow::Result;
-use crate::{repository::message::Message, remote::session_host};
+use crate::api::client::session_host;
 
 
 /// 获取指定会话的消息历史

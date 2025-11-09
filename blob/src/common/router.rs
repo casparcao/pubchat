@@ -3,13 +3,12 @@ use tower_http::{cors::{Any, CorsLayer}, validate_request::ValidateRequestHeader
 use anyhow::Result;
 use axum::{error_handling::HandleErrorLayer, routing::any, Router};
 use core::response::{e404, e500};
-use crate::controller::{session, blob};
+use crate::controller::{blob};
 
 pub fn init() -> Result<Router> {
     let app = Router::new();
     Ok(app
         .route("/index", axum::routing::get(|| async { "Blob Service" }))
-        .merge(session::router())
         .merge(blob::router())
         .layer(ValidateRequestHeaderLayer::custom(core::auth::AuthHeader{}))
         .fallback(any(e404))

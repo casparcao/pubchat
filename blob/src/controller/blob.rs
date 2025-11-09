@@ -7,8 +7,9 @@ use core::auth::User;
 use core::extract::Multipart;
 use core::extract::{Path};
 use core::response::{ApiResponse, ApiErr};
+use core::api::types::blob::{BlobResponse, BlobUploadResponse};
 use anyhow::Result;
-use crate::{service::blob::{get_blob, upload_file}, vo::blob::{BlobResponse, BlobUploadResponse}};
+use crate::{service::blob::{get_blob, upload_file}};
 
 pub async fn upload_blob(
     Extension(user): Extension<User>,

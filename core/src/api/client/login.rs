@@ -1,32 +1,14 @@
-use core::{auth::Token, response::{ApiErr, ApiResult}};
+use crate::{api::types::auth::{LoginRequest, RegisterRequest}, auth::Token, response::{ApiErr, ApiResult}};
 use anyhow::Result;
-use serde::Serialize;
 
-use crate::remote::user_host;
+use crate::api::client::user_host;
 
-
-// 登录请求结构
-#[derive(Serialize)]
-pub(crate) struct LoginRequest {
-    pub(crate) username: String,
-    pub(crate) password: String,
-}
-
-// 注册请求结构
-#[derive(Serialize)]
-pub(crate) struct RegisterRequest {
-    pub(crate) username: String,
-    pub(crate) password: String,
-    pub(crate) gender: String,
-    pub(crate) age: i8,
-}
 
 
 // 执行登录操作
 pub fn login(body: &LoginRequest) -> Result<Token> {
     // 创建HTTP客户端
     let client = reqwest::blocking::Client::new();
-    
     // 发送登录请求
     let response = client
         .post(format!("{}/login", user_host()))

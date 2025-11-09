@@ -1,15 +1,17 @@
 // 缓存ui聊天框的聊天列表
 // 实现三级缓存：内存 -> SQLite -> 远程服务器
 
+use core::api::client::session::create_session;
+use core::api::client::session::get_session as get_session_from_remote;
+use core::api::client::session::get_sessions as get_sessions_from_remote;
+use core::api::types::session::CreateSessionRequest;
+use core::api::types::session::SessionDetailResponse;
+use core::api::types::session::SessionResponse;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::RwLock;
 use anyhow::Ok;
 use anyhow::Result;
-use crate::remote::session;
-use crate::remote::session::CreateSessionRequest;
-use crate::remote::session::SessionDetailResponse;
-use crate::remote::session::SessionResponse;
 use core::request::Page;
 
 
@@ -65,7 +67,7 @@ impl Cache {
         // }
 
         // 3. 从远程服务器获取
-        match self.get_from_remote(token){
+        match get_sessions_from_remote(token){
             std::result::Result::Ok(sessions) => {
                 // 将结果存入内存缓存和SQLite数据库
                 {
@@ -96,7 +98,7 @@ impl Cache {
             }
         }
 
-        match session::get_session(token, id){
+        match get_session_from_remote(token, id){
             std::result::Result::Ok(session) => {
                 // 将结果存入内存缓存和SQLite数据库
                 {
@@ -143,13 +145,6 @@ impl Cache {
     //     Ok(())
     // }
 
-    /// 从远程服务器获取消息
-    fn get_from_remote(&self, token: &str) -> Result<Vec<SessionResponse>> {
-        // 注意：这里需要将会话ID映射到房间ID
-        // 在实际实现中，您可能需要一个映射机制
-        log::info!("从远程服务器获取session列表");
-        session::get_sessions(token)
-    }
 
     /// 向缓存中添加单条消息
     pub fn add_session(&self, token: &str, payload: CreateSessionRequest) -> Result<SessionResponse> {
@@ -166,7 +161,7 @@ impl Cache {
         // if let Err(e) = self.save_to_sqlite(&message){
             // log::error!("保存消息到SQLite失败: {}", e);
         // }
-        session::create_session(token, payload)
+        create_session(token, payload)
     }
 
 }

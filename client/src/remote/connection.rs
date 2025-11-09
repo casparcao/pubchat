@@ -5,8 +5,8 @@ use tokio::net::TcpStream;
 use tokio::io::AsyncWriteExt;
 use core::{proto::message::{Cort, Message, Type}, response::ApiErr};
 use core::proto::codec::{encode, decode};
-
-use crate::{cache, remote::connection_host};
+use core::api::client::connection_host;
+use crate::{cache};
 
 
 // 使用token建立TCP连接
@@ -47,7 +47,7 @@ pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64, String)>
 }
 
 // 接收消息的异步任务
-pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf, sx: tokio::sync::mpsc::Sender<crate::repository::message::Message>) {
+pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf, sx: tokio::sync::mpsc::Sender<core::api::types::message::Message>) {
     // 启动接收消息的任务
     tokio::spawn(async move {
         loop {
@@ -62,7 +62,7 @@ pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf, sx: to
                                 //聊天缓存
                                 //ui
                                 if let Some(m) = chat.message {
-                                    let msg = crate::repository::message::Message{
+                                    let msg = core::api::types::message::Message{
                                         id: snowflaker::next_id().unwrap() as i64,
                                         sender: chat.sender as i64,
                                         receiver: chat.receiver as i64,

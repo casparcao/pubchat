@@ -1,18 +1,9 @@
-use core::response::{ApiErr, ApiResult};
+use crate::{api::types::contact::ContactResponse, response::{ApiErr, ApiResult}};
 
 use reqwest;
-use serde::{Deserialize, Serialize};
 use anyhow::Result;
-use sqlx::prelude::FromRow;
 
-use crate::remote::user_host;
-
-#[derive(Debug, Deserialize, Serialize, Clone, FromRow)]
-pub struct ContactResponse {
-    pub id: i64,
-    pub name: String,
-    pub avatar: Option<String>,
-}
+use crate::api::client::user_host;
 
 pub fn get_contacts(token: &str) -> Result<Vec<ContactResponse>> {
     let client = reqwest::blocking::Client::new();

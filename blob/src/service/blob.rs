@@ -7,7 +7,7 @@ use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
 use crate::model::blob::Blob;
 use crate::repository::blob::{create_blob, get_blob_by_id};
-use crate::vo::blob::{BlobResponse, BlobUploadResponse};
+use core::api::types::blob::{BlobResponse, BlobUploadResponse};
 use core::auth::User;
 
 

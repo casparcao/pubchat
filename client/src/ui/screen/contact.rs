@@ -1,6 +1,6 @@
-use core::response::ApiErr;
+use core::{api::{client::session::calc_session_id, types::{contact::ContactResponse, session::CreateSessionRequest}}, response::ApiErr};
 
-use crate::{cache, remote::session::{CreateSessionRequest, CreateSessionUserRequest, calc_session_id}, ui::models::{Contact, Me, Session, Status}};
+use crate::{cache, ui::models::{Contact, Me, Session, Status}};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, List, ListItem, Paragraph},
@@ -127,13 +127,15 @@ impl ContactListScreen {
                 id: session_id,
                 name: session_name.clone(),
                 members: vec![
-                    CreateSessionUserRequest {
+                    ContactResponse {
                         id: self.me.id as i64,
                         name: self.me.name.clone(),
+                        avatar: None,
                     },
-                    CreateSessionUserRequest {
+                    ContactResponse {
                         id: selected.id,
                         name: selected.name.clone(),
+                        avatar: None,
                     }
                 ],
             };

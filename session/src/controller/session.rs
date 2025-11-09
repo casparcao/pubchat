@@ -9,8 +9,8 @@ use axum::routing::{get, post};
 use axum::Router;
 use crate::service::session;
 use crate::model::session::Session;
-use crate::vo::session::SessionDetailResponse;
-use crate::vo::session::{CreateSessionRequest};
+use core::api::types::session::SessionDetailResponse;
+use core::api::types::session::{CreateSessionRequest};
 
 pub async fn create_session(
     Extension(claims): Extension<User>,
