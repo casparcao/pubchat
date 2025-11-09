@@ -25,7 +25,8 @@ pub struct BlobResponse {
 
 impl Display for BlobUploadResponse {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[File] {} (size: {}, exp: {})", self.name, self.size, self.exp.as_ref().unwrap_or(&"never".to_string()))
+        write!(f, "[File] {} (size: {}, exp: {}, download id: {})", 
+            self.name, self.size, self.exp.as_ref().unwrap_or(&"never".to_string()), base62::encode(self.id as u128))
     }
 }
 
@@ -78,9 +79,19 @@ pub fn download_file(token: &str, file_id: i64, save_path: &str) -> Result<()> {
         .send()?;
     
     if response.status().is_success() {
-        let file_data = response.bytes()?;
-        std::fs::write(save_path, file_data)?;
-        Ok(())
+        let result: ApiResult<BlobResponse> = response.json()?;
+        if result.ok {
+            let path = result.data.unwrap().path;
+            log::info!("Downloading file: {}", path);
+            let file_data = client
+                .get(&path)
+                .send()?
+                .bytes()?;
+            std::fs::write(save_path, file_data)?;
+            return Ok(());
+        }else{
+            return Err(ApiErr::Error(result.message.unwrap()).into());
+        }
     } else {
         let status = response.status();
         let error_text = response.text()?;

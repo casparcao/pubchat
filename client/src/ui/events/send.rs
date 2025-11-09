@@ -163,9 +163,9 @@ impl ChatComponent {
                     let file_id = parts[1];
                     let save_path = parts[2];
                     
-                    match file_id.parse::<i64>() {
+                    match base62::decode(file_id) {
                         Ok(id) => {
-                            match blob::download_file(&self.token, id, save_path) {
+                            match blob::download_file(&self.token, id as i64, save_path) {
                                 Ok(_) => {
                                     self.messages.push(crate::ui::models::Message::new(
                                         "SYSTEM".to_string(), 
