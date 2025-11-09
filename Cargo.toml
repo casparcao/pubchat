@@ -50,6 +50,7 @@ http = "1.3"
 lapin = "3.7"
 deadpool = "0.12"
 deadpool-lapin = "0.13"
+base62 = "2.2"
 
 [profile.dev]
 panic = "abort"

@@ -538,6 +538,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c7f02d4ea65f2c1853089ffd8d2787bdbc63de2f0d29dedbcf8ccdfa0ccd4cf"
 
 [[package]]
+name = "base62"
+version = "2.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1adf9755786e27479693dedd3271691a92b5e242ab139cacb9fb8e7fb5381111"
+
+[[package]]
 name = "base64"
 version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -994,6 +1000,7 @@ dependencies = [
  "anyhow",
  "axum",
  "axum-extra",
+ "base62",
  "bytes",
  "chrono",
  "env_logger",
@@ -3205,6 +3212,7 @@ name = "pubchat"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "base62",
  "bytes",
  "chrono",
  "color-eyre",
@@ -3284,7 +3292,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.59.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]

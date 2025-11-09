@@ -22,7 +22,8 @@ impl Display for crate::proto::message::chrt::Message {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { 
         match self {
             crate::proto::message::chrt::Message::Text(text) => write!(f, "{}", text.text),
-            crate::proto::message::chrt::Message::Blob(file) => write!(f, "[File] {} (size: {}, exp: {})", file.name, file.size, file.exp.as_ref().unwrap_or(&"never".to_string())),
+            crate::proto::message::chrt::Message::Blob(file) => write!(f, "[File] {} (size: {}, exp: {}, download id: {})", 
+                file.name, file.size, file.exp.as_ref().unwrap_or(&"never".to_string()), base62::encode(file.id as u64)),
         }
     }
 }
@@ -31,7 +32,8 @@ impl Display for crate::proto::message::chrs::Message {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { 
         match self {
             crate::proto::message::chrs::Message::Text(text) => write!(f, "{}", text.text),
-            crate::proto::message::chrs::Message::Blob(file) => write!(f, "[File] {} (size: {}, exp: {})", file.name, file.size, file.exp.as_ref().unwrap_or(&"never".to_string())),
+            crate::proto::message::chrs::Message::Blob(file) => write!(f, "[File] {} (size: {}, exp: {}, download id: {})", 
+                file.name, file.size, file.exp.as_ref().unwrap_or(&"never".to_string()), base62::encode(file.id as u64)),
         }
     }
 }
