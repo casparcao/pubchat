@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  blob:
+    build:
+      context: ../blob
+      dockerfile: Dockerfile
+    container_name: pubchat-blob
+    ports:
+      - "3002:3002"
+    environment:
+      - DATABASE_URL=mysql://root:root@mysql:3306/blob
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_ADDR=amqp://admin:admin@rabbitmq:5672/pubchat_vhost
+      - JWT_SECRET=iloverustlangitsveryverynice
+      - ACCESS_PRIVATE_KEY=pubchat_access_private_key
+    volumes:
+      - ./private/uploads:/home/data/images:rw
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+    restart: unless-stopped
+
+  blob-nginx:
+    image: nginx:alpine
+    container_name: pubchat-blob-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./private/uploads:/var/www/private/uploads:ro
+    restart: unless-stopped
+    depends_on:
+      - blob
+
+volumes:
+  blob_data:
+    driver: local
