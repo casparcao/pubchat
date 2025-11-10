@@ -1,6 +1,7 @@
 pub mod send;
 pub mod chat;
 pub mod contact;
+pub mod auth;
 
 use crate::{cache, ui::{models::{App, Session, View}, screen::chat::Focus}};
 use crossterm::event::{KeyCode, KeyEvent};

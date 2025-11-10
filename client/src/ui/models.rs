@@ -118,3 +118,17 @@ pub struct App {
     pub stream: Arc<Mutex<OwnedWriteHalf>>,
     pub me: Me,
 }
+
+impl App {
+    pub fn new(token: String, me: Me, stream: Arc<Mutex<OwnedWriteHalf>>) -> Self {
+        Self {
+            contact: ContactListScreen::new(&token, me.clone()),
+            chat: ChatScreen::new(&token),
+            view: View::Contact,
+            token: token,
+            me: me,
+            stream: stream,
+        }
+    }
+    
+}
