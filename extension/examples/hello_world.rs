@@ -1,5 +1,6 @@
-use pubchat::extension::{Extension, ExtensionContext};
+use pubchat::{Extension, MessageProcessor, CommandHandler, CommandResult, extension::{ExtensionContext, ExtensionMethods}};
 use anyhow::Result;
+use core::proto::message::Message;
 
 pub struct HelloWorldExtension;
 
@@ -9,7 +10,7 @@ impl Extension for HelloWorldExtension {
     }
 
     fn initialize(&mut self, context: &ExtensionContext) -> Result<()> {
-        println!("Hello, World! Extension {} initialized", self.name());
+        println!("Hello, World! Extension {} initialized with config: {:?}", self.name(), context.config);
         Ok(())
     }
 
@@ -17,8 +18,49 @@ impl Extension for HelloWorldExtension {
         println!("Goodbye from {} extension!", self.name());
         Ok(())
     }
+    
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+impl MessageProcessor for HelloWorldExtension {
+    fn on_message_receive(&self, message: &mut Message) -> Result<bool> {
+        println!("Processing incoming message: {:?}", message);
+        // Always allow the message to continue processing
+        Ok(true)
+    }
+
+    fn on_message_send(&self, message: &mut Message) -> Result<bool> {
+        println!("Processing outgoing message: {:?}", message);
+        // Always allow the message to be sent
+        Ok(true)
+    }
+}
+
+impl CommandHandler for HelloWorldExtension {
+    fn commands(&self) -> Vec<&str> {
+        vec!["hello", "world"]
+    }
+
+    fn handle_command(&self, command: &str, args: Vec<&str>) -> Result<CommandResult> {
+        match command {
+            "hello" => Ok(CommandResult::Success(format!("Hello, {}!", args.get(0).unwrap_or(&"World")))),
+            "world" => Ok(CommandResult::Success("World says hello back!".to_string())),
+            _ => Ok(CommandResult::NotHandled),
+        }
+    }
 }
 
 fn main() {
     // This is just an example - actual usage would be in the main pubchat binary
+    let mut extension = HelloWorldExtension;
+    let context = ExtensionContext {
+        config: Default::default(),
+        methods: ExtensionMethods::default(),
+    };
+    
+    extension.initialize(&context).unwrap();
+    println!("Extension name: {}", extension.name());
+    extension.shutdown().unwrap();
 }

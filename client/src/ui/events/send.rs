@@ -131,6 +131,18 @@ impl ChatComponent {
                     "/quit or /exit - Exit the application".to_string(), 
                     true
                 ));
+
+                // Add extension command help if available
+                if let Some(plugin_manager) = &self.plugin_manager {
+                    let extensions_help = plugin_manager.list_commands();
+                    for help_text in extensions_help {
+                        self.messages.push(crate::ui::models::Message::new(
+                            "SYSTEM".to_string(),
+                            help_text,
+                            true
+                        ));
+                    }
+                }
             }
             "/file" => {
                 if let Some(file_path) = parts.get(1) {
