@@ -95,6 +95,7 @@ impl ChatComponent {
         let parts: Vec<&str> = input.split_whitespace().collect();
         let cmd = parts.get(0).unwrap_or(&"");
         
+        // Handle built-in commands
         match *cmd {
             "/help" => {
                 self.messages.push(crate::ui::models::Message::new(
@@ -134,17 +135,23 @@ impl ChatComponent {
                 ));
 
                 // Add extension command help if available
-                //todo: add extension command help
-                // if let Some(plugin_manager) = &self.plugin_manager {
-                //     let extensions_help = plugin_manager.list_commands();
-                //     for help_text in extensions_help {
-                //         self.messages.push(crate::ui::models::Message::new(
-                //             "SYSTEM".to_string(),
-                //             help_text,
-                //             true
-                //         ));
-                //     }
-                // }
+                if let Some(plugin_manager) = &self.plugin_manager {
+                    let extensions_help = plugin_manager.list_commands();
+                    for help_text in extensions_help {
+                        self.messages.push(crate::ui::models::Message::new(
+                            "SYSTEM".to_string(),
+                            help_text,
+                            true
+                        ));
+                    }
+                }
+                
+                // Add info about new command format
+                self.messages.push(crate::ui::models::Message::new(
+                    "SYSTEM".to_string(),
+                    "You can also use !plugin.command format for direct plugin commands".to_string(),
+                    true
+                ));
             }
             "/file" => {
                 if let Some(file_path) = parts.get(1) {
@@ -189,51 +196,96 @@ impl ChatComponent {
                                 }
                                 Err(e) => {
                                     self.messages.push(crate::ui::models::Message::new(
-                                        "SYSTEM".to_string(), 
-                                        format!("Failed to download file: {}", e), 
+                                        "SYSTEM".to_string(),
+                                        format!("Failed to download file: {}", e),
                                         true
                                     ));
                                 }
                             }
                         }
-                        Err(_) => {
+                        Err(e) => {
                             self.messages.push(crate::ui::models::Message::new(
-                                "SYSTEM".to_string(), 
-                                "Invalid file ID".to_string(), 
+                                "SYSTEM".to_string(),
+                                format!("Invalid file ID: {}", e),
                                 true
                             ));
                         }
                     }
                 } else {
                     self.messages.push(crate::ui::models::Message::new(
-                        "SYSTEM".to_string(), 
-                        "Usage: /download <file_id> <save_path>".to_string(), 
+                        "SYSTEM".to_string(),
+                        "Usage: /download <file_id> <save_path>".to_string(),
                         true
                     ));
                 }
             }
             "/friends" => {
-                // 切换到好友列表视图
-                // self.view = View::Contact;
-                
-                // if let Some(messages) = self.messages.get_mut(&target) {
-                //     messages.push(MessageItem::system("Opening friends list..."));
-                // }
+                self.current_view = crate::ui::models::View::FriendsList;
+                self.selected_friend = None;
+                self.messages.push(crate::ui::models::Message::new(
+                    "SYSTEM".to_string(),
+                    "Opening friends list...".to_string(),
+                    true
+                ));
             }
             "/clear" => {
-                // if let Some(messages) = self.messages.get_mut(&target) {
-                //     messages.clear();
-                // }
+                self.messages.clear();
             }
             "/quit" | "/exit" => {
                 should_exit = true;
             }
             _ => {
-                self.messages.push(crate::ui::models::Message::new(
-                    "SYSTEM".to_string(), 
-                    format!("Unknown command: {}", cmd), 
-                    true
-                ));
+                // Handle plugin commands with new format !plugin.command
+                if let Some(plugin_manager) = &self.plugin_manager {
+                    let command_args: Vec<&str> = parts.iter().skip(1).cloned().collect();
+                    match plugin_manager.handle_command(cmd, command_args) {
+                        Ok(Some(result)) => {
+                            match result {
+                                pubchat::extension::CommandResult::Success(output) => {
+                                    self.messages.push(crate::ui::models::Message::new(
+                                        "SYSTEM".to_string(),
+                                        output,
+                                        true
+                                    ));
+                                }
+                                pubchat::extension::CommandResult::Error(error) => {
+                                    self.messages.push(crate::ui::models::Message::new(
+                                        "SYSTEM".to_string(),
+                                        format!("Error: {}", error),
+                                        true
+                                    ));
+                                }
+                                pubchat::extension::CommandResult::NotHandled => {
+                                    self.messages.push(crate::ui::models::Message::new(
+                                        "SYSTEM".to_string(),
+                                        format!("Unknown command: {}", cmd),
+                                        true
+                                    ));
+                                }
+                            }
+                        }
+                        Ok(None) => {
+                            self.messages.push(crate::ui::models::Message::new(
+                                "SYSTEM".to_string(),
+                                format!("Unknown command: {}", cmd),
+                                true
+                            ));
+                        }
+                        Err(e) => {
+                            self.messages.push(crate::ui::models::Message::new(
+                                "SYSTEM".to_string(),
+                                format!("Error handling command: {}", e),
+                                true
+                            ));
+                        }
+                    }
+                } else {
+                    self.messages.push(crate::ui::models::Message::new(
+                        "SYSTEM".to_string(),
+                        format!("Unknown command: {}", cmd),
+                        true
+                    ));
+                }
             }
         }
         

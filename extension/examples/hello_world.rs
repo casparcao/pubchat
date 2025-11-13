@@ -47,7 +47,7 @@ impl CommandHandler for HelloWorldExtension {
         match command {
             "hello" => Ok(CommandResult::Success(format!("Hello, {}!", args.get(0).unwrap_or(&"World")))),
             "world" => Ok(CommandResult::Success("World says hello back!".to_string())),
-            _ => Ok(CommandResult::Ignore),
+            _ => Ok(CommandResult::NotHandled),
         }
     }
 }

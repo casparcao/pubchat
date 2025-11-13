@@ -65,7 +65,7 @@ impl CommandHandler for CommandExtension {
                     Ok(CommandResult::Error("Usage: /calc <num1> <operator> <num2>".to_string()))
                 }
             },
-            _ => Ok(CommandResult::Ignore),
+            _ => Ok(CommandResult::NotHandled),
         }
     }
 }

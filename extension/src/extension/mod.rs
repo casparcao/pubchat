@@ -100,6 +100,13 @@ pub trait CommandHandler: Extension {
     /// 
     /// This method is called when a user enters a command that this extension has registered
     fn handle(&self, command: &str, args: Vec<&str>) -> Result<CommandResult>;
+    
+    /// Get the prefix for this extension's commands
+    /// 
+    /// By default, this returns the extension name
+    fn prefix(&self) -> &str {
+        self.name()
+    }
 }
 
 /// Result of command execution
@@ -109,7 +116,7 @@ pub enum CommandResult {
     /// Command was handled but with an error
     Error(String),
     /// Command was not recognized by this handler
-    Ignore,
+    NotHandled,
 }
 
 impl<T: Extension + 'static> AsAny for T {

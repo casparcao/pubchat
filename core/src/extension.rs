@@ -95,13 +95,34 @@ impl ExtensionManager {
     }
 
     /// Handle a command through all registered command handlers
-    pub fn handle_command(&self, command: &str, args: Vec<&str>) -> Result<Option<pubchat::extension::CommandResult>> {
+    pub fn handle_command(&self, command_input: &str, args: Vec<&str>) -> Result<Option<pubchat::extension::CommandResult>> {
+        // First, try to parse as !plugin.command format
+        if command_input.starts_with('!') && command_input.contains('.') {
+            let parts: Vec<&str> = command_input[1..].splitn(2, '.').collect();
+            let plugin_name = parts[0];
+            let command = parts[1];
+            
+            // Look for a specific plugin
+            if let Some(loaded_ext) = self.extensions.get(plugin_name) {
+                // Try to downcast to CommandHandler
+                if let Some(handler) = loaded_ext.extension.as_any().downcast_ref::<&(dyn CommandHandler)>() {
+                    return Ok(Some(handler.handle(command, args)?));
+                }
+            }
+            
+            // Plugin not found or doesn't handle commands
+            return Ok(Some(pubchat::extension::CommandResult::Error(
+                format!("Plugin '{}' not found or doesn't handle commands", plugin_name)
+            )));
+        }
+        
+        // Fall back to the old method - try all command handlers
         for handler_name in &self.command_handlers {
             if let Some(loaded_ext) = self.extensions.get(handler_name) {
                 // Try to downcast to CommandHandler
                 if let Some(handler) = loaded_ext.extension.as_any().downcast_ref::<&(dyn CommandHandler)>() {
-                    match handler.handle(command, args.clone())? {
-                        pubchat::extension::CommandResult::Ignore => continue,
+                    match handler.handle(command_input, args.clone())? {
+                        pubchat::extension::CommandResult::NotHandled => continue,
                         result => return Ok(Some(result)),
                     }
                 }

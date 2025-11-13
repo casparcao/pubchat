@@ -88,8 +88,18 @@ Implement the [CommandHandler](src/extension/mod.rs) trait to add new commands:
 
 - `commands`: Return a list of commands this extension handles
 - `handle_command`: Process a command and return a result
+- `command_prefix`: Return the prefix for this extension's commands (defaults to extension name)
 
 Return [CommandResult::NotHandled](src/extension/mod.rs) if the command is not recognized by this handler.
+
+## Command Format
+
+PubChat supports two command formats:
+
+1. Traditional format: `/command` - searches all extensions for a matching command
+2. Direct format: `!extension.command` - directly calls the specified extension's command
+
+The direct format is more efficient as it bypasses searching through all extensions.
 
 ## Extension Lifecycle
 
