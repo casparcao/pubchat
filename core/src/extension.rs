@@ -3,7 +3,7 @@
 //! This module handles loading, initializing, and managing extensions.
 
 use anyhow::Result;
-use pubchat::{Extension, ExtensionContext, LoadedExtension};
+use pubchat::extension::{Extension, ExtensionContext, LoadedExtension};
 use std::collections::HashMap;
 
 /// Manages extensions for the PubChat system

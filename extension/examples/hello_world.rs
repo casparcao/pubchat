@@ -1,4 +1,4 @@
-use pubchat::{Extension, ExtensionContext};
+use pubchat::extension::{Extension, ExtensionContext};
 use anyhow::Result;
 
 pub struct HelloWorldExtension;
