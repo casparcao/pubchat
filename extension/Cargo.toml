@@ -12,3 +12,10 @@ tokio = { workspace = true }
 anyhow = { workspace = true }
 log = {workspace = true}
 thiserror = { workspace = true }
+prost = {workspace = true}
+serde = { workspace = true }
+bytes = { workspace = true }
+base62 = { workspace = true }
+
+[build-dependencies]
+prost-build = "0.14" 

@@ -29,6 +29,7 @@ http-body = { workspace = true }
 http = { workspace = true }
 lapin = { workspace = true }
 core = { path = "../core" }
+pubchat = { path = "../extension" }
 deadpool = { workspace = true }
 deadpool-lapin = { workspace = true }
 env_logger = { workspace = true }

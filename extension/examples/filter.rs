@@ -1,6 +1,6 @@
-use pubchat::{Extension, MessageProcessor, extension::{ExtensionContext, ExtensionMethods}};
+use pubchat::extension::{Extension, MessageProcessor, ExtensionContext, ExtensionMethods};
 use anyhow::Result;
-use core::proto::message::Message;
+use pubchat::core::message::Message;
 
 pub struct FilterExtension;
 
@@ -30,10 +30,10 @@ impl MessageProcessor for FilterExtension {
         // For demo purposes, let's block messages containing "blockme"
         if let Some(content) = &message.content {
             match content {
-                core::proto::message::message::Content::Chrt(chrt) => {
+                pubchat::core::message::message::Content::Chrt(chrt) => {
                     if let Some(msg) = &chrt.message {
                         match msg {
-                            core::proto::message::chrt::Message::Text(text) => {
+                            pubchat::core::message::chrt::Message::Text(text) => {
                                 if text.text.contains("blockme") {
                                     println!("Blocking message containing 'blockme'");
                                     return Ok(false); // Block the message
@@ -55,10 +55,10 @@ impl MessageProcessor for FilterExtension {
         // For demo purposes, let's modify messages containing "replace_me"
         if let Some(content) = &mut message.content {
             match content {
-                core::proto::message::message::Content::Chrt(chrt) => {
+                pubchat::core::message::message::Content::Chrt(chrt) => {
                     if let Some(msg) = &mut chrt.message {
                         match msg {
-                            core::proto::message::chrt::Message::Text(text) => {
+                            pubchat::core::message::chrt::Message::Text(text) => {
                                 if text.text.contains("replace_me") {
                                     text.text = text.text.replace("replace_me", "REPLACED");
                                 }

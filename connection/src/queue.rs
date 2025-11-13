@@ -6,7 +6,7 @@ use lapin::{
     options::*, BasicProperties
 };
 use log::{info, error};
-use core::proto::message::{Chrs, Message, Type, message::Content};
+use pubchat::core::message::{Chrs, Message, Type, message::Content};
 use std::{sync::OnceLock};
 use crate::connection;
 
@@ -96,7 +96,7 @@ pub async fn receive() -> Result<()> {
                                             ctype: resp.ctype,
                                             message: resp.message
                                                 .as_ref()
-                                                .map(|m|core::proto::message::chrs::Message::from(m)),
+                                                .map(|m|pubchat::core::message::chrs::Message::from(m)),
                                             ts: resp.ts,
                                             uname: resp.uname.clone(),
 

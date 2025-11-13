@@ -5,7 +5,7 @@
 use anyhow::Result;
 use pubchat::extension::{Extension, ExtensionContext, LoadedExtension, MessageProcessor, CommandHandler};
 use std::collections::HashMap;
-use crate::proto::message::Message;
+use pubchat::core::message::Message;
 
 /// Manages extensions for the PubChat system
 pub struct ExtensionManager {
@@ -29,13 +29,13 @@ impl ExtensionManager {
         let name = extension.name().to_string();
         
         // Check if extension implements MessageProcessor
-        let is_message_processor = extension.as_any().is::<dyn MessageProcessor>();
+        let is_message_processor = extension.as_any().is::<&(dyn MessageProcessor)>();
         if is_message_processor {
             self.message_processors.push(name.clone());
         }
         
         // Check if extension implements CommandHandler
-        let is_command_handler = extension.as_any().is::<dyn CommandHandler>();
+        let is_command_handler = extension.as_any().is::<&(dyn CommandHandler)>();
         if is_command_handler {
             self.command_handlers.push(name.clone());
         }
@@ -67,7 +67,7 @@ impl ExtensionManager {
         for processor_name in &self.message_processors {
             if let Some(loaded_ext) = self.extensions.get(processor_name) {
                 // Try to downcast to MessageProcessor
-                if let Some(processor) = loaded_ext.extension.as_any().downcast_ref::<dyn MessageProcessor>() {
+                if let Some(processor) = loaded_ext.extension.as_any().downcast_ref::<&(dyn MessageProcessor)>() {
                     if !processor.on_message_receive(message)? {
                         // If any processor returns false, stop processing
                         return Ok(false);
@@ -83,7 +83,7 @@ impl ExtensionManager {
         for processor_name in &self.message_processors {
             if let Some(loaded_ext) = self.extensions.get(processor_name) {
                 // Try to downcast to MessageProcessor
-                if let Some(processor) = loaded_ext.extension.as_any().downcast_ref::<dyn MessageProcessor>() {
+                if let Some(processor) = loaded_ext.extension.as_any().downcast_ref::<&(dyn MessageProcessor)>() {
                     if !processor.on_message_send(message)? {
                         // If any processor returns false, stop processing
                         return Ok(false);
@@ -99,7 +99,7 @@ impl ExtensionManager {
         for handler_name in &self.command_handlers {
             if let Some(loaded_ext) = self.extensions.get(handler_name) {
                 // Try to downcast to CommandHandler
-                if let Some(handler) = loaded_ext.extension.as_any().downcast_ref::<dyn CommandHandler>() {
+                if let Some(handler) = loaded_ext.extension.as_any().downcast_ref::<&(dyn CommandHandler)>() {
                     match handler.handle_command(command, args.clone())? {
                         pubchat::extension::CommandResult::NotHandled => continue,
                         result => return Ok(Some(result)),
@@ -147,8 +147,8 @@ pub trait AsAny {
     fn as_any(&self) -> &dyn std::any::Any;
 }
 
-impl<T: Extension> AsAny for T {
-    fn as_any(&self) -> &dyn std::any::Any {
+impl<T: Extension + 'static> AsAny for T {
+    fn as_any(&self) -> &(dyn std::any::Any) {
         self
     }
 }

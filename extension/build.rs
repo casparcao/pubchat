@@ -7,7 +7,7 @@ fn main() -> Result<()> {
     let mut config = prost_build::Config::new();
 
     // 可选：设置输出目录
-    config.out_dir("src/proto");
+    config.out_dir("src/core");
 
     // 可选：为所有类型添加 derive
     config.type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]");

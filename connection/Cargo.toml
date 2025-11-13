@@ -14,6 +14,7 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 prost = { workspace = true }
 core = { path = "../core" }
+pubchat = { path = "../extension" }
 lapin = { workspace = true }
 dotenv = { workspace = true }
 deadpool = { workspace = true }

@@ -19,10 +19,10 @@ pub async fn consume_messages(channel: Channel, queue_name: &str) -> Result<()> 
         log::info!("Started consuming messages from RabbitMQ queue: {}", queue_name);
         while let Some(delivery) = consumer.next().await {
             if let Ok(delivery) = delivery {
-                match serde_json::from_slice::<core::proto::message::Message>(&delivery.data) {
+                match serde_json::from_slice::<pubchat::core::message::Message>(&delivery.data) {
                     Ok(proto_message) => {
                         // Convert the proto message to our database message model
-                        if let Some(core::proto::message::message::Content::Chrt(chat)) = proto_message.content {
+                        if let Some(pubchat::core::message::message::Content::Chrt(chat)) = proto_message.content {
                             if let Some(m) = chat.message { 
                                 let message = Message {
                                     id: proto_message.id as i64,

@@ -3,10 +3,11 @@ use anyhow::Result;
 use log::{error, info};
 use tokio::net::TcpStream;
 use tokio::io::AsyncWriteExt;
-use core::{proto::message::{Cort, Message, Type}, response::ApiErr};
-use core::proto::codec::{encode, decode};
+use core::{response::ApiErr};
+use pubchat::core::codec::{encode, decode};
 use core::api::client::connection_host;
 use crate::{cache};
+use pubchat::core::message::{Cort, Message, Type}; 
 
 
 // 使用token建立TCP连接
@@ -21,7 +22,7 @@ pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64, String)>
             .unwrap()
             .as_millis() as u64,
         mtype: Type::Cort as i32,
-        content: Some(core::proto::message::message::Content::Cort(Cort {
+        content: Some(pubchat::core::message::message::Content::Cort(Cort {
             token: token.to_string(),
         })),
     };
@@ -31,7 +32,7 @@ pub async fn connect_with_token(token: &str) -> Result<(TcpStream, u64, String)>
     // 读取连接响应
     let response = decode::<Message, _>(&mut stream).await?;
     // 检查连接响应是否成功并获取用户ID
-    let (user_id, uname) = if let Some(core::proto::message::message::Content::Cors(resp)) = response.content {
+    let (user_id, uname) = if let Some(pubchat::core::message::message::Content::Cors(resp)) = response.content {
         if resp.code == 0 {
             info!("Connection established successfully, user ID: {}", resp.uid);
             (resp.uid, resp.uname) // 返回用户ID
@@ -57,7 +58,7 @@ pub async fn receive_messages(mut reader: tokio::net::tcp::OwnedReadHalf, sx: to
                     // 处理接收到的消息
                     match msg.mtype {
                         t if t == Type::Chrs as i32 => {
-                            if let Some(core::proto::message::message::Content::Chrs(chat)) = msg.content {
+                            if let Some(pubchat::core::message::message::Content::Chrs(chat)) = msg.content {
                                 //存储
                                 //聊天缓存
                                 //ui

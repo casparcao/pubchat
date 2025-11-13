@@ -21,7 +21,7 @@ To create an extension:
 ```rust
 use pubchat::{Extension, MessageProcessor, CommandHandler, CommandResult, extension::{ExtensionContext, ExtensionMethods}};
 use anyhow::Result;
-use core::proto::message::Message;
+use pubchat::core::message::Message;
 
 pub struct MyExtension;
 

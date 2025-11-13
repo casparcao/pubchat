@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 use anyhow::Result;
-use core::proto::message::Message;
+use crate::core::message::Message;
 
 /// The main trait that all extensions must implement
 pub trait Extension: Send + Sync {
@@ -112,7 +112,7 @@ pub enum CommandResult {
     NotHandled,
 }
 
-impl<T: Extension> AsAny for T {
+impl<T: Extension + 'static> AsAny for T {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -124,13 +124,13 @@ pub trait AsAny {
 }
 
 impl AsRef<dyn Extension> for dyn MessageProcessor {
-    fn as_ref(&self) -> &dyn Extension {
+    fn as_ref(&self) -> &(dyn Extension + 'static) {
         self
     }
 }
 
 impl AsRef<dyn Extension> for dyn CommandHandler {
-    fn as_ref(&self) -> &dyn Extension {
+    fn as_ref(&self) -> &(dyn Extension + 'static) {
         self
     }
 }

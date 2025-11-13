@@ -1,6 +1,6 @@
-use pubchat::{Extension, MessageProcessor, CommandHandler, CommandResult, extension::{ExtensionContext, ExtensionMethods}};
+use pubchat::extension::{CommandHandler, CommandResult, Extension, ExtensionContext, ExtensionMethods, MessageProcessor};
 use anyhow::Result;
-use core::proto::message::Message;
+use pubchat::core::message::Message;
 
 pub struct HelloWorldExtension;
 

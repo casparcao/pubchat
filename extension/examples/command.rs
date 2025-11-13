@@ -1,4 +1,4 @@
-use pubchat::{Extension, CommandHandler, CommandResult, extension::{ExtensionContext, ExtensionMethods}};
+use pubchat::extension::{Extension, CommandHandler, CommandResult, ExtensionContext, ExtensionMethods};
 use anyhow::Result;
 
 pub struct CommandExtension;

@@ -1,7 +1,7 @@
 use anyhow::{Ok, Result};
 use log::{info, error};
-use core::proto::message::Message;
-use core::proto::message::message;
+use pubchat::core::message::Message;
+use pubchat::core::message::message;
 use crate::queue;
 pub async fn handle(message: Message) -> Result<()> { 
     if let Some(message::Content::Chrt(chat_req)) = &message.content {

@@ -1,5 +1,5 @@
 use anyhow::{Ok, Result};
-use core::proto::message::Message;
+use pubchat::core::message::Message;
 pub async fn handle(_message: &Message) -> Result<()> { 
     Ok(())
 }

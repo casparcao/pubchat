@@ -1,7 +1,8 @@
-use core::{api::client::blob::{download_file, upload_file}, proto::{codec::encode, message::{Blob, ChatType, Chrt, Message, Text, Type}}};
+use core::{api::client::blob::{download_file, upload_file}};
 use std::sync::Arc;
 
 use crate::{cache, ui::{component::chat::ChatComponent, models::Me}};
+use pubchat::core::{codec::encode, message::{Blob, ChatType, Chrt, Message, Text, Type}};
 use tokio::{io::AsyncWriteExt, net::tcp::OwnedWriteHalf, sync::Mutex};
 
 impl ChatComponent {
@@ -28,7 +29,7 @@ impl ChatComponent {
                     .unwrap()
                     .as_millis() as u64,
                 mtype: Type::Chrt as i32,
-                content: Some(core::proto::message::message::Content::Chrt(Chrt{
+                content: Some(pubchat::core::message::message::Content::Chrt(Chrt{
                     sender: me.id, // 使用真实的用户ID
                     session: session_id as u64,
                     receivers: session.members.iter()
@@ -36,7 +37,7 @@ impl ChatComponent {
                         .filter(|id| *id != me.id)
                         .collect(),
                     ctype: ChatType::Text as i32,
-                    message: Some(core::proto::message::chrt::Message::Text(Text{ text: content.clone() })),
+                    message: Some(pubchat::core::message::chrt::Message::Text(Text{ text: content.clone() })),
                     ts: std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
@@ -133,16 +134,17 @@ impl ChatComponent {
                 ));
 
                 // Add extension command help if available
-                if let Some(plugin_manager) = &self.plugin_manager {
-                    let extensions_help = plugin_manager.list_commands();
-                    for help_text in extensions_help {
-                        self.messages.push(crate::ui::models::Message::new(
-                            "SYSTEM".to_string(),
-                            help_text,
-                            true
-                        ));
-                    }
-                }
+                //todo: add extension command help
+                // if let Some(plugin_manager) = &self.plugin_manager {
+                //     let extensions_help = plugin_manager.list_commands();
+                //     for help_text in extensions_help {
+                //         self.messages.push(crate::ui::models::Message::new(
+                //             "SYSTEM".to_string(),
+                //             help_text,
+                //             true
+                //         ));
+                //     }
+                // }
             }
             "/file" => {
                 if let Some(file_path) = parts.get(1) {
@@ -256,7 +258,7 @@ impl ChatComponent {
                     .unwrap()
                     .as_millis() as u64,
                 mtype: Type::Chrt as i32,
-                content: Some(core::proto::message::message::Content::Chrt(Chrt{
+                content: Some(pubchat::core::message::message::Content::Chrt(Chrt{
                     sender: me.id,
                     session: session_id as u64,
                     receivers: session.members.iter()
@@ -264,7 +266,7 @@ impl ChatComponent {
                         .filter(|id| *id != me.id)
                         .collect(),
                     ctype: ChatType::File as i32,
-                    message: Some(core::proto::message::chrt::Message::Blob(Blob{
+                    message: Some(pubchat::core::message::chrt::Message::Blob(Blob{
                         id: upload_result.id as u64,
                         name: upload_result.name.clone(),
                         size: upload_result.size.to_string(),

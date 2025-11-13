@@ -1,12 +1,12 @@
 use anyhow::Result;
 use tokio::{io::AsyncWriteExt, sync::Mutex};
 use log::{info, warn, error};
-use core::proto::message::Message;
+use pubchat::core::message::Message;
 use std::{collections::HashMap, sync::OnceLock};
 use tokio::net::tcp::OwnedWriteHalf;
 use tokio::net::TcpStream;
-use core::proto::message::Type;
-use core::proto::codec::decode;
+use pubchat::core::message::Type;
+use pubchat::core::codec::decode;
 use std::sync::Arc;
 use crate::handlers;
 
@@ -33,7 +33,7 @@ pub async fn add_client(uid: u64, client: Client) {
 pub async fn send_message(uid: u64, message: &Message) -> Result<()> {
     let lock = CLIENTS.get().expect("获取客户端列表失败").lock().await;
     if let Some(client) = lock.get(&uid) {
-        let encoded = core::proto::codec::encode(message)?;
+        let encoded = pubchat::core::codec::encode(message)?;
         let mut writer = client.writer.lock().await;
         writer.write_all(&encoded).await?;
         writer.flush().await?;

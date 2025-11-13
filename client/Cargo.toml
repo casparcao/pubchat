@@ -21,6 +21,7 @@ chrono = {workspace = true}
 bytes = {workspace = true}
 prost = {workspace = true}
 core = { path = "../core" }
+pubchat = { path = "../extension" }
 sqlx = { workspace = true }
 anyhow = {workspace = true}
 dotenv = {workspace = true}
