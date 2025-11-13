@@ -1,7 +1,11 @@
 [package]
-name = "pubchat"
+name = "client"
 edition = "2024"
 description = "chat program based on terminal"
+
+[[bin]]
+name = "pubchat"
+path = "src/main.rs"
 
 [dependencies]
 crossterm = {workspace = true}

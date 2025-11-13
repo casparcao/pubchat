@@ -25,6 +25,7 @@ chrono = { workspace = true }
 base62 = { workspace = true }
 reqwest = { workspace = true , features = ["blocking", "multipart"] }
 dotenv = { workspace = true }
+pubchat = { path = "../extension" }
 
 [build-dependencies]
 prost-build = "0.14" 

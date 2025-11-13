@@ -1,7 +1,11 @@
 [package]
-name = "pubchat-extension"
+name = "pubchat"
 edition = "2024"
 description = "pubchat extension"
+
+[lib]
+name = "pubchat"
+path = "src/lib.rs"
 
 [dependencies]
 tokio = { workspace = true }

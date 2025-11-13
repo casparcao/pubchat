@@ -855,6 +855,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "client"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base62",
+ "bytes",
+ "chrono",
+ "color-eyre",
+ "core",
+ "crossterm",
+ "dotenv",
+ "env_logger",
+ "log 0.4.28",
+ "prost",
+ "ratatui",
+ "serde",
+ "serde_json",
+ "snowflaker",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "cmake"
 version = "0.1.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1013,6 +1039,7 @@ dependencies = [
  "log 0.4.28",
  "prost",
  "prost-build",
+ "pubchat",
  "reqwest",
  "serde",
  "serde_json",
@@ -3219,32 +3246,6 @@ dependencies = [
 
 [[package]]
 name = "pubchat"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "base62",
- "bytes",
- "chrono",
- "color-eyre",
- "core",
- "crossterm",
- "dotenv",
- "env_logger",
- "log 0.4.28",
- "prost",
- "ratatui",
- "serde",
- "serde_json",
- "snowflaker",
- "sqlx",
- "thiserror 1.0.69",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "pubchat-extension"
 version = "0.0.0"
 dependencies = [
  "anyhow",
