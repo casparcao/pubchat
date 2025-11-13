@@ -100,8 +100,8 @@ impl ExtensionManager {
             if let Some(loaded_ext) = self.extensions.get(handler_name) {
                 // Try to downcast to CommandHandler
                 if let Some(handler) = loaded_ext.extension.as_any().downcast_ref::<&(dyn CommandHandler)>() {
-                    match handler.handle_command(command, args.clone())? {
-                        pubchat::extension::CommandResult::NotHandled => continue,
+                    match handler.handle(command, args.clone())? {
+                        pubchat::extension::CommandResult::Ignore => continue,
                         result => return Ok(Some(result)),
                     }
                 }

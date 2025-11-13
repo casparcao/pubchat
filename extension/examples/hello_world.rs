@@ -43,11 +43,11 @@ impl CommandHandler for HelloWorldExtension {
         vec!["hello", "world"]
     }
 
-    fn handle_command(&self, command: &str, args: Vec<&str>) -> Result<CommandResult> {
+    fn handle(&self, command: &str, args: Vec<&str>) -> Result<CommandResult> {
         match command {
             "hello" => Ok(CommandResult::Success(format!("Hello, {}!", args.get(0).unwrap_or(&"World")))),
             "world" => Ok(CommandResult::Success("World says hello back!".to_string())),
-            _ => Ok(CommandResult::NotHandled),
+            _ => Ok(CommandResult::Ignore),
         }
     }
 }

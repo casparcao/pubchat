@@ -28,7 +28,7 @@ impl CommandHandler for CommandExtension {
         vec!["time", "echo", "calc"]
     }
 
-    fn handle_command(&self, command: &str, args: Vec<&str>) -> Result<CommandResult> {
+    fn handle(&self, command: &str, args: Vec<&str>) -> Result<CommandResult> {
         match command {
             "time" => {
                 let now = std::time::SystemTime::now()
@@ -65,7 +65,7 @@ impl CommandHandler for CommandExtension {
                     Ok(CommandResult::Error("Usage: /calc <num1> <operator> <num2>".to_string()))
                 }
             },
-            _ => Ok(CommandResult::NotHandled),
+            _ => Ok(CommandResult::Ignore),
         }
     }
 }

@@ -99,7 +99,7 @@ pub trait CommandHandler: Extension {
     /// Handle a command
     /// 
     /// This method is called when a user enters a command that this extension has registered
-    fn handle_command(&self, command: &str, args: Vec<&str>) -> Result<CommandResult>;
+    fn handle(&self, command: &str, args: Vec<&str>) -> Result<CommandResult>;
 }
 
 /// Result of command execution
@@ -109,7 +109,7 @@ pub enum CommandResult {
     /// Command was handled but with an error
     Error(String),
     /// Command was not recognized by this handler
-    NotHandled,
+    Ignore,
 }
 
 impl<T: Extension + 'static> AsAny for T {
