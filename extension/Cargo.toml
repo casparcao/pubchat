@@ -1,0 +1,10 @@
+[package]
+name = "pubchat-extension"
+edition = "2024"
+description = "pubchat extension"
+
+[dependencies]
+tokio = { workspace = true }
+anyhow = { workspace = true }
+log = {workspace = true}
+thiserror = { workspace = true }

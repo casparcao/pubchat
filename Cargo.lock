@@ -3244,6 +3244,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "pubchat-extension"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "log 0.4.28",
+ "thiserror 1.0.69",
+ "tokio",
+]
+
+[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
