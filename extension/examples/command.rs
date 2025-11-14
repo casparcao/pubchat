@@ -1,9 +1,9 @@
-use pubchat::extension::{Extension, CommandHandler, CommandResult, ExtensionContext, ExtensionMethods};
+use pubchat::extension::{Extension, CommandExtension, CommandResult, ExtensionContext, ExtensionMethods};
 use anyhow::Result;
 
-pub struct CommandExtension;
+pub struct CalcCommandExtension;
 
-impl Extension for CommandExtension {
+impl Extension for CalcCommandExtension {
     fn name(&self) -> &str {
         "command"
     }
@@ -23,56 +23,50 @@ impl Extension for CommandExtension {
     }
 }
 
-impl CommandHandler for CommandExtension {
-    fn commands(&self) -> Vec<&str> {
-        vec!["time", "echo", "calc"]
+impl CommandExtension for CalcCommandExtension {
+    fn command(&self) -> &str {
+        "calc"
     }
 
-    fn handle(&self, command: &str, args: Vec<&str>) -> Result<CommandResult> {
-        match command {
-            "time" => {
-                let now = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs();
-                Ok(CommandResult::Success(format!("Current timestamp: {}", now)))
-            },
-            "echo" => {
-                Ok(CommandResult::Success(args.join(" ")))
-            },
-            "calc" => {
-                if args.len() == 3 {
-                    let a: f64 = args[0].parse().unwrap_or(0.0);
-                    let op = args[1];
-                    let b: f64 = args[2].parse().unwrap_or(0.0);
-                    
-                    let result = match op {
-                        "+" => a + b,
-                        "-" => a - b,
-                        "*" => a * b,
-                        "/" => {
-                            if b != 0.0 {
-                                a / b
-                            } else {
-                                return Ok(CommandResult::Error("Division by zero".to_string()));
-                            }
-                        },
-                        _ => return Ok(CommandResult::Error("Unknown operator".to_string())),
-                    };
-                    
-                    Ok(CommandResult::Success(format!("{} {} {} = {}", a, op, b, result)))
-                } else {
-                    Ok(CommandResult::Error("Usage: /calc <num1> <operator> <num2>".to_string()))
-                }
-            },
-            _ => Ok(CommandResult::NotHandled),
+    fn execute(&self, args: Vec<&str>) -> Result<CommandResult> {
+        if args.len() == 3 {
+            let a: f64 = args[0].parse().unwrap_or(0.0);
+            let op = args[1];
+            let b: f64 = args[2].parse().unwrap_or(0.0);
+            
+            let result = match op {
+                "+" => a + b,
+                "-" => a - b,
+                "*" => a * b,
+                "/" => {
+                    if b != 0.0 {
+                        a / b
+                    } else {
+                        return Ok(CommandResult::Error("Division by zero".to_string()));
+                    }
+                },
+                _ => return Ok(CommandResult::Error("Unknown operator".to_string())),
+            };
+            
+            Ok(CommandResult::Success(format!("{} {} {} = {}", a, op, b, result)))
+        } else {
+            Ok(CommandResult::Error("Usage: /calc <num1> <operator> <num2>".to_string()))
         }
     }
+
+    fn help(&self) -> &str {
+         "!demo calc <num1> <operator> <num2> - Calculate the result of the operation"
+    }
+
+    fn prefix(&self) -> &str {
+        "demo"
+    }
+
 }
 
 fn main() {
     // This is just an example - actual usage would be in the main pubchat binary
-    let mut extension = CommandExtension;
+    let mut extension = CalcCommandExtension;
     let context = ExtensionContext {
         config: Default::default(),
         methods: ExtensionMethods::default(),

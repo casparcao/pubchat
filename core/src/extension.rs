@@ -3,7 +3,7 @@
 //! This module handles loading, initializing, and managing extensions.
 
 use anyhow::Result;
-use pubchat::extension::{Extension, ExtensionContext, LoadedExtension, MessageProcessor, CommandHandler};
+use pubchat::extension::{Extension, ExtensionContext, LoadedExtension, MessageExtension, CommandExtension};
 use std::collections::HashMap;
 use pubchat::core::message::Message;
 
@@ -29,13 +29,13 @@ impl ExtensionManager {
         let name = extension.name().to_string();
         
         // Check if extension implements MessageProcessor
-        let is_message_processor = extension.as_any().is::<&(dyn MessageProcessor)>();
+        let is_message_processor = extension.as_any().is::<&(dyn MessageExtension)>();
         if is_message_processor {
             self.message_processors.push(name.clone());
         }
         
         // Check if extension implements CommandHandler
-        let is_command_handler = extension.as_any().is::<&(dyn CommandHandler)>();
+        let is_command_handler = extension.as_any().is::<&(dyn CommandExtension)>();
         if is_command_handler {
             self.command_handlers.push(name.clone());
         }
@@ -62,12 +62,25 @@ impl ExtensionManager {
         Ok(())
     }
 
+    pub fn list_commands(&self) -> Vec<String> {
+        let mut commands = Vec::new();
+        for handler_name in &self.command_handlers {
+            if let Some(loaded_ext) = self.extensions.get(handler_name) {
+                // Try to downcast to CommandHandler
+                if let Some(handler) = loaded_ext.extension.as_any().downcast_ref::<&(dyn CommandExtension)>() {
+                    commands.push(format!("{} {} : {}", handler.prefix(), handler.command(), handler.help()));
+                }
+            }
+        }
+        commands
+    }
+
     /// Process an incoming message through all registered message processors
     pub fn process_incoming_message(&self, message: &mut Message) -> Result<bool> {
         for processor_name in &self.message_processors {
             if let Some(loaded_ext) = self.extensions.get(processor_name) {
                 // Try to downcast to MessageProcessor
-                if let Some(processor) = loaded_ext.extension.as_any().downcast_ref::<&(dyn MessageProcessor)>() {
+                if let Some(processor) = loaded_ext.extension.as_any().downcast_ref::<&(dyn MessageExtension)>() {
                     if !processor.on_message_receive(message)? {
                         // If any processor returns false, stop processing
                         return Ok(false);
@@ -83,7 +96,7 @@ impl ExtensionManager {
         for processor_name in &self.message_processors {
             if let Some(loaded_ext) = self.extensions.get(processor_name) {
                 // Try to downcast to MessageProcessor
-                if let Some(processor) = loaded_ext.extension.as_any().downcast_ref::<&(dyn MessageProcessor)>() {
+                if let Some(processor) = loaded_ext.extension.as_any().downcast_ref::<&(dyn MessageExtension)>() {
                     if !processor.on_message_send(message)? {
                         // If any processor returns false, stop processing
                         return Ok(false);
@@ -95,7 +108,7 @@ impl ExtensionManager {
     }
 
     /// Handle a command through all registered command handlers
-    pub fn handle_command(&self, command_input: &str, args: Vec<&str>) -> Result<Option<pubchat::extension::CommandResult>> {
+    pub fn handle_command(&self, command_input: &str, args: Vec<&str>) -> Result<pubchat::extension::CommandResult> {
         // First, try to parse as !plugin.command format
         if command_input.starts_with('!') && command_input.contains('.') {
             let parts: Vec<&str> = command_input[1..].splitn(2, '.').collect();
@@ -105,30 +118,30 @@ impl ExtensionManager {
             // Look for a specific plugin
             if let Some(loaded_ext) = self.extensions.get(plugin_name) {
                 // Try to downcast to CommandHandler
-                if let Some(handler) = loaded_ext.extension.as_any().downcast_ref::<&(dyn CommandHandler)>() {
-                    return Ok(Some(handler.handle(command, args)?));
+                if let Some(handler) = loaded_ext.extension.as_any().downcast_ref::<&(dyn CommandExtension)>() {
+                    return Ok(handler.execute(args)?);
                 }
             }
             
             // Plugin not found or doesn't handle commands
-            return Ok(Some(pubchat::extension::CommandResult::Error(
+            return Ok(pubchat::extension::CommandResult::Error(
                 format!("Plugin '{}' not found or doesn't handle commands", plugin_name)
-            )));
+            ));
         }
         
         // Fall back to the old method - try all command handlers
         for handler_name in &self.command_handlers {
             if let Some(loaded_ext) = self.extensions.get(handler_name) {
                 // Try to downcast to CommandHandler
-                if let Some(handler) = loaded_ext.extension.as_any().downcast_ref::<&(dyn CommandHandler)>() {
-                    match handler.handle(command_input, args.clone())? {
-                        pubchat::extension::CommandResult::NotHandled => continue,
-                        result => return Ok(Some(result)),
+                if let Some(handler) = loaded_ext.extension.as_any().downcast_ref::<&(dyn CommandExtension)>() {
+                    match handler.execute(args.clone())? {
+                        pubchat::extension::CommandResult::Ignore => continue,
+                        result => return Ok(result),
                     }
                 }
             }
         }
-        Ok(None)
+        Ok(pubchat::extension::CommandResult::Ignore)
     }
 
     /// Get a reference to a loaded extension by name

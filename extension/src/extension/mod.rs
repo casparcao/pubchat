@@ -63,7 +63,7 @@ pub struct LoadedExtension {
 /// Trait for message processing extensions
 /// 
 /// This trait allows plugins to intercept and process messages at various stages
-pub trait MessageProcessor: Extension {
+pub trait MessageExtension: Extension {
     /// Process an incoming message before it's handled by the system
     /// 
     /// This method is called when a message is received but before it's processed.
@@ -89,24 +89,28 @@ pub trait MessageProcessor: Extension {
     }
 }
 
+
 /// Trait for command extensions
 /// 
-/// This trait allows plugins to register and handle custom commands
-pub trait CommandHandler: Extension {
-    /// Get a list of commands this extension handles
-    fn commands(&self) -> Vec<&str>;
+/// This trait allows plugins to register and handle custom command
+pub trait CommandExtension: Extension {
+    /// Get the help text for this extension's command
+    fn help(&self) -> &str;
 
     /// Handle a command
     /// 
     /// This method is called when a user enters a command that this extension has registered
-    fn handle(&self, command: &str, args: Vec<&str>) -> Result<CommandResult>;
+    fn execute(&self, args: Vec<&str>) -> Result<CommandResult>;
     
-    /// Get the prefix for this extension's commands
+    /// Get the prefix for this extension's command, to prevent conflicts with other extensions
     /// 
     /// By default, this returns the extension name
     fn prefix(&self) -> &str {
         self.name()
     }
+
+    /// Get the command name for this extension
+    fn command(&self) -> &str;
 }
 
 /// Result of command execution
@@ -116,7 +120,7 @@ pub enum CommandResult {
     /// Command was handled but with an error
     Error(String),
     /// Command was not recognized by this handler
-    NotHandled,
+    Ignore,
 }
 
 impl<T: Extension + 'static> AsAny for T {
@@ -130,13 +134,13 @@ pub trait AsAny {
     fn as_any(&self) -> &dyn std::any::Any;
 }
 
-impl AsRef<dyn Extension> for dyn MessageProcessor {
+impl AsRef<dyn Extension> for dyn MessageExtension {
     fn as_ref(&self) -> &(dyn Extension + 'static) {
         self
     }
 }
 
-impl AsRef<dyn Extension> for dyn CommandHandler {
+impl AsRef<dyn Extension> for dyn CommandExtension {
     fn as_ref(&self) -> &(dyn Extension + 'static) {
         self
     }

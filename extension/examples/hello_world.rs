@@ -1,4 +1,4 @@
-use pubchat::extension::{CommandHandler, CommandResult, Extension, ExtensionContext, ExtensionMethods, MessageProcessor};
+use pubchat::extension::{CommandExtension, CommandResult, Extension, ExtensionContext, ExtensionMethods, MessageExtension};
 use anyhow::Result;
 use pubchat::core::message::Message;
 
@@ -24,7 +24,7 @@ impl Extension for HelloWorldExtension {
     }
 }
 
-impl MessageProcessor for HelloWorldExtension {
+impl MessageExtension for HelloWorldExtension {
     fn on_message_receive(&self, message: &mut Message) -> Result<bool> {
         println!("Processing incoming message: {:?}", message);
         // Always allow the message to continue processing
@@ -38,17 +38,23 @@ impl MessageProcessor for HelloWorldExtension {
     }
 }
 
-impl CommandHandler for HelloWorldExtension {
-    fn commands(&self) -> Vec<&str> {
-        vec!["hello", "world"]
+/// usage: !hello world
+impl CommandExtension for HelloWorldExtension {
+
+    fn command(&self) -> &str {
+        "world"
     }
 
-    fn handle(&self, command: &str, args: Vec<&str>) -> Result<CommandResult> {
-        match command {
-            "hello" => Ok(CommandResult::Success(format!("Hello, {}!", args.get(0).unwrap_or(&"World")))),
-            "world" => Ok(CommandResult::Success("World says hello back!".to_string())),
-            _ => Ok(CommandResult::NotHandled),
-        }
+    fn help(&self) -> &str {
+        "Say hello to someone or to the world"
+    }
+
+    fn prefix(&self) -> &str {
+        "hello"
+    }
+
+    fn execute(&self, args: Vec<&str>) -> Result<CommandResult> {
+        Ok(CommandResult::Success("World says hello back!".to_string()))
     }
 }
 

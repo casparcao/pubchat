@@ -1,4 +1,4 @@
-use pubchat::extension::{Extension, MessageProcessor, ExtensionContext, ExtensionMethods};
+use pubchat::extension::{Extension, MessageExtension, ExtensionContext, ExtensionMethods};
 use anyhow::Result;
 use pubchat::core::message::Message;
 
@@ -24,7 +24,7 @@ impl Extension for FilterExtension {
     }
 }
 
-impl MessageProcessor for FilterExtension {
+impl MessageExtension for FilterExtension {
     fn on_message_receive(&self, message: &mut Message) -> Result<bool> {
         println!("Filtering incoming message: {:?}", message);
         // For demo purposes, let's block messages containing "blockme"

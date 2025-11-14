@@ -135,15 +135,13 @@ impl ChatComponent {
                 ));
 
                 // Add extension command help if available
-                if let Some(plugin_manager) = &self.plugin_manager {
-                    let extensions_help = plugin_manager.list_commands();
-                    for help_text in extensions_help {
-                        self.messages.push(crate::ui::models::Message::new(
-                            "SYSTEM".to_string(),
-                            help_text,
-                            true
-                        ));
-                    }
+                let extensions_help = crate::ext::get().list_commands();
+                for help_text in extensions_help {
+                    self.messages.push(crate::ui::models::Message::new(
+                        "SYSTEM".to_string(),
+                        help_text,
+                        true
+                    ));
                 }
                 
                 // Add info about new command format
@@ -219,12 +217,10 @@ impl ChatComponent {
                     ));
                 }
             }
-            "/friends" => {
-                self.current_view = crate::ui::models::View::FriendsList;
-                self.selected_friend = None;
+            "/contacts" => {
                 self.messages.push(crate::ui::models::Message::new(
                     "SYSTEM".to_string(),
-                    "Opening friends list...".to_string(),
+                    "Opening contacts list...".to_string(),
                     true
                 ));
             }
@@ -236,55 +232,40 @@ impl ChatComponent {
             }
             _ => {
                 // Handle plugin commands with new format !plugin.command
-                if let Some(plugin_manager) = &self.plugin_manager {
-                    let command_args: Vec<&str> = parts.iter().skip(1).cloned().collect();
-                    match plugin_manager.handle_command(cmd, command_args) {
-                        Ok(Some(result)) => {
-                            match result {
-                                pubchat::extension::CommandResult::Success(output) => {
-                                    self.messages.push(crate::ui::models::Message::new(
-                                        "SYSTEM".to_string(),
-                                        output,
-                                        true
-                                    ));
-                                }
-                                pubchat::extension::CommandResult::Error(error) => {
-                                    self.messages.push(crate::ui::models::Message::new(
-                                        "SYSTEM".to_string(),
-                                        format!("Error: {}", error),
-                                        true
-                                    ));
-                                }
-                                pubchat::extension::CommandResult::NotHandled => {
-                                    self.messages.push(crate::ui::models::Message::new(
-                                        "SYSTEM".to_string(),
-                                        format!("Unknown command: {}", cmd),
-                                        true
-                                    ));
-                                }
+                let command_args: Vec<&str> = parts.iter().skip(1).cloned().collect();
+                match crate::ext::get().handle_command(cmd, command_args) {
+                    Ok(result) => {
+                        match result {
+                            pubchat::extension::CommandResult::Success(output) => {
+                                self.messages.push(crate::ui::models::Message::new(
+                                    "SYSTEM".to_string(),
+                                    output,
+                                    true
+                                ));
+                            }
+                            pubchat::extension::CommandResult::Error(error) => {
+                                self.messages.push(crate::ui::models::Message::new(
+                                    "SYSTEM".to_string(),
+                                    format!("Error: {}", error),
+                                    true
+                                ));
+                            }
+                            pubchat::extension::CommandResult::Ignore => {
+                                self.messages.push(crate::ui::models::Message::new(
+                                    "SYSTEM".to_string(),
+                                    format!("Unknown command: {}", cmd),
+                                    true
+                                ));
                             }
                         }
-                        Ok(None) => {
-                            self.messages.push(crate::ui::models::Message::new(
-                                "SYSTEM".to_string(),
-                                format!("Unknown command: {}", cmd),
-                                true
-                            ));
-                        }
-                        Err(e) => {
-                            self.messages.push(crate::ui::models::Message::new(
-                                "SYSTEM".to_string(),
-                                format!("Error handling command: {}", e),
-                                true
-                            ));
-                        }
                     }
-                } else {
-                    self.messages.push(crate::ui::models::Message::new(
-                        "SYSTEM".to_string(),
-                        format!("Unknown command: {}", cmd),
-                        true
-                    ));
+                    Err(e) => {
+                        self.messages.push(crate::ui::models::Message::new(
+                            "SYSTEM".to_string(),
+                            format!("Error handling command: {}", e),
+                            true
+                        ));
+                    }
                 }
             }
         }

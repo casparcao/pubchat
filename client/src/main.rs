@@ -16,6 +16,7 @@ mod repository;
 mod remote;
 mod cache;
 mod asynrt;
+mod ext;
 
 use crate::{ui::{models::Me}};
 
@@ -30,6 +31,7 @@ fn main() -> Result<()> {
     db::init();
     client::init();
     cache::init();
+    ext::init();
     
     // 进入原始模式
     enable_raw_mode()?;
