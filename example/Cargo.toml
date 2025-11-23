@@ -1,0 +1,20 @@
+[package]
+name = "example"
+edition = "2024"
+description = "pubchat extension example"
+
+[lib]
+name = "example"
+path = "src/lib.rs"
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+tokio = { workspace = true }
+anyhow = { workspace = true }
+log = {workspace = true}
+thiserror = { workspace = true }
+serde = { workspace = true }
+zip = { workspace = true }
+tempfile = { workspace = true }
+pubchat = { path = "../extension" }
+serde_json = { workspace = true }

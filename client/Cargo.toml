@@ -29,3 +29,5 @@ log = {workspace = true}
 env_logger = { workspace = true }
 snowflaker = { workspace = true }
 base62 = { workspace = true }
+zip = { workspace = true }
+tempfile = { workspace = true }

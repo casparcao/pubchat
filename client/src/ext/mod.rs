@@ -3,6 +3,8 @@ use std::sync::OnceLock;
 
 pub static EM: OnceLock<ExtensionManager> = OnceLock::new();
 
+pub mod loader;
+
 pub(crate) fn init() {
     EM.get_or_init(|| {ExtensionManager::new()});
 }

@@ -1,25 +1,39 @@
 # PubChat Extension System
 
-This crate provides the foundation for extending PubChat functionality through plugins/extensions.
+The extension system allows developers to extend the functionality of PubChat without modifying the core codebase.
 
 ## Overview
 
-Extensions in PubChat are Rust crates that implement the [Extension](src/lib.rs) trait. They can hook into various parts of the system to add new functionality.
+Extensions can hook into various parts of the application lifecycle and customize behavior such as message processing, command handling, and more.
+
+## Core Concepts
+
+### Extension Trait
+
+All extensions must implement the `Extension` trait which defines the basic extension interface:
+
+```rust
+pub trait Extension: Send + Sync {
+    fn name(&self) -> &str;
+    fn initialize(&mut self, context: &ExtensionContext) -> Result<()>;
+    fn shutdown(&mut self) -> Result<()>;
+    fn as_any(&self) -> &dyn std::any::Any;
+}
+```
+
+### Specialized Extension Traits
+
+Extensions can also implement specialized traits for specific functionality:
+
+1. `MessageExtension` - For processing messages
+2. `CommandExtension` - For handling commands
 
 ## Creating an Extension
 
-To create an extension:
-
-1. Create a new Rust library crate
-2. Add `pubchat` as a dependency
-3. Implement the [Extension](src/lib.rs) trait
-4. Optionally implement additional traits like [MessageProcessor](src/extension/mod.rs) or [CommandHandler](src/extension/mod.rs)
-5. Build and package your extension
-
-### Example Extension
+To create an extension, implement the `Extension` trait and any additional extension traits you need:
 
 ```rust
-use pubchat::{Extension, MessageProcessor, CommandHandler, CommandResult, extension::{ExtensionContext, ExtensionMethods}};
+use pubchat::extension::{Extension, ExtensionContext, MessageExtension, CommandExtension};
 use anyhow::Result;
 use pubchat::core::message::Message;
 
@@ -27,16 +41,16 @@ pub struct MyExtension;
 
 impl Extension for MyExtension {
     fn name(&self) -> &str {
-        "my_extension"
+        "MyExtension"
     }
 
     fn initialize(&mut self, context: &ExtensionContext) -> Result<()> {
-        // Initialize your extension here
+        // Initialization code
         Ok(())
     }
 
     fn shutdown(&mut self) -> Result<()> {
-        // Clean up your extension here
+        // Cleanup code
         Ok(())
     }
     
@@ -45,82 +59,172 @@ impl Extension for MyExtension {
     }
 }
 
-impl MessageProcessor for MyExtension {
+impl MessageExtension for MyExtension {
     fn on_message_receive(&self, message: &mut Message) -> Result<bool> {
         // Process incoming messages
-        Ok(true) // Return false to block the message
+        Ok(true) // Allow message to continue processing
     }
 
     fn on_message_send(&self, message: &mut Message) -> Result<bool> {
         // Process outgoing messages
-        Ok(true) // Return false to block the message
+        Ok(true) // Allow message to be sent
     }
 }
 
-impl CommandHandler for MyExtension {
-    fn commands(&self) -> Vec<&str> {
-        vec!["mycommand", "another"]
+impl CommandExtension for MyExtension {
+    fn command(&self) -> &str {
+        "mycommand"
     }
 
-    fn handle_command(&self, command: &str, args: Vec<&str>) -> Result<CommandResult> {
-        match command {
-            "mycommand" => Ok(CommandResult::Success("Handled mycommand!".to_string())),
-            _ => Ok(CommandResult::NotHandled),
-        }
+    fn help(&self) -> &str {
+        "Description of what mycommand does"
+    }
+
+    fn prefix(&self) -> &str {
+        "myext"
+    }
+
+    fn execute(&self, args: Vec<&str>) -> Result<CommandResult> {
+        Ok(CommandResult::Success("Command executed successfully".to_string()))
     }
 }
 ```
 
-## Extension Types
+## Plugin Package Format (.pubchat)
 
-### MessageProcessor
+PubChat supports plugin packages with the .pubchat extension. These are ZIP files with a specific structure:
 
-Implement the [MessageProcessor](src/extension/mod.rs) trait to intercept and process messages:
+```
+example_plugin.pubchat (ZIP file)
+├── manifest.json
+├── plugin.dll (or .so, .dylib - compiled plugin library)
+└── [other assets]
+```
 
-- `on_message_receive`: Process incoming messages before they are handled
-- `on_message_send`: Process outgoing messages before they are sent
+### Manifest Format
 
-Return `false` from these methods to block the message, or `true` to allow it to continue processing.
+The manifest.json file contains metadata about the plugin:
 
-### CommandHandler
+```json
+{
+  "name": "example_plugin",
+  "version": "1.0.0",
+  "description": "An example plugin for PubChat",
+  "main": "plugin.dll",
+  "author": "Your Name",
+  "repository": "https://github.com/user/repo",
+  "display_name": "Example Plugin",
+  "categories": ["example", "demo"],
+  "keywords": ["example", "demo"],
+  "license": "MIT",
+  "homepage": "https://example.com"
+}
+```
 
-Implement the [CommandHandler](src/extension/mod.rs) trait to add new commands:
+### Building a Plugin Package
 
-- `commands`: Return a list of commands this extension handles
-- `handle_command`: Process a command and return a result
-- `command_prefix`: Return the prefix for this extension's commands (defaults to extension name)
+To build a plugin package, create a ZIP file with the manifest and compiled library:
 
-Return [CommandResult::NotHandled](src/extension/mod.rs) if the command is not recognized by this handler.
+```rust
+use std::fs::File;
+use std::io::{Write, BufWriter};
+use zip::{ZipWriter, CompressionMethod};
 
-## Command Format
+// Create the plugin package (.pubchat file)
+let package_file = File::create("example_plugin.pubchat")?;
+let mut zip = ZipWriter::new(BufWriter::new(package_file));
 
-PubChat supports two command formats:
+// Add manifest.json
+zip.start_file("manifest.json", CompressionMethod::Deflated)?;
+// ... write manifest content
 
-1. Traditional format: `/command` - searches all extensions for a matching command
-2. Direct format: `!extension.command` - directly calls the specified extension's command
+// Add plugin library
+zip.start_file("plugin.dll", CompressionMethod::Deflated)?;
+// ... write library content
 
-The direct format is more efficient as it bypasses searching through all extensions.
+zip.finish()?;
+```
+
+## Complete Example Plugin
+
+There is a complete example plugin in the `example` directory that demonstrates all features of the extension system:
+
+1. Message processing
+2. Command handling
+3. Proper packaging for distribution
+
+To build the complete example plugin package:
+
+```bash
+cd example
+cargo run --bin build_complete_package
+```
+
+This will create a `complete_example.pubchat` file that can be placed in the client's plugins directory.
+
+## Loading Extensions
+
+### Static Loading
+
+Extensions can be statically loaded by registering them directly with the ExtensionManager:
+
+```rust
+let mut extension_manager = ExtensionManager::new();
+extension_manager.load_extension(Box::new(MyExtension));
+```
+
+### Package-based Loading
+
+Extensions can be loaded from .pubchat package files:
+
+1. Place plugin packages in the `plugins` directory
+2. The PubChat client will automatically load all .pubchat files in this directory at startup
+
+The client looks for functions with the signature `fn _create_extension() -> Box<dyn Extension>` in the plugin library.
+
+## Built-in Extension Examples
+
+The extension crate includes several example extensions:
+
+1. `hello_world.rs` - Basic extension with message processing and command handling
+2. `filter.rs` - Message filtering extension
+3. `command.rs` - Command handling extension
+4. `build_package.rs` - Example of how to build a plugin package
+5. `complete_plugin.rs` - A complete example showing all features
 
 ## Extension Lifecycle
 
 1. **Loading**: The extension is loaded by the ExtensionManager
-2. **Initialization**: The `initialize` method is called with an [ExtensionContext](src/extension/mod.rs)
+2. **Initialization**: The `initialize` method is called with an ExtensionContext
 3. **Runtime**: The extension is active and can interact with the system
 4. **Shutdown**: The `shutdown` method is called when the system shuts down
 
 ## Extension Context
 
-The [ExtensionContext](src/extension/mod.rs) provides extensions with:
+The ExtensionContext provides extensions with:
 
 - Configuration values
 - Methods to interact with the core system
 
 Currently, these are placeholders and will be expanded in future versions.
 
-## Examples
+## Command Handling
 
-See the [examples](examples/) directory for sample extensions:
+Extensions can handle commands in two ways:
 
-- [hello_world.rs](examples/hello_world.rs): Basic extension with message processing and command handling
-- [filter.rs](examples/filter.rs): Message filtering extension
-- [command.rs](examples/command.rs): Command handling extension
+1. **Direct plugin commands**: Using the `!plugin.command` format (e.g., `!hello.world`)
+2. **Global command handlers**: Extensions register command handlers that are tried in sequence
+
+The direct plugin format is preferred as it's more efficient and avoids naming conflicts.
+
+## Future Improvements
+
+Planned improvements to the extension system include:
+
+- Plugin configuration via files
+- Plugin communication mechanisms
+- Performance metrics for extensions
+- Plugin permissions and sandboxing
+- Hot-reloading of extensions during development
+- Plugin marketplace/repository
+- Plugin signature verification for security
