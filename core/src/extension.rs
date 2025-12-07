@@ -175,14 +175,3 @@ impl Default for ExtensionManager {
         Self::new()
     }
 }
-
-// Add a trait to allow downcasting
-pub trait AsAny {
-    fn as_any(&self) -> &dyn std::any::Any;
-}
-
-impl<T: Extension + 'static> AsAny for T {
-    fn as_any(&self) -> &(dyn std::any::Any) {
-        self
-    }
-}
