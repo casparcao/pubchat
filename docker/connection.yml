@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  connection:
+    build:
+      context: ../connection
+      dockerfile: Dockerfile
+    container_name: pubchat-connection
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=mysql://root:root@mysql:3306/connection
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_ADDR=amqp://admin:admin@rabbitmq:5672/pubchat_vhost
+      - JWT_SECRET=iloverustlangitsveryverynice
+      - ACCESS_PRIVATE_KEY=pubchat_access_private_key
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+    restart: unless-stopped
+
+volumes:
+  connection_data:
+    driver: local

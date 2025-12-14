@@ -22,16 +22,13 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy the binary from builder stage
-COPY --from=builder /app/target/release/blob ./blob
+COPY --from=builder /app/target/release/connection ./connection
 
 # Copy environment file
 COPY --from=builder /app/.env ./.env
 
-# Create directory for file storage
-RUN mkdir -p /home/data/images
-
-# Expose port
-EXPOSE 3002
+# Expose port (using default for connection service)
+EXPOSE 3001
 
 # Run the application
-CMD ["./blob"]
+CMD ["./connection"]
