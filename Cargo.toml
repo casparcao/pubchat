@@ -45,7 +45,7 @@ dotenv = "0.15.0"
 snowflaker = "0.3"
 redis = "0.32"
 sqlx = { version = "0.8", features = [ "mysql", "sqlite", "migrate", "runtime-tokio", "chrono", "derive", "rust_decimal" ] }
-rust_decimal = "1.38"
+rust_decimal = "1.39"
 validator = {version = "0.20", features = ["derive"]}
 http-body = "1.0"
 http = "1.3"
